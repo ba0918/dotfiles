@@ -127,6 +127,11 @@ install_gcm() {
 }
 
 install_deps() {
+	# Prime sudo once so subsequent apt/dpkg calls don't re-prompt.
+	if command -v sudo >/dev/null 2>&1; then
+		echo "[sudo] caching credentials for dependency install"
+		sudo -v
+	fi
 	install_stow
 	install_delta
 	install_gcm
