@@ -3,16 +3,31 @@
 #
 # Installed into new repositories via `git init` / `git clone` template dir
 # (see [init] templateDir in ~/.gitconfig). Existing repositories are not
-# touched — copy this file into .git/hooks/pre-commit manually if desired.
+# touched — symlink or copy this file into .git/hooks/pre-commit manually.
 #
-# Behavior:
+# Behavior (fail-secure): if any prerequisite is missing, the commit is
+# rejected. Silent fallbacks are intentionally avoided because a hook that
+# pretends to scan while doing nothing is worse than no hook at all.
+#
 #   - scans only the files currently staged for this commit
-#   - if secretlint is unavailable, falls back to a warning (never breaks the
-#     developer environment on a fresh machine)
+#   - rejects the commit if secretlint is not on PATH
+#   - rejects the commit if neither a project .secretlintrc* nor the global
+#     dotfiles config is available (otherwise rules would be empty)
 #   - honors a project-local .secretlintrc* if present; otherwise uses the
 #     global config shipped with dotfiles
 
 set -euo pipefail
+
+# Make pnpm-installed binaries discoverable even when the hook is invoked
+# from a shell that has not loaded PNPM_HOME into PATH (e.g. fish without
+# the conf.d snippet). Keeps the hook self-contained across environments.
+PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+if [[ -d "$PNPM_HOME" ]]; then
+    case ":$PATH:" in
+        *":$PNPM_HOME:"*) ;;
+        *) PATH="$PNPM_HOME:$PATH" ;;
+    esac
+fi
 
 # Gather staged added / modified file paths (skip deletions).
 mapfile -t STAGED < <(git diff --cached --name-only --diff-filter=AM)
@@ -25,9 +40,11 @@ fi
 # recommend preset package, causing false-positive commit blocks on machines
 # that haven't run `./install.sh --deps` yet.
 if ! command -v secretlint >/dev/null 2>&1; then
-    echo "[pre-commit] secretlint not installed; skipping secret scan." >&2
-    echo "[pre-commit] install: pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
-    exit 0
+    echo "[pre-commit] secretlint not installed — rejecting commit for safety." >&2
+    echo "[pre-commit] install via dotfiles:   ./install.sh --deps" >&2
+    echo "[pre-commit] or manually:            pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
+    echo "[pre-commit] override (risky):       git commit --no-verify" >&2
+    exit 1
 fi
 RUNNER=(secretlint)
 
@@ -47,8 +64,8 @@ if [[ -n "$PROJECT_CONFIG" ]]; then
 else
     if [[ ! -f "$GLOBAL_CONFIG" ]]; then
         echo "[pre-commit] no project .secretlintrc and global config missing: $GLOBAL_CONFIG" >&2
-        echo "[pre-commit] skipping secret scan." >&2
-        exit 0
+        echo "[pre-commit] rejecting commit — install dotfiles git package (./install.sh git) to provision it." >&2
+        exit 1
     fi
     CMD=("${RUNNER[@]}" --secretlintrc "$GLOBAL_CONFIG" "${STAGED[@]}")
 fi
