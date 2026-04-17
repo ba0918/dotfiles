@@ -136,6 +136,21 @@ install_gcm() {
 	echo "[gcm] configured; on WSL credentials are stored via Windows Credential Manager"
 }
 
+install_secretlint() {
+	if command -v secretlint >/dev/null 2>&1; then
+		echo "[secretlint] already installed ($(secretlint --version 2>/dev/null | head -1))"
+		return
+	fi
+	if ! command -v pnpm >/dev/null 2>&1; then
+		echo "[secretlint][warn] pnpm not found; install Node.js + pnpm (e.g. via mise) first." >&2
+		return 0
+	fi
+	# Use pnpm with --ignore-scripts to mitigate supply-chain attacks at install
+	# time. secretlint and its preset are pure JS and do not need postinstall.
+	echo "[secretlint] installing via pnpm (global, --ignore-scripts)..."
+	pnpm add --global --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend
+}
+
 install_deps() {
 	# Prime sudo once so subsequent apt/dpkg calls don't re-prompt.
 	if command -v sudo >/dev/null 2>&1; then
@@ -145,6 +160,7 @@ install_deps() {
 	install_stow
 	install_delta
 	install_gcm
+	install_secretlint
 }
 
 # ----- stow runner -----

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Global pre-commit hook: run secretlint on staged files.
+#
+# Installed into new repositories via `git init` / `git clone` template dir
+# (see [init] templateDir in ~/.gitconfig). Existing repositories are not
+# touched — copy this file into .git/hooks/pre-commit manually if desired.
+#
+# Behavior:
+#   - scans only the files currently staged for this commit
+#   - if secretlint is unavailable, falls back to a warning (never breaks the
+#     developer environment on a fresh machine)
+#   - honors a project-local .secretlintrc* if present; otherwise uses the
+#     global config shipped with dotfiles
+
+set -euo pipefail
+
+# Gather staged added / modified file paths (skip deletions).
+mapfile -t STAGED < <(git diff --cached --name-only --diff-filter=AM)
+if [[ ${#STAGED[@]} -eq 0 ]]; then
+    exit 0
+fi
+
+# Require a globally installed secretlint. npx fallback is intentionally
+# disabled: npx can fetch `secretlint` itself but cannot auto-resolve the
+# recommend preset package, causing false-positive commit blocks on machines
+# that haven't run `./install.sh --deps` yet.
+if ! command -v secretlint >/dev/null 2>&1; then
+    echo "[pre-commit] secretlint not installed; skipping secret scan." >&2
+    echo "[pre-commit] install: pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
+    exit 0
+fi
+RUNNER=(secretlint)
+
+# Let project-level config win; otherwise use the global dotfiles config.
+PROJECT_CONFIG=""
+for candidate in .secretlintrc.json .secretlintrc.yaml .secretlintrc.yml .secretlintrc.js .secretlintrc; do
+    if [[ -f "$candidate" ]]; then
+        PROJECT_CONFIG="$candidate"
+        break
+    fi
+done
+
+GLOBAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/secretlint/.secretlintrc.json"
+
+if [[ -n "$PROJECT_CONFIG" ]]; then
+    CMD=("${RUNNER[@]}" "${STAGED[@]}")
+else
+    if [[ ! -f "$GLOBAL_CONFIG" ]]; then
+        echo "[pre-commit] no project .secretlintrc and global config missing: $GLOBAL_CONFIG" >&2
+        echo "[pre-commit] skipping secret scan." >&2
+        exit 0
+    fi
+    CMD=("${RUNNER[@]}" --secretlintrc "$GLOBAL_CONFIG" "${STAGED[@]}")
+fi
+
+if ! "${CMD[@]}"; then
+    echo "" >&2
+    echo "[pre-commit] secretlint detected potential secrets in staged files." >&2
+    echo "[pre-commit] fix the findings, or (only if you are sure) bypass with: git commit --no-verify" >&2
+    exit 1
+fi

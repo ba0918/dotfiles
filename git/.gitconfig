@@ -3,6 +3,7 @@
 	email = pub.dev.delusions@gmail.com
 [init]
 	defaultBranch = main
+	templateDir = ~/.config/git/template
 [core]
 	autocrlf = input
 	quotepath = false
