@@ -38,25 +38,92 @@ DANGEROUS_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 
 
-def _strip_comment(cmd: str) -> str:
-    """Drop everything after an unquoted `#`."""
+_HEREDOC_START_RE = re.compile(r"<<-?\s*[\"']?(\w+)[\"']?")
+
+
+def _strip_noise(cmd: str) -> str:
+    """Remove shell noise that is not itself executed as a command:
+    comments, quoted strings (both kinds), and heredoc bodies.
+
+    Rationale: regex detection was producing false positives on things like
+    `git commit -m "... xargs rm ..."` where dangerous words appear inside
+    string literals. Stripping these regions first keeps detection focused
+    on the actual command surface.
+
+    Trade-off: this also masks command substitutions (`$(...)`, backticks)
+    that are nested inside double quotes, so pathological cases such as
+    `echo "$(rm -rf /)"` slip through. Acceptable — for this user-scope
+    hook we optimize for low FP rate over exotic attack coverage.
+    """
     out: list[str] = []
-    in_sq = False
-    in_dq = False
-    for c in cmd:
-        if c == "'" and not in_dq:
-            in_sq = not in_sq
-        elif c == '"' and not in_sq:
-            in_dq = not in_dq
-        elif c == "#" and not in_sq and not in_dq:
-            break
+    i = 0
+    n = len(cmd)
+    while i < n:
+        c = cmd[i]
+
+        if c == "#":
+            while i < n and cmd[i] != "\n":
+                i += 1
+            continue
+
+        if c == "<" and i + 1 < n and cmd[i + 1] == "<":
+            m = _HEREDOC_START_RE.match(cmd, i)
+            if m:
+                delim = m.group(1)
+                # Replace the whole heredoc (marker + body + terminator) with
+                # a single space so that tokens on either side stay separated
+                # for word-boundary regex matching.
+                out.append(" ")
+                i = m.end()
+                end_re = re.compile(rf"\n\t*{re.escape(delim)}(?:\n|$)")
+                em = end_re.search(cmd, i)
+                i = em.end() if em else n
+                continue
+
+        if c in ("'", '"'):
+            quote = c
+            i += 1
+            while i < n and cmd[i] != quote:
+                if quote == '"':
+                    # Escape sequence
+                    if cmd[i] == "\\" and i + 1 < n:
+                        i += 2
+                        continue
+                    # Nested backtick command substitution — skip whole block
+                    # so the inner `"..."` doesn't look like the outer closer
+                    if cmd[i] == "`":
+                        i += 1
+                        while i < n and cmd[i] != "`":
+                            if cmd[i] == "\\" and i + 1 < n:
+                                i += 2
+                                continue
+                            i += 1
+                        i += 1  # past closing backtick (or end)
+                        continue
+                    # Nested $( ... ) command substitution with balanced parens
+                    if cmd[i] == "$" and i + 1 < n and cmd[i + 1] == "(":
+                        depth = 1
+                        i += 2  # past "$("
+                        while i < n and depth > 0:
+                            if cmd[i] == "(":
+                                depth += 1
+                            elif cmd[i] == ")":
+                                depth -= 1
+                            i += 1
+                        continue
+                i += 1
+            i += 1  # skip closing quote (or past end)
+            continue
+
         out.append(c)
+        i += 1
+
     return "".join(out)
 
 
 def analyze(command: str) -> list[Block]:
     """Return dangerous-rule matches for `command`. Pure function."""
-    stripped = _strip_comment(command)
+    stripped = _strip_noise(command)
     blocks: list[Block] = []
     for rule, pat in DANGEROUS_PATTERNS:
         m = pat.search(stripped)

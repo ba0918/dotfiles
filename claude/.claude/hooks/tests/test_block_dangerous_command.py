@@ -96,12 +96,86 @@ def test_comment_strips_dangerous_look():
     assert analyze("ls # find /tmp -delete") == []
 
 
-def test_comment_inside_single_quotes_still_lexes_as_code():
-    # Conservative: if quoted, the parser keeps scanning. A find...-delete
-    # inside single quotes is still flagged; we'd rather false-positive than
-    # miss.
-    blocks = analyze("echo 'find /tmp -delete'")
-    assert len(blocks) >= 1
+def test_single_quoted_string_body_is_not_analyzed():
+    # We used to flag this conservatively, but it caused false positives in
+    # real usage (e.g. `git commit -m '... find -delete ...'`). Trade-off
+    # accepted: adversarial inputs like `echo '$(rm -rf /)'` slip through.
+    assert analyze("echo 'find /tmp -delete'") == []
+
+
+def test_double_quoted_string_body_is_not_analyzed():
+    assert analyze('echo "find /tmp -delete"') == []
+
+
+def test_git_commit_message_with_dangerous_words_not_flagged():
+    # The exact shape that self-blocked our own commit
+    cmd = 'git commit -m "fix find -delete handling and xargs rm path"'
+    assert analyze(cmd) == []
+
+
+def test_heredoc_body_is_not_analyzed():
+    cmd = (
+        'git commit -m "$(cat <<\'EOF\'\n'
+        'fix: find -delete now handled\n'
+        'also mkfs and shred safety improved\n'
+        'EOF\n'
+        ')"'
+    )
+    assert analyze(cmd) == []
+
+
+def test_unquoted_heredoc_body_is_not_analyzed():
+    cmd = (
+        "cat <<EOF\n"
+        "find /tmp -delete\n"
+        "xargs rm\n"
+        "EOF"
+    )
+    assert analyze(cmd) == []
+
+
+def test_dangerous_outside_quotes_still_caught():
+    # Quoted decoy plus a real dangerous command afterwards
+    blocks = analyze('echo "safe"; find /tmp -delete')
+    assert any("-delete" in b.rule for b in blocks)
+
+
+def test_dangerous_after_heredoc_still_caught():
+    cmd = (
+        "cat <<EOF\n"
+        "docs\n"
+        "EOF\n"
+        "find /tmp -delete"
+    )
+    blocks = analyze(cmd)
+    assert any("-delete" in b.rule for b in blocks)
+
+
+def test_backtick_in_double_quote_does_not_break_quote_parsing():
+    # Regression: a backtick block inside a double-quoted string contains
+    # its own `"..."` pair. Naive quote tracking would think the inner `"`
+    # closes the outer double quote, re-exposing later dangerous text.
+    cmd = (
+        'git commit -m "$(cat <<\'EOF\'\n'
+        'mention `git commit -m "... find -delete ..."` in the body\n'
+        'also show $(rm -rf /) as an example\n'
+        'EOF\n'
+        ')"'
+    )
+    assert analyze(cmd) == []
+
+
+def test_dollar_paren_in_double_quote_skipped():
+    # Same idea with $(...) command substitution wrapping a heredoc
+    cmd = 'echo "pre $(cat <<\'EOF\'\nfind -delete\nEOF\n) post"'
+    assert analyze(cmd) == []
+
+
+def test_nested_parens_in_dollar_paren():
+    # $(echo $(echo x)) — balanced depth must be tracked so we don't stop
+    # at the first `)` and re-enter the surrounding string.
+    cmd = 'echo "wrap $(cat <<\'EOF\'\nfind -delete\nsomething with (parens) inside\nEOF\n) end"'
+    assert analyze(cmd) == []
 
 
 def test_multiple_rules_can_match():
