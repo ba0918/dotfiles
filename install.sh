@@ -135,17 +135,17 @@ install_deps() {
 # ----- stow runner -----
 
 run_stow() {
-	local flag="$1"
-	shift
 	local package="$1"
+	shift
+	# remaining args are stow flags
 
 	if [[ ! -d "${DOTFILES_DIR}/${package}" ]]; then
 		echo "[skip] package not found: ${package}"
 		return
 	fi
 
-	echo "[stow ${flag}] ${package} -> ${TARGET}"
-	stow --verbose=1 --dir="${DOTFILES_DIR}" --target="${TARGET}" "${flag}" "${package}"
+	echo "[stow $*] ${package} -> ${TARGET}"
+	stow --verbose=1 --dir="${DOTFILES_DIR}" --target="${TARGET}" "$@" "${package}"
 }
 
 # ----- main -----
@@ -156,18 +156,18 @@ case "${MODE}" in
 		;;
 	dry-run)
 		install_stow
-		for pkg in "${PACKAGES[@]}"; do run_stow "--no --stow" "${pkg}"; done
+		for pkg in "${PACKAGES[@]}"; do run_stow "${pkg}" -n -S; done
 		;;
 	unlink)
 		install_stow
-		for pkg in "${PACKAGES[@]}"; do run_stow "-D" "${pkg}"; done
+		for pkg in "${PACKAGES[@]}"; do run_stow "${pkg}" -D; done
 		;;
 	install)
 		install_stow
 		echo "[phase 1] dry-run to detect conflicts"
-		for pkg in "${PACKAGES[@]}"; do run_stow "--no --stow" "${pkg}"; done
+		for pkg in "${PACKAGES[@]}"; do run_stow "${pkg}" -n -S; done
 		echo "[phase 2] linking"
-		for pkg in "${PACKAGES[@]}"; do run_stow "-S" "${pkg}"; done
+		for pkg in "${PACKAGES[@]}"; do run_stow "${pkg}" -S; done
 		echo "[done] symlinks installed"
 		echo ""
 		echo "[hint] install external tools (delta / GCM) via:"
