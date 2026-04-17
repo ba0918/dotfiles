@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 #
-# dotfiles installer — GNU Stow ベースで $HOME に symlink を張る
+# dotfiles installer - GNU Stow based symlink manager for $HOME
 #
 # Usage:
-#   ./install.sh            # デフォルトパッケージを ドライラン → 実リンク
-#   ./install.sh --dry-run  # 何が起きるかだけ見る
-#   ./install.sh --unlink   # リンクを剥がす
-#   ./install.sh --deps     # 依存ツール (stow/delta/GCM) のみインストール
-#   ./install.sh git fish   # 個別パッケージ指定
+#   ./install.sh             Default packages: dry-run then link
+#   ./install.sh --dry-run   Show what stow would do without linking
+#   ./install.sh --unlink    Remove symlinks
+#   ./install.sh --deps      Install external tools only (stow/delta/GCM)
+#   ./install.sh git fish    Target specific packages
 
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${HOME}"
 
-# デフォルトで stow するパッケージ（ディレクトリ名）
+# Default packages to stow (directory names)
 DEFAULT_PACKAGES=(git)
 
 MODE="install"
@@ -43,10 +43,9 @@ if [[ ${#PACKAGES[@]} -eq 0 ]]; then
 	PACKAGES=("${DEFAULT_PACKAGES[@]}")
 fi
 
-# ----- パッケージマネージャ共通 -----
+# ----- package manager helper -----
 
 pm_install() {
-	# $@ = install 対象（複数可）
 	if command -v apt-get >/dev/null 2>&1; then
 		sudo apt-get update -y
 		sudo apt-get install -y "$@"
@@ -57,30 +56,30 @@ pm_install() {
 	elif command -v brew >/dev/null 2>&1; then
 		brew install "$@"
 	else
-		echo "[error] パッケージマネージャが見つからない。手動で $* 入れてね〜" >&2
+		echo "[error] no supported package manager found; install manually: $*" >&2
 		return 1
 	fi
 }
 
-# ----- 個別ツールのインストーラ -----
+# ----- tool installers -----
 
 install_stow() {
 	if command -v stow >/dev/null 2>&1; then
-		echo "[stow] 既に入ってるよ〜 ($(stow --version | head -1))"
+		echo "[stow] already installed ($(stow --version | head -1))"
 		return
 	fi
-	echo "[stow] インストールするね〜"
+	echo "[stow] installing..."
 	pm_install stow
 }
 
 install_delta() {
 	if command -v delta >/dev/null 2>&1; then
-		echo "[delta] 既に入ってるよ〜 ($(delta --version))"
+		echo "[delta] already installed ($(delta --version))"
 		return
 	fi
-	echo "[delta] インストールするね〜"
+	echo "[delta] installing..."
 	if command -v apt-get >/dev/null 2>&1; then
-		# Ubuntu 22.04+ / Debian 12+ は git-delta パッケージあり
+		# Ubuntu 22.04+ / Debian 12+ ships git-delta
 		pm_install git-delta || pm_install delta
 	else
 		pm_install git-delta
@@ -89,20 +88,21 @@ install_delta() {
 
 install_gcm() {
 	if command -v git-credential-manager >/dev/null 2>&1; then
-		echo "[GCM] 既に入ってるよ〜 ($(git-credential-manager --version 2>/dev/null | head -1))"
+		echo "[gcm] already installed ($(git-credential-manager --version 2>/dev/null | head -1))"
 		return
 	fi
-	echo "[GCM] git-credential-manager をインストールするね〜"
+	echo "[gcm] installing git-credential-manager..."
 
 	local arch
 	case "$(uname -m)" in
 		x86_64)  arch="amd64"  ;;
 		aarch64) arch="arm64"  ;;
-		*) echo "[GCM][error] 未対応の arch: $(uname -m)" >&2; return 1 ;;
+		*) echo "[gcm][error] unsupported arch: $(uname -m)" >&2; return 1 ;;
 	esac
 
 	if ! command -v apt-get >/dev/null 2>&1; then
-		echo "[GCM][warn] apt 以外は自動対応してない。https://github.com/git-ecosystem/git-credential-manager/releases を参考に手動インストールしてね〜" >&2
+		echo "[gcm][warn] automatic install only supports apt-based systems." >&2
+		echo "[gcm][warn] see https://github.com/git-ecosystem/git-credential-manager/releases" >&2
 		return 1
 	fi
 
@@ -113,7 +113,7 @@ install_gcm() {
 		| head -1)
 
 	if [[ -z "$deb_url" ]]; then
-		echo "[GCM][error] 最新 .deb の URL を取得できなかった" >&2
+		echo "[gcm][error] failed to resolve latest .deb url" >&2
 		return 1
 	fi
 
@@ -123,7 +123,7 @@ install_gcm() {
 	curl -sL -o "$tmp" "$deb_url"
 	sudo dpkg -i "$tmp" || sudo apt-get install -f -y
 	git-credential-manager configure
-	echo "[GCM] 完了〜！ WSL なら Windows 側の Credential Manager に保存されるよ〜"
+	echo "[gcm] configured; on WSL credentials are stored via Windows Credential Manager"
 }
 
 install_deps() {
@@ -132,7 +132,7 @@ install_deps() {
 	install_gcm
 }
 
-# ----- stow 実行 -----
+# ----- stow runner -----
 
 run_stow() {
 	local flag="$1"
@@ -140,7 +140,7 @@ run_stow() {
 	local package="$1"
 
 	if [[ ! -d "${DOTFILES_DIR}/${package}" ]]; then
-		echo "[skip] ${package} パッケージが存在しない"
+		echo "[skip] package not found: ${package}"
 		return
 	fi
 
@@ -164,13 +164,13 @@ case "${MODE}" in
 		;;
 	install)
 		install_stow
-		echo "[phase 1] dry-run で衝突を確認するよ〜"
+		echo "[phase 1] dry-run to detect conflicts"
 		for pkg in "${PACKAGES[@]}"; do run_stow "--no --stow" "${pkg}"; done
-		echo "[phase 2] 実リンクを張るよ〜"
+		echo "[phase 2] linking"
 		for pkg in "${PACKAGES[@]}"; do run_stow "-S" "${pkg}"; done
-		echo "[done] オタクくん、完了〜！"
+		echo "[done] symlinks installed"
 		echo ""
-		echo "[hint] delta / GCM など外部ツールがまだなら:"
+		echo "[hint] install external tools (delta / GCM) via:"
 		echo "  ./install.sh --deps"
 		;;
 esac
