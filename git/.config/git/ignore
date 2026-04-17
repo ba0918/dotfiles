@@ -1,0 +1,107 @@
+# ============================================================
+# Global gitignore — すべての repo に適用される
+# XDG: ~/.config/git/ignore （git が自動検出）
+# ============================================================
+
+# ===== OS: macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ===== OS: Windows =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ===== OS: Linux =====
+*~
+.fuse_hidden*
+.nfs*
+
+# ===== WSL — Windows からコピーすると付く Zone.Identifier =====
+*:Zone.Identifier
+
+# ===== Editor: Vim / Neovim =====
+*.swp
+*.swo
+*.swn
+*.swm
+.netrwhist
+Session.vim
+.nvimlog
+
+# ===== Editor: Emacs =====
+\#*\#
+.\#*
+*.elc
+
+# ===== Editor: JetBrains =====
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ===== Editor: Zed =====
+.zed/
+
+# ===== Editor: VSCode =====
+# .vscode/ はプロジェクトで共有したいことがあるので除外しない
+# （代わりに .vscode/settings.local.json だけ除外するプロジェクト運用を推奨）
+.history/
+*.code-workspace
+
+# ===== ctags / cscope =====
+tags
+TAGS
+!tags/
+cscope.*
+
+# ===== Build artifacts（念押し — 各プロジェクトで入れるのが基本） =====
+node_modules/
+.cache/
+.parcel-cache/
+dist/
+build/
+target/
+coverage/
+.nyc_output/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.tox/
+*.egg-info/
+
+# ===== Rust =====
+Cargo.lock.bak
+
+# ===== Tools =====
+.direnv/
+.envrc.local
+.tool-versions.local
+.mise.local.toml
+
+# ===== Secrets（最後の砦。各プロジェクトの .gitignore が本命） =====
+.env.local
+*.pem
+*.key
+!*.key.pub
+.git-credentials
+
+# ===== Backups / temp =====
+*.bak
+*.orig
+*.rej
+
+# ===== LLM / AI coding agents（ローカル設定系） =====
+**/.claude/settings.local.json
+.aider*
+.cursor/local/
+.specstory/
