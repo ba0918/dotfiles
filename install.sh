@@ -121,9 +121,17 @@ install_gcm() {
 	echo "[gcm] downloading ${deb_url}"
 	local tmp
 	tmp=$(mktemp --suffix=.deb)
-	trap 'rm -f "$tmp"' RETURN
-	curl -fL -o "$tmp" "$deb_url"
-	sudo dpkg -i "$tmp" || sudo apt-get install -f -y
+	# Explicit cleanup (avoid RETURN trap leaking into enclosing function
+	# scope under set -u, which triggered "tmp: unbound variable" once the
+	# install_deps wrapper returned).
+	if curl -fL -o "$tmp" "$deb_url" \
+		&& { sudo dpkg -i "$tmp" || sudo apt-get install -f -y; }; then
+		rm -f "$tmp"
+	else
+		rm -f "$tmp"
+		echo "[gcm][error] install failed" >&2
+		return 1
+	fi
 	git-credential-manager configure
 	echo "[gcm] configured; on WSL credentials are stored via Windows Credential Manager"
 }
