@@ -93,9 +93,10 @@ install_gcm() {
 	fi
 	echo "[gcm] installing git-credential-manager..."
 
+	# GCM release asset naming: gcm-linux-<x64|arm64>-<version>.deb
 	local arch
 	case "$(uname -m)" in
-		x86_64)  arch="amd64"  ;;
+		x86_64)  arch="x64"    ;;
 		aarch64) arch="arm64"  ;;
 		*) echo "[gcm][error] unsupported arch: $(uname -m)" >&2; return 1 ;;
 	esac
@@ -109,18 +110,19 @@ install_gcm() {
 	local api="https://api.github.com/repos/git-ecosystem/git-credential-manager/releases/latest"
 	local deb_url
 	deb_url=$(curl -sL "$api" \
-		| grep -oE "https://[^\"]*gcm-linux_${arch}[^\"]*\.deb" \
+		| grep -oE "https://[^\"]*gcm-linux-${arch}-[^\"]*\.deb" \
 		| head -1)
 
 	if [[ -z "$deb_url" ]]; then
-		echo "[gcm][error] failed to resolve latest .deb url" >&2
+		echo "[gcm][error] failed to resolve latest .deb url for arch=${arch}" >&2
 		return 1
 	fi
 
+	echo "[gcm] downloading ${deb_url}"
 	local tmp
 	tmp=$(mktemp --suffix=.deb)
 	trap 'rm -f "$tmp"' RETURN
-	curl -sL -o "$tmp" "$deb_url"
+	curl -fL -o "$tmp" "$deb_url"
 	sudo dpkg -i "$tmp" || sudo apt-get install -f -y
 	git-credential-manager configure
 	echo "[gcm] configured; on WSL credentials are stored via Windows Credential Manager"
