@@ -1,0 +1,68 @@
+[user]
+	name = ba0918
+	email = pub.dev.delusions@gmail.com
+[init]
+	defaultBranch = main
+[core]
+	autocrlf = input
+	quotepath = false
+	editor = nvim
+	pager = delta
+[color]
+	ui = auto
+[credential]
+	helper = manager
+	credentialStore = wincredman
+[commit]
+	verbose = true
+[help]
+	autocorrect = prompt
+[rerere]
+	enabled = true
+	autoupdate = true
+[pull]
+	rebase = true
+[push]
+	default = simple
+	autoSetupRemote = true
+	followTags = true
+[fetch]
+	prune = true
+	pruneTags = true
+[rebase]
+	autoStash = true
+	autoSquash = true
+[diff]
+	algorithm = histogram
+	colorMoved = zebra
+[merge]
+	conflictStyle = zdiff3
+[tag]
+	sort = -version:refname
+[branch]
+	sort = -committerdate
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	light = false
+	line-numbers = true
+	side-by-side = false
+	syntax-theme = Monokai Extended
+	hyperlinks = true
+[alias]
+	s = status --short --branch
+	st = status
+	ci = commit
+	co = checkout
+	sw = switch
+	br = branch
+	di = diff
+	wd = diff --word-diff
+	pu = pull
+	pr = pull --rebase
+	tr = log --graph --pretty='format:%C(yellow)%h%Creset %s %Cgreen(%an)%Creset %Cred%d%Creset'
+	tree = log --graph --pretty=oneline --abbrev-commit --decorate
+	last = log -1 HEAD --stat
+	unstage = reset HEAD --
+	amend = commit --amend --no-edit

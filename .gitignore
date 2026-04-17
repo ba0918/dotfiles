@@ -1,8 +1,68 @@
-# logs
+# ===== Logs =====
 logs
 *.log
 npm-debug.log*
 
-# intelij
+# ===== Editor / IDE =====
 .idea
 *.iml
+.vscode
+*.swp
+*~
+.DS_Store
+
+# ===== Secrets / Credentials (ABSOLUTE NO COMMIT) =====
+*.credentials.json
+.credentials.json
+auth.json
+.auth.json
+*auth_token*
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+.git-credentials
+*_rsa
+*_ed25519
+*_ecdsa
+
+# ===== Claude Code runtime artifacts =====
+claude/.claude/history.jsonl
+claude/.claude/session_index.jsonl
+claude/.claude/session_index/
+claude/.claude/sessions/
+claude/.claude/projects/
+claude/.claude/file-history/
+claude/.claude/shell_snapshots/
+claude/.claude/debug/
+claude/.claude/cache/
+claude/.claude/backups/
+claude/.claude/tmp/
+claude/.claude/.tmp/
+claude/.claude/ide/
+claude/.claude/downloads/
+claude/.claude/state_*.sqlite*
+claude/.claude/logs_*.sqlite*
+claude/.claude/models_cache.json
+claude/.claude/mcp-needs-auth-cache.json
+claude/.claude/.schedule_cache.json
+claude/.claude.json
+claude/.claude.json.backup
+
+# ===== Codex runtime artifacts =====
+codex/.codex/history.jsonl
+codex/.codex/session_index.jsonl
+codex/.codex/sessions/
+codex/.codex/log/
+codex/.codex/logs_*.sqlite*
+codex/.codex/state_*.sqlite*
+codex/.codex/models_cache.json
+codex/.codex/cache/
+codex/.codex/tmp/
+codex/.codex/.tmp/
+codex/.codex/installation_id
+codex/.codex/.personality_migration
+
+# ===== OS / misc =====
+Thumbs.db
