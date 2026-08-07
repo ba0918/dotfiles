@@ -1,0 +1,10 @@
+#:schema https://yazi-rs.github.io/schemas/keymap.json
+
+# キーバインド（26.5.6 対応）。デフォルトへ前置・後置で追加する mix 形式。
+# S はデフォルトで「内容を ripgrep 検索」、s は「fd 検索」に割り当て済み。
+
+[mgr]
+prepend_keymap = [
+  # WSL: Windows エクスプローラーで現在のディレクトリを開く
+  { on = "E", run = "shell 'explorer.exe .' --orphan", desc = "Open current dir in Windows Explorer" },
+]

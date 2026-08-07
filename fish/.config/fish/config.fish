@@ -97,6 +97,17 @@ if status is-interactive
         end
     end
 
+    # ya: yazi で操作し、終了時は最後にいたディレクトリへ cd する
+    function ya
+        set -l tmp (mktemp -t "yazi-cwd.XXXXXX")
+        yazi "$argv" --cwd-file "$tmp"
+        set -l cwd (command cat -- "$tmp")
+        if test -n "$cwd"; and test -d "$cwd"
+            cd -- "$cwd"
+        end
+        rm -f -- "$tmp"
+    end
+
     # fzf default (zoxide の _ZO_FZF_OPTS とは独立)
     set -gx FZF_DEFAULT_OPTS "
         --height 40%

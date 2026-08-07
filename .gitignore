@@ -84,3 +84,7 @@ fish/.config/fish/conf.d/fzf.fish
 fish/.config/fish/conf.d/z.fish
 fish/.config/fish/conf.d/fish_frozen_*
 fish/.config/fish/conf.d/nix.fish
+
+# ===== Yazi runtime artifacts (never commit plugin / state) =====
+yazi/.config/yazi/yazi-cwd-*
+yazi/.config/yazi/plugins/

@@ -1,0 +1,46 @@
+#:schema https://yazi-rs.github.io/schemas/yazi.json
+
+# Yazi 設定 (26.5.6 対応、デフォルトからの差分のみ記述する mix 形式)。
+# 未指定の項目は組み込みのプリセットが使われる。全体の書き換えにならないよう改名・簡素化する。
+
+[mgr]
+ratio = [ 1, 4, 3 ]
+sort_by = "natural"
+sort_sensitive = false
+sort_reverse = false
+sort_dir_first = true
+show_hidden = false
+scrolloff = 5
+
+[preview]
+# 長い行は折り返す。画像プレビューの上限も少し上げて大きめに表示。
+wrap = "yes"
+tab_size = 4
+max_width = 800
+max_height = 900
+
+# ── オープナー ─────────────────────────────────────────────
+# WSL では Linux の xdg-open が機能しないため、Windows 側の既定アプリへ
+# explorer.exe で委譲する。Ctrl+Enter でファイルが並んでいても全選択を渡す。
+# （expor.exe は現在の WSLパスを自動で Windows 側にマップできる）
+[opener]
+open = [
+  { run = 'explorer.exe "%s"', orphan = true, desc = "Windows explorer", for = "unix" },
+]
+edit = [
+  { run = "nvim %s", block = true, desc = "Neovim", for = "unix" },
+]
+reveal = [
+  { run = 'explorer.exe /select,"$(wslpath -w "%s1")"', orphan = true, desc = "Reveal in Explorer", for = "unix" },
+]
+
+# ── 開く規則 ───────────────────────────────────────────────
+# デフォルトの rules に prefix を追加する（base は default preset が残る）。
+[open]
+prepend_rules = [
+  # テキスト系はエディタで開く
+  { mime = "text/*", use = "edit" },
+  { mime = "application/json", use = "edit" },
+  { mime = "application/xml", use = "edit" },
+  { mime = "application/x-shellscript", use = "edit" },
+]

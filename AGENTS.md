@@ -33,6 +33,8 @@ dotfiles/
 ├── nvim/                      # 育成中
 ├── claude/                    # 育成中（secret 混入厳禁）
 ├── codex/                     # 育成中（secret 混入厳禁）
+├── yazi/                      # 育成中
+│   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── mise/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
@@ -139,6 +141,12 @@ mise bootstrap dotfiles unapply --dry-run
 - **bat / fd-find / eza / zoxide / fzf** — config.fish の alias / abbr /
   プロンプト連携（`apt:bat` / `apt:fd-find` / `apt:eza` / `apt:zoxide` / `apt:fzf`）
 - **opencode** — `mise bootstrap` の `[tools]` で導入（`aqua:anomalyco/opencode`）
+
+`yazi/.config/yazi` は以下に依存:
+
+- **yazi** — `[tools]` の `yazi` で導入（mise 管轄）
+- **explorer.exe** — WSL から Windows Explorer / 既定アプリを呼び出す opener。
+  テキスト系は `nvim`、それ以外は `explorer.exe` へ委譲する
 
 ## トラブルシュート
 

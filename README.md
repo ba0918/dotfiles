@@ -55,6 +55,8 @@ dotfiles/
 │   └── .claude/
 ├── codex/                  # → ~/.codex/*   （secret 除外）
 │   └── .codex/
+├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
+│   └── .config/yazi/
 ├── apt/                    # 同梱 apt リポジトリ（bootstrap.sh が導入）
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
@@ -99,6 +101,9 @@ mise bootstrap packages status --missing
   mise registry に無いため `./install.sh` で導入
 - **fish シェル本体と shell ツール** — fish / bat / fd-find / eza / zoxide / fzf
   は apt で配布（`[bootstrap.packages]` の `apt:*` 宣言）。
+- **yazi** — TUI ファイルマネージャ（`[tools]` の `yazi`）。`ya` 関数で起動すると
+  終了時のカレントディレクトリに移動。`S` で ripgrep によるファイル内容検索、
+  `E` で Windows Explorer を開く（WSL 向け opener は `explorer.exe` へ委譲）。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから

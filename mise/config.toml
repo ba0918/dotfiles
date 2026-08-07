@@ -39,6 +39,10 @@ compile = false
 "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
 "~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
 
+# Yazi: 設定のみ（プラグイン・キャッシュは yazi が自分のディレクトリで管理）
+"~/.config/yazi/yazi.toml" = "../yazi/.config/yazi/yazi.toml"
+"~/.config/yazi/keymap.toml" = "../yazi/.config/yazi/keymap.toml"
+
 [tools]
 ast-grep = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
@@ -54,3 +58,4 @@ opencode = "latest"
 pnpm = "latest"
 rust = "latest"
 shellcheck = "latest"
+yazi = "latest"
