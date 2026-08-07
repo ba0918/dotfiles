@@ -37,6 +37,8 @@ dotfiles/
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
 │   └── .config/glow/          # glow.yml（スタイル等）
+├── herdr/                     # 確定
+│   └── .config/herdr/         # config.toml（プラグインは herdr plugin install で導入）
 ├── npm/                       # 確定（JS サプライチェーン対策）
 │   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
 ├── pnpm/                      # 確定（JS サプライチェーン対策）
@@ -92,6 +94,10 @@ mise bootstrap                   # [tools] の aqua:ba0918/clipboard2path-wsl �
 clipboard2path-wsl init --no-hook # unit / wl-paste wrapper を生成（destructive なので再実行注意）
 clipboard2path-wsl status        # service / hook / wrapper の状態
 systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mise の latest パスを参照）
+
+# herdr（ターミナルマルチプレクサ。config.toml のみ dotfiles 管理）
+herdr plugin install smarzban/herdr-file-viewer   # プラグイン導入（plugins.json は生成物として repo 除外）
+herdr plugin list                # 導入済みプラグインの確認
 ```
 
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
@@ -191,6 +197,14 @@ systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mis
 - **glow** — `[tools]` の `glow`（`aqua:charmbracelet/glow`）で導入（mise 管轄）。
   snap 版から移行済み（snap は削除対象）
 
+`herdr/.config/herdr` は以下に依存:
+
+- **herdr** — `[tools]` の `herdr`（`aqua:herdrdev/herdr`）で導入（mise 管轄）
+- **herdr-file-viewer** — プラグイン。`herdr plugin install smarzban/herdr-file-viewer`
+  で導入。config.toml の `[[keys.command]]`（prefix+f / prefix+shift+f）が参照する。
+  `plugins.json` は生成物（plugin install / link / enable 時に herdr が自動書き込み）
+  のため repo から除外し、新マシンでは上記コマンドで再現する
+
 ## トラブルシュート
 
 | 症状 | 原因と対処 |
@@ -202,6 +216,8 @@ systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mis
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore で除外済み (`~/.config/git/ignore`) |
 | `clipboard2path-wsl` が起動しない / `command not found` | aqua カスタムレジストリは `mise/config.toml` の `[settings] aqua.registries` で設定済み。導入は `mise bootstrap`、手動再起動は `systemctl --user restart clipboard2path` |
 | `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。シェル経由（shim）では問題ない |
+| `herdr/.config/herdr/config.toml` に意図しない差分が出る | herdr が実行時に config.toml を書き戻す（write-through。onboarding / [ui] 等の変更で upsert）。差分を確認して整理する。`herdr/.config/herdr/config.toml` は repo 実体と一致させる |
+| `herdr plugin` の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
 
 ## 関連ドキュメント
 

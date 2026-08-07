@@ -89,5 +89,13 @@ fish/.config/fish/conf.d/nix.fish
 yazi/.config/yazi/yazi-cwd-*
 yazi/.config/yazi/plugins/
 
+# ===== herdr runtime artifacts (never commit plugin registry / session / logs) =====
+herdr/.config/herdr/plugins/
+herdr/.config/herdr/plugins.json
+herdr/.config/herdr/session.json
+herdr/.config/herdr/*.log
+herdr/.config/herdr/*.sock
+herdr/.config/herdr/.plugins.lock
+
 # ===== Neovim runtime artifacts (never commit lock / cache) =====
 nvim/.config/nvim/lazy-lock.json

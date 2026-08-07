@@ -52,6 +52,9 @@ compile = false
 # Glow: 設定のみ（スタイル等）
 "~/.config/glow/glow.yml" = "../glow/.config/glow/glow.yml"
 
+# Herdr: 設定のみ（plugins.json / session.json / logs は生成物として除外）
+"~/.config/herdr/config.toml" = "../herdr/.config/herdr/config.toml"
+
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"
 
@@ -84,6 +87,7 @@ ghq = "latest"
 glab = "latest"
 glow = "latest"
 go = "latest"
+herdr = "latest"
 just = "latest"
 lazygit = "latest"
 neovim = "latest"
