@@ -9,7 +9,6 @@ dotfiles.default_mode = "symlink"
 compile = false
 
 [bootstrap.packages]
-"apt:stow" = "latest"
 "apt:git-delta" = "latest"
 
 [dotfiles]
@@ -32,7 +31,6 @@ compile = false
 ast-grep = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
 bun = "latest"
-chezmoi = "latest"
 deno = "latest"
 gh = "latest"
 ghq = "latest"
