@@ -49,8 +49,8 @@ dotfiles/
 │       ├── fish_plugins
 │       ├── functions/up.fish
 │       └── conf.d/clipboard2path.fish     # Alt+V ペースト hook（dotfiles 管理）
-├── nvim/                   # 育成中
-│   └── .config/nvim/
+├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
+│   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
 ├── claude/                 # → ~/.claude/* （secret 除外）
 │   └── .claude/
 ├── codex/                  # → ~/.codex/*   （secret 除外）
@@ -59,6 +59,12 @@ dotfiles/
 │   └── .config/yazi/
 ├── glow/                   # → ~/.config/glow/glow.yml
 │   └── .config/glow/
+├── npm/                    # → ~/.npmrc（min-release-age=7）
+│   └── .npmrc              # JS サプライチェーン対策（リリース年齢 7 日）
+├── pnpm/                   # → ~/.config/pnpm/config.yaml
+│   └── .config/pnpm/       # minimumReleaseAge 10080 分（7 日）
+├── bun/                    # → ~/.bunfig.toml
+│   └── .bunfig.toml        # minimumReleaseAge 604800 秒（7 日）
 ├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入)
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
@@ -68,6 +74,16 @@ dotfiles/
 ├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
+
+サプライチェーン対策は 3 層構成:
+
+- **mise `minimum_release_age = "7d"`** — ツールバイナリ（gh / glow / neovim 等）の導入を
+  リリースから 7 日以上経過したものに制限
+- **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
+  （`min-release-age` / `minimumReleaseAge`。単位はエコシステムごとに異なる）
+- **Aikido Safe Chain** — npm / pnpm / bun / pip 等のパッケージマネージャをラップし、
+  マルウェア検知 + 最小リリース年齢（デフォルト 48h）を適用。`bootstrap.sh` が sha256 検証付きで
+  導入し、非対話シェル（LLM エージェント等）へは mise の PATH 経由で shim が渡る
 
 ## よく使うコマンド
 
@@ -81,6 +97,8 @@ mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
 gh auth setup-git                # GitHub の credential helper に gh を登録
 glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行・登録
+npm safe-chain-verify            # safe-chain が有効か確認（pnpm / bun / pip 等でも可）
+safe-chain --version             # safe-chain のバージョン確認
 ```
 
 `./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
@@ -110,6 +128,10 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
   `E` で Windows Explorer を開く（WSL 向け opener は `explorer.exe` へ委譲）。
 - **glow** — ターミナル用 markdown レンダラ（`[tools]` の `glow`）。スタイル等の
   設定は `~/.config/glow/glow.yml` を symlink 管理。
+- **neovim** — `[tools]` の `neovim`（LazyVim は Neovim 0.12+ を要求）。
+  旧 appimage（`/opt/nvim`）は廃止済み。
+- **ripgrep** — `[tools]` の `ripgrep`。`S` 検索（yazi）や `grep` の代替に使用。
+  旧 apt 版（14.1.0）から mise 管理（15.2.0）へ移行済み。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
@@ -123,6 +145,11 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
   systemd user service と wl-paste wrapper は `clipboard2path-wsl init --no-hook`
   が生成する（fish hook のみ `conf.d/clipboard2path.fish` を dotfiles 管理）。
   動作確認は `clipboard2path-wsl status`。
+- **Aikido Safe Chain**（[AikidoSec/safe-chain]）— npm / pnpm / bun / pip 等の
+  パッケージマネージャをラップし、マルウェア検知（Aikido Intel）+ 最小リリース年齢
+  （デフォルト 48h）を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。
+  `bootstrap.sh` が sha256 検証付きでインストールし、fish の関数ラッパーと
+  mise PATH 経由の shim（非対話シェル / LLM エージェント用）でラップする。
 
 ## パッケージの追加手順
 
@@ -139,3 +166,8 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
 - 既存の実ファイルがある対象は mise が refuse する（`--force` は明示的に渡す）
 - `.gitignore` で credentials / session / sqlite / history を絶対ブロック
 - `mise bootstrap dotfiles unapply --dry-run` で剥がす前に確認できる
+- サプライチェーン対策: mise の `minimum_release_age` / npm・pnpm・bun の
+  リリース年齢設定 / Aikido Safe Chain の 3 層でカバー
+
+[AikidoSec/safe-chain]: https://github.com/AikidoSec/safe-chain
+[ba0918/clipboard2path-wsl]: https://github.com/ba0918/clipboard2path-wsl
