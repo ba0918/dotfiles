@@ -53,7 +53,7 @@ if status is-interactive
     abbr gp 'git push'
     abbr gpl 'git pull'
 
-    # auto ls
+    # __auto_ls: cd / ディレクトリ移動時に eza で自動表示
     function __auto_ls --on-variable PWD
         if status --is-interactive
             eza --icons --grid --group-directories-first
