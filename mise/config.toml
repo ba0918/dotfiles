@@ -4,6 +4,7 @@ _.path = ["~/.bun/bin", "~/.cargo/bin"]
 
 [settings]
 dotfiles.default_mode = "symlink"
+minimum_release_age = "7d"
 
 [settings.node]
 compile = false
