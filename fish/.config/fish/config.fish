@@ -60,6 +60,7 @@ if status is-interactive
         end
     end
 
+    # fe: fzf でファイル/ディレクトリを選択し、プレビュー表示
     function fe
         fzf --preview '
 	    if test -d {}
