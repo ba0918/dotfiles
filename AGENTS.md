@@ -39,6 +39,8 @@ dotfiles/
 │   └── .config/glow/          # glow.yml（スタイル等）
 ├── herdr/                     # 確定
 │   └── .config/herdr/         # config.toml（プラグインは herdr plugin install で導入）
+├── opencode/                  # 確定
+│   └── opencode.json          # → ~/.opencode/opencode.json（permission / plugin 宣言）
 ├── npm/                       # 確定（JS サプライチェーン対策）
 │   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
 ├── pnpm/                      # 確定（JS サプライチェーン対策）
@@ -196,6 +198,13 @@ herdr plugin list                # 導入済みプラグインの確認
 
 - **glow** — `[tools]` の `glow`（`aqua:charmbracelet/glow`）で導入（mise 管轄）。
   snap 版から移行済み（snap は削除対象）
+
+`opencode/opencode.json` は以下に依存:
+
+- **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入（mise 管轄）。
+  グローバル config（`~/.opencode/opencode.json`）は dotfiles が管理する
+- **claude-skills** — `plugin` 宣言で導入（`claude-skills@git+https://github.com/ba0918/claude-skills.git`）。
+  スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
 `herdr/.config/herdr` は以下に依存:
 

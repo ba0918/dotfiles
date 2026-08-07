@@ -55,6 +55,9 @@ compile = false
 # Herdr: 設定のみ（plugins.json / session.json / logs は生成物として除外）
 "~/.config/herdr/config.toml" = "../herdr/.config/herdr/config.toml"
 
+# opencode: グローバル設定のみ（opencode.json。plugin は plugin 宣言で管理）
+"~/.opencode/opencode.json" = "../opencode/opencode.json"
+
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"
 
