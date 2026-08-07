@@ -2,6 +2,20 @@
 fish_add_path ~/.bun/bin
 fish_add_path ~/.local/bin
 
+# repo 配置を実体パスから導出（repo をどの場所に置いても self-contained）
+# config.fish は symlink 経由で読まれるため realpath で実体に解決してから 4 段上る
+set -l dotfiles_root (dirname (dirname (dirname (dirname (realpath (status filename))))))
+
+# mise setting
+# repo 内の config をグローバル config として使用。
+# 新規マシンの初回のみ ./bootstrap.sh が設定する（ここは対話シェル用）。
+set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
+if status is-interactive
+    mise activate fish | source
+else
+    mise activate fish --shims | source
+end
+
 # environment
 set -gx EDITOR nvim
 set -gx BROWSER powershell.exe
@@ -46,7 +60,6 @@ if status is-interactive
         end
     end
 
-    #
     function fe
         fzf --preview '
 	    if test -d {}
@@ -75,30 +88,13 @@ if status is-interactive
 	--preview-window right:60%:border-rounded
     "
 
-    # zoxide setting
+    # zoxide setting（共通の高さ・レイアウト・枠は FZF_DEFAULT_OPTS が適用済み）
     set -gx _ZO_FZF_OPTS "
         --no-sort
-	--height 40%
-	--layout reverse
-	--border
 	--preview 'eza --icons --tree --color=always --level=1 {2..}'
     "
     zoxide init fish | source
 
-end
-
-# repo 配置を実体パスから導出（repo をどの場所に置いても self-contained）
-# config.fish は symlink 経由で読まれるため realpath で実体に解決してから 4 段上る
-set -l dotfiles_root (dirname (dirname (dirname (dirname (realpath (status filename))))))
-
-# mise setting
-# repo 内の config をグローバル config として使用。
-# 新規マシンの初回のみ ./bootstrap.sh が設定する（ここは対話シェル用）。
-set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
-if status is-interactive
-    mise activate fish | source
-else
-    mise activate fish --shims | source
 end
 
 # for Playwright tests...
