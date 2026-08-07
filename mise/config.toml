@@ -49,6 +49,9 @@ compile = false
 "~/.config/yazi/yazi.toml" = "../yazi/.config/yazi/yazi.toml"
 "~/.config/yazi/keymap.toml" = "../yazi/.config/yazi/keymap.toml"
 
+# Glow: 設定のみ（スタイル等）
+"~/.config/glow/glow.yml" = "../glow/.config/glow/glow.yml"
+
 [tools]
 "aqua:ba0918/clipboard2path-wsl" = "latest"
 ast-grep = "latest"
@@ -58,6 +61,7 @@ deno = "latest"
 gh = "latest"
 ghq = "latest"
 glab = "latest"
+glow = "latest"
 go = "latest"
 just = "latest"
 lazygit = "latest"

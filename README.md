@@ -57,6 +57,8 @@ dotfiles/
 │   └── .codex/
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/
+├── glow/                   # → ~/.config/glow/glow.yml
+│   └── .config/glow/
 ├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入)
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
@@ -106,6 +108,8 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
 - **yazi** — TUI ファイルマネージャ（`[tools]` の `yazi`）。`ya` 関数で起動すると
   終了時のカレントディレクトリに移動。`S` で ripgrep によるファイル内容検索、
   `E` で Windows Explorer を開く（WSL 向け opener は `explorer.exe` へ委譲）。
+- **glow** — ターミナル用 markdown レンダラ（`[tools]` の `glow`）。スタイル等の
+  設定は `~/.config/glow/glow.yml` を symlink 管理。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから

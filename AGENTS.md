@@ -35,6 +35,8 @@ dotfiles/
 ├── codex/                     # 育成中（secret 混入厳禁）
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
+├── glow/                      # 確定
+│   └── .config/glow/          # glow.yml（スタイル等）
 ├── mise/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
@@ -168,6 +170,11 @@ systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mis
 - **yazi** — `[tools]` の `yazi` で導入（mise 管轄）
 - **explorer.exe** — WSL から Windows Explorer / 既定アプリを呼び出す opener。
   テキスト系は `nvim`、それ以外は `explorer.exe` へ委譲する
+
+`glow/.config/glow` は以下に依存:
+
+- **glow** — `[tools]` の `glow`（`aqua:charmbracelet/glow`）で導入（mise 管轄）。
+  snap 版から移行済み（snap は削除対象）
 
 ## トラブルシュート
 
