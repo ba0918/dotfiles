@@ -38,12 +38,11 @@ fi
 # Require a globally installed secretlint. npx fallback is intentionally
 # disabled: npx can fetch `secretlint` itself but cannot auto-resolve the
 # recommend preset package, causing false-positive commit blocks on machines
-# that haven't run `./install.sh --deps` yet.
+# that haven't installed secretlint yet.
 if ! command -v secretlint >/dev/null 2>&1; then
     echo "[pre-commit] secretlint not installed — rejecting commit for safety." >&2
-    echo "[pre-commit] install via dotfiles:   ./install.sh --deps" >&2
-    echo "[pre-commit] or manually:            pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
-    echo "[pre-commit] override (risky):       git commit --no-verify" >&2
+    echo "[pre-commit] install:             pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
+    echo "[pre-commit] override (risky):    git commit --no-verify" >&2
     exit 1
 fi
 RUNNER=(secretlint)
@@ -64,7 +63,7 @@ if [[ -n "$PROJECT_CONFIG" ]]; then
 else
     if [[ ! -f "$GLOBAL_CONFIG" ]]; then
         echo "[pre-commit] no project .secretlintrc and global config missing: $GLOBAL_CONFIG" >&2
-        echo "[pre-commit] rejecting commit — install dotfiles git package (./install.sh git) to provision it." >&2
+        echo "[pre-commit] rejecting commit — apply dotfiles (mise bootstrap) to provision it." >&2
         exit 1
     fi
     CMD=("${RUNNER[@]}" --secretlintrc "$GLOBAL_CONFIG" "${STAGED[@]}")
