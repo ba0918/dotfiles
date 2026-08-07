@@ -2,6 +2,15 @@
 fish_add_path ~/.bun/bin
 fish_add_path ~/.local/bin
 
+# environment
+set -gx EDITOR nvim
+set -gx BROWSER powershell.exe
+set -gx PAGER less
+set -gx BAT_THEME OneHalfDark
+
+# fish greeting 抑止（tide がプロンプトを描くため起動挨拶は不要）
+set -g fish_greeting
+
 if status is-interactive
     # alias
     alias cat 'batcat --paging=never'
@@ -12,6 +21,17 @@ if status is-interactive
     abbr ls 'eza --icons --grid --group-directories-first'
     abbr ll 'eza --icons -m --long --all --git --time-style=long-iso --group-directories-first'
     abbr lt 'eza --icons --tree --level=2'
+
+    # git
+    abbr gst 'git status'
+    abbr gco 'git checkout'
+    abbr gbr 'git branch -vv'
+    abbr gl 'git log --oneline --graph --decorate -20'
+    abbr gd 'git diff'
+    abbr ga 'git add'
+    abbr gcm 'git commit -m'
+    abbr gp 'git push'
+    abbr gpl 'git pull'
 
     # auto ls
     function __auto_ls --on-variable PWD
@@ -30,6 +50,24 @@ if status is-interactive
             end
 	'
     end
+
+    # ghq リポジトリ一覧から fzf で選択して移動
+    function gr
+        set -l ghq_root (ghq root)
+        ghq list | fzf --preview "eza --tree --icons --color=always --level=1 $ghq_root/{}" | read -l repo
+        if test -n "$repo"
+            cd "$ghq_root/$repo"
+        end
+    end
+
+    # fzf default (zoxide の _ZO_FZF_OPTS とは独立)
+    set -gx FZF_DEFAULT_OPTS "
+        --height 40%
+	--layout reverse
+	--border
+	--info inline
+	--preview-window right:60%:border-rounded
+    "
 
     # zoxide setting
     set -gx _ZO_FZF_OPTS "
