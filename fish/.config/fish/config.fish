@@ -18,6 +18,11 @@ if status is-interactive
     alias fd fdfind
     alias clip 'powershell.exe -noprofile -command "Set-Clipboard"'
 
+    # config 再読込（設定変更を即時反映）
+    alias reload 'source ~/.config/fish/config.fish'
+    # 完全リスタート（環境変数・関数を全部作り直し）
+    alias reshell 'exec fish'
+
     abbr ls 'eza --icons --grid --group-directories-first'
     abbr ll 'eza --icons -m --long --all --git --time-style=long-iso --group-directories-first'
     abbr lt 'eza --icons --tree --level=2'
