@@ -52,6 +52,18 @@ compile = false
 # Glow: 設定のみ（スタイル等）
 "~/.config/glow/glow.yml" = "../glow/.config/glow/glow.yml"
 
+# Neovim (LazyVim): 設定のみ。lazy-lock.json 等の runtime artifact は除外
+"~/.config/nvim/init.lua" = "../nvim/.config/nvim/init.lua"
+"~/.config/nvim/lazyvim.json" = "../nvim/.config/nvim/lazyvim.json"
+"~/.config/nvim/stylua.toml" = "../nvim/.config/nvim/stylua.toml"
+"~/.config/nvim/.neoconf.json" = "../nvim/.config/nvim/.neoconf.json"
+"~/.config/nvim/lua/config/autocmds.lua" = "../nvim/.config/nvim/lua/config/autocmds.lua"
+"~/.config/nvim/lua/config/keymaps.lua" = "../nvim/.config/nvim/lua/config/keymaps.lua"
+"~/.config/nvim/lua/config/lazy.lua" = "../nvim/.config/nvim/lua/config/lazy.lua"
+"~/.config/nvim/lua/config/options.lua" = "../nvim/.config/nvim/lua/config/options.lua"
+"~/.config/nvim/lua/plugins/lsp.lua" = "../nvim/.config/nvim/lua/plugins/lsp.lua"
+"~/.config/nvim/lua/plugins/ui.lua" = "../nvim/.config/nvim/lua/plugins/ui.lua"
+
 [tools]
 "aqua:ba0918/clipboard2path-wsl" = "latest"
 ast-grep = "latest"

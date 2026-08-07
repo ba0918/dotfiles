@@ -88,3 +88,6 @@ fish/.config/fish/conf.d/nix.fish
 # ===== Yazi runtime artifacts (never commit plugin / state) =====
 yazi/.config/yazi/yazi-cwd-*
 yazi/.config/yazi/plugins/
+
+# ===== Neovim runtime artifacts (never commit lock / cache) =====
+nvim/.config/nvim/lazy-lock.json
