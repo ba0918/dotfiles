@@ -63,3 +63,7 @@ codex/.codex/.personality_migration
 
 # ===== OS / misc =====
 Thumbs.db
+
+# ===== LLM Artifacts =====
+.agents/artifacts/
+.agents/runtime/

@@ -1,9 +1,9 @@
 # 既存設定の取り込みチートシート
 
-新しいマシンで `install.sh` を走らせる用ではなく、**今このマシンにあるリアル設定を** リポジトリに取り込みたい時の手順。
+新しいマシンで `mise bootstrap` を走らせる用ではなく、**今このマシンにあるリアル設定を** リポジトリに取り込みたい時の手順。
 
 基本ポリシー:
-- `$HOME` 側の実ファイルをリポジトリ側に `mv` してから `stow` で symlink し直す
+- `$HOME` 側の実ファイルをリポジトリ側に `mv` してから `[dotfiles]` で symlink し直す
 - credentials / session / cache / sqlite は絶対コピーしない（`.gitignore` でブロック済みだが、そもそも移動しない）
 - 移動前に `cp -a` でバックアップを取る
 
@@ -18,9 +18,10 @@ mv ~/.config/fish/config.fish    ~/develop/dotfiles/fish/.config/fish/
 mv ~/.config/fish/functions      ~/develop/dotfiles/fish/.config/fish/
 mv ~/.config/fish/conf.d         ~/develop/dotfiles/fish/.config/fish/
 
-# stow で symlink に置き換え
-cd ~/develop/dotfiles
-./install.sh fish
+# ~/.config/mise/config.toml の [dotfiles] に宣言
+#   "~/.config/fish" = "~/develop/dotfiles/fish/.config/fish"
+mise bootstrap dotfiles apply --dry-run   # 衝突確認
+mise bootstrap dotfiles apply --force     # 実ファイルを symlink に置換
 ```
 
 ## 例: Claude Code の設定を取り込む
@@ -51,11 +52,15 @@ cd ~/develop/dotfiles
 
 ## 衝突したら
 
-`stow` は既存の実ファイルがある場所には symlink を張らない（安全）。
+`mise bootstrap dotfiles apply` は既存の実ファイルがある場所には symlink を張らない（安全）。
 衝突したら:
 
 ```bash
-./install.sh --dry-run  # まず何が衝突してるか確認
+mise bootstrap dotfiles status            # まず何が衝突してるか確認 (differs)
 mv ~/.conflicting-file dotfiles/<package>/path/to/file  # 取り込み
-./install.sh            # 再チャレンジ
+mise bootstrap dotfiles apply --dry-run   # 再チャレンジ（先に dry-run）
+mise bootstrap dotfiles apply --force     # 置換が必要なときだけ明示的に
 ```
+
+注意: ディレクトリが既に symlink の場合、file-level の宣言を追加すると repo 内ファイルが
+symlink 化される事故がある。ディレクトリ単位で宣言すること（secretlint の例）。

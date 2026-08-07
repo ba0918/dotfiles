@@ -1,79 +1,94 @@
 # dotfiles
 
-`ba0918` の dotfiles。GNU Stow で管理する。
+`ba0918` の dotfiles。**mise** の `bootstrap` で管理する。
 
-## セットアップ
+## セットアップ（新マシン / WSL 内）
+
+前提: mutable前の WSL。Windows 側の環境構築は対象外。
 
 ```bash
+# 1. mise を入れる (まだ無ければ)
+curl https://mise.run | sh
+
+# 2. repo を clone
 git clone <this-repo> ~/develop/dotfiles
-cd ~/develop/dotfiles
-./install.sh            # stow を自動インストール → dry-run → 実リンク
+
+# 3. グローバル config に repo への source を宣言
+#    ~/.config/mise/config.toml に [dotfiles] などを追記（段階移行中は install..sh 参照）
+
+# 4. 一括適用
+mise trust ~/develop/dotfiles
+mise bootstrap
 ```
+
+`mise bootstrap` は [bootstrap.packages] / [dotfiles] / [tools] を順に適用し、
+システムパッケージ・dotfiles・開発ツールを一つで再現する。再実行は冪等。
 
 ## レイアウト
 
-各トップレベルディレクトリが「**Stow パッケージ**」で、そのツリー構造がそのまま
-`$HOME` の下に symlink される。
+トップレベルは「パッケージ」で、source ツリーが `[dotfiles]` の宣言を通じて
+`$HOME` の下に symlink 展開される。
 
 ```
 dotfiles/
-├── git/                # → ~/.gitconfig + ~/.config/git/{ignore,attributes}
+├── git/                    # → ~/.gitconfig + ~/.config/git/{ignore,attributes,template}
 │   ├── .gitconfig
 │   └── .config/git/
-│       ├── ignore      # global gitignore (XDG, 自動検出)
-│       └── attributes  # global gitattributes (XDG, 自動検出)
-├── fish/               # → ~/.config/fish/*
+│       ├── ignore          # global gitignore (XDG, 自動検出)
+│       ├── attributes      # global gitattributes (XDG, 自動検出)
+│       └── template/       # git init テンプレート (global pre-commit 等)
+├── fish/                   # 育成中
 │   └── .config/fish/
-├── nvim/               # → ~/.config/nvim/*
+├── nvim/                   # 育成中
 │   └── .config/nvim/
-├── claude/             # → ~/.claude/* （secret 除外）
+├── claude/                 # → ~/.claude/* （secret 除外）
 │   └── .claude/
-├── codex/              # → ~/.codex/*   （secret 除外）
+├── codex/                  # → ~/.codex/*   （secret 除外）
 │   └── .codex/
 ├── meta/
-│   └── MIGRATION.md    # 既存設定の取り込み手順
-├── install.sh          # stow ラッパー（自動インストール + dry-run → link）
-├── Makefile            # make install / check / unlink / relink
-└── .gitignore          # secret / runtime artifact を鉄壁ブロック
+│   └── MIGRATION.md        # 既存設定の取り込み手順
+├── install.sh              # GCM 専用インストーラ（apt）
+└── .gitignore              # secret / runtime artifact をブロック
 ```
 
 ## よく使うコマンド
 
 ```bash
-./install.sh                 # 全パッケージを install
-./install.sh --dry-run       # 何が起きるか確認
-./install.sh --unlink        # 全部剥がす
-./install.sh --deps          # 外部ツール (stow/delta/GCM) のみ導入
-./install.sh git fish        # 個別パッケージのみ
-
-make list                    # パッケージ一覧
-make check                   # 全部 dry-run
-make install                 # 全部 install
-make install-fish            # fish だけ install
-make relink                  # unlink → install で貼り直し
+mise bootstrap                     # [bootstrap.packages] + [dotfiles] + [tools] を適用
+mise bootstrap --dry-run           # 何が起きるか確認
+mise bootstrap --skip packages     # 一部スキップ
+mise bootstrap dotfiles status     # dotfiles の適用状態
+mise bootstrap dotfiles status --missing
+mise bootstrap packages status --missing
+./install.sh                       # GCM のみ導入（略式: --check で状態確認）
 ```
 
 ## 外部ツール依存
 
-`git/.gitconfig` は以下の外部ツールに依存する。`./install.sh --deps` で自動インストールできる:
+- システムパッケージ / dev ツールは **mise** (`[bootstrap.packages]` / `[tools]`)
+  で宣言する
+- **[delta](https://github.com/dandavison/delta)** — `core.pager` /
+  `interactive.diffFilter` に使う色付き diff（`apt:git-delta`）
+- **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)**
+  — `credential.helper = manager`。WSL では Windows Credential Manager (DPAPI)。
+  mise registry に無いため `./install.sh` で導入
 
-- **[delta](https://github.com/dandavison/delta)** — `core.pager` / `interactive.diffFilter` に使う色付き diff
-- **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)** — `credential.helper = manager`。WSL なら Windows Credential Manager (DPAPI) に資格情報を保存する
-
-未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず `git` が「delta: command not found」で怒る。`--deps` を走らせてから `install.sh` するか、一時的にページャを戻す (`git -c core.pager=less diff`) で回避可能。
+未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
+`git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
+使うか、一時的にページャを戻す (`git -c core.pager=less diff`) で回避可能。
 
 ## パッケージの追加手順
 
 1. 新しいディレクトリを作る: `mkdir -p newpkg/.config/newpkg`
 2. そこに設定ファイルを置く（`$HOME` からの相対パスをそのまま再現）
-3. `./install.sh newpkg` で symlink
+3. `~/.config/mise/config.toml` の `[dotfiles]` に source を追記
 4. `.gitignore` に runtime / secret パスを追記
 
 既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を見る。
 
 ## 安全設計
 
-- `install.sh` は最初に `--dry-run` を走らせて衝突を検出してから実リンクを張る
+- `mise bootstrap --dry-run` で衝突を確認してから実適用する
+- 既存の実ファイルがある対象は mise が refuse する（`--force` は明示的に渡す）
 - `.gitignore` で credentials / session / sqlite / history を絶対ブロック
-- `stow` は既存の実ファイルを上書きしない（衝突なら失敗する）ので、間違って消える心配なし
-- アンリンクも `make unlink` 一発で戻せる
+- `mise bootstrap dotfiles unapply --dry-run` で剥がす前に確認できる
