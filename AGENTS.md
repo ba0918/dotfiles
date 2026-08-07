@@ -37,6 +37,12 @@ dotfiles/
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
 │   └── .config/glow/          # glow.yml（スタイル等）
+├── npm/                       # 確定（JS サプライチェーン対策）
+│   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
+├── pnpm/                      # 確定（JS サプライチェーン対策）
+│   └── .config/pnpm/          # config.yaml（minimumReleaseAge 分単位）
+├── bun/                       # 確定（JS サプライチェーン対策）
+│   └── .bunfig.toml           # → ~/.bunfig.toml（minimumReleaseAge 秒単位）
 ├── mise/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
@@ -164,6 +170,15 @@ systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mis
 - **systemd user サービス / wl-paste wrapper** — `clipboard2path-wsl init --no-hook`
   が生成する（dotfiles 管轄外）。unit の `ExecStart` は mise installs の `latest`
   シンボリックパスを参照するため、`mise up` 後の再起動で追従
+
+`fish/.config/fish/config.fish` は以下に依存（条件付きロード）:
+
+- **Aikido Safe Chain** — npm/pnpm/bun/pip 等のパッケージマネージャをラップし、
+  マルウェア検知 + 最小リリース年齢（デフォルト 48h）を適用。実体は `~/.safe-chain/`
+  （dotfiles 管轄外）。config.fish は `"$HOME/.safe-chain/scripts/init-fish.fish"` が
+  存在する場合のみ source する。インストールは `bootstrap.sh` が sha256 検証付きで実施。
+  設定ファイル（`~/.safe-chain/config.json`）はデフォルトのまま（リリース年齢は
+  npm/pnpm/bun 各ネイティブ設定の 7 日制限が上位でカバー）
 
 `yazi/.config/yazi` は以下に依存:
 

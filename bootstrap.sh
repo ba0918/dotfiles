@@ -65,3 +65,22 @@ if [ "${DRY_RUN}" = false ]; then
 	mise x aqua:ba0918/clipboard2path-wsl -- init --no-hook 2>/dev/null || \
 		clipboard2path-wsl init --no-hook 2>/dev/null || true
 fi
+
+# Aikido Safe Chain: npm/yarn/pnpm/bun/pip 等のパッケージマネージャをラップし、
+# マルウェア検知と最小リリース年齢（デフォルト 48h）を適用する。
+# インストールは sha256 検証付き（実体は ~/.safe-chain/）。未導入でも失敗しても全体は止めない。
+# config.fish 側は "$HOME/.safe-chain/..." が存在する場合のみ source する。
+if [ "${DRY_RUN}" = false ]; then
+	if [ ! -x "$HOME/.safe-chain/bin/safe-chain" ]; then
+		SAFE_CHAIN_VERSION="1.5.15"
+		SAFE_CHAIN_SHA256="de0565e3d6346407a604e84e639e95fea8758748063da2216bbfdca5feda5dd2"
+		echo "safe-chain: installing v${SAFE_CHAIN_VERSION}"
+		if curl -fsSL "https://github.com/AikidoSec/safe-chain/releases/download/${SAFE_CHAIN_VERSION}/install-safe-chain.sh" -o /tmp/install-safe-chain.sh \
+			&& echo "${SAFE_CHAIN_SHA256}  /tmp/install-safe-chain.sh" | sha256sum -c - >/dev/null; then
+			sh /tmp/install-safe-chain.sh || echo "safe-chain: install failed (continuing)"
+		else
+			echo "safe-chain: install script checksum verification failed (skipping)"
+		fi
+		rm -f /tmp/install-safe-chain.sh
+	fi
+fi

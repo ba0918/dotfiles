@@ -128,3 +128,7 @@ end
 
 # for Playwright tests...
 export DBUS_SESSION_BUS_ADDRESS=/dev/null
+# Safe-chain: 導入済み環境でのみロード（未導入マシンでは無視）
+if test -f "$HOME/.safe-chain/scripts/init-fish.fish"
+    source "$HOME/.safe-chain/scripts/init-fish.fish"
+end
