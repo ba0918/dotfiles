@@ -21,17 +21,17 @@ max_height = 900
 
 # ── オープナー ─────────────────────────────────────────────
 # WSL では Linux の xdg-open が機能しないため、Windows 側の既定アプリへ
-# explorer.exe で委譲する。Ctrl+Enter でファイルが並んでいても全選択を渡す。
-# （expor.exe は現在の WSLパスを自動で Windows 側にマップできる）
+# explorer.exe で委譲する。exporer.exe は WSL のパスを自動で Windows 側へ
+# 変換しないため、wslpath で明示変換してから渡す（reveal と対称）。
 [opener]
 open = [
-  { run = 'explorer.exe "%s"', orphan = true, desc = "Windows explorer", for = "unix" },
+  { run = 'explorer.exe "$(wslpath -w -- "%s1")"', orphan = true, desc = "Windows explorer", for = "unix" },
 ]
 edit = [
   { run = "nvim %s", block = true, desc = "Neovim", for = "unix" },
 ]
 reveal = [
-  { run = 'explorer.exe /select,"$(wslpath -w "%s1")"', orphan = true, desc = "Reveal in Explorer", for = "unix" },
+  { run = 'explorer.exe /select,"$(wslpath -w -- "%s1")"', orphan = true, desc = "Reveal in Explorer", for = "unix" },
 ]
 
 # ── 開く規則 ───────────────────────────────────────────────
