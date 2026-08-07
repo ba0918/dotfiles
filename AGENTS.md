@@ -28,6 +28,8 @@ dotfiles/
 │       └── template/          # → ~/.config/git/template
 ├── fish/                      # 手動ファイルのみ（プラグインは fish_plugins で管理）
 │   └── .config/fish/          # config.fish / fish_plugins / up.fish / clipboard2path.fish
+├── apt/                       # 同梱 apt リポジトリ（bootstrap.sh が導入）
+│   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── nvim/                      # 育成中
 ├── claude/                    # 育成中（secret 混入厳禁）
 ├── codex/                     # 育成中（secret 混入厳禁）
@@ -35,7 +37,7 @@ dotfiles/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
-├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust）
+├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust + apt 設定）
 ├── install.sh                  # GCM 専用インストーラ（apt）
 ├── CLAUDE.md                  # Claude Code 用エントリ（AGENTS.md を参照）
 ├── AGENTS.md                  # このファイル（本体）
@@ -52,7 +54,7 @@ dotfiles/
 ## コマンドリファレンス
 
 ```bash
-# 新規マシンでの一括適用（config 場所解決 + trust 込み）
+# 新規マシンでの一括適用（config 場所解決 + trust + apt 設定込み）
 ./bootstrap.sh                     # 新マシン / repo をどこに置いても 1 コマンド
 
 # mise で一括適用（2 回目以降 / fish 経由）
@@ -73,6 +75,8 @@ mise bootstrap dotfiles unapply --dry-run
 `~/.config/mise/config.toml` は存在しない（撤去済み）。config 編集は repo 内
 `mise/config.toml` に対して行い、`mise` コマンドは fish 経由で使う
 （fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を設定する）。
+`./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
+未設定なら導入して `apt-get update` する（sudo を要求）。
 
 ## 変更時に守るルール
 
@@ -127,6 +131,14 @@ mise bootstrap dotfiles unapply --dry-run
 - **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)**
   — `credential.helper` / WSL では `credentialStore = wincredman` で Windows
   Credential Manager (DPAPI) に資格情報を保存。`./install.sh` で導入
+
+`fish/.config/fish` は以下に依存（すべて `[bootstrap.packages]` の `apt:*` 宣言）:
+
+- **fish 本体** — `apt:fish`。4.x は repo 同梱の PPA
+  (`apt/fish-shell-ubuntu-release-4-noble.sources`) から導入
+- **bat / fd-find / eza / zoxide / fzf** — config.fish の alias / abbr /
+  プロンプト連携（`apt:bat` / `apt:fd-find` / `apt:eza` / `apt:zoxide` / `apt:fzf`）
+- **opencode** — `mise bootstrap` の `[tools]` で導入（`aqua:anomalyco/opencode`）
 
 ## トラブルシュート
 

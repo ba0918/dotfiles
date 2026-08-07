@@ -55,11 +55,13 @@ dotfiles/
 │   └── .claude/
 ├── codex/                  # → ~/.codex/*   （secret 除外）
 │   └── .codex/
+├── apt/                    # 同梱 apt リポジトリ（bootstrap.sh が導入）
+│   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
 │   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
 ├── meta/
 │   └── MIGRATION.md        # 既存設定の取り込み手順
-├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + mise bootstrap）
+├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
 ├── install.sh              # GCM 専用インストーラ（apt）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
@@ -79,7 +81,8 @@ mise bootstrap packages status --missing
 
 `./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
 未設定なら導入し、`apt-get update` する（sudo を要求。新規マシンでプロンプトが出る）。
-`--dry-run` は「何をすべきか」を常に表示するため、実際の導入済み/未導入は反映しない。
+`--dry-run` は導入が必要な apt リポジトリの検出と表示のみ行い、実際のコピーと
+`apt-get update` は実行しない。
 
 グローバル config は `mise/config.toml` が実体。
 `MISE_GLOBAL_CONFIG_FILE` が未設定の環境（fish 外の sh 等）では tools が読めないので、

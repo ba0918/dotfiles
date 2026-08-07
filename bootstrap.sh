@@ -21,7 +21,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 case "${1:-}" in
 	--help|-h)
-		sed -n '2,15p' "${BASH_SOURCE[0]}"
+		sed -n '2,16p' "${BASH_SOURCE[0]}"
 		exit 0
 		;;
 esac
