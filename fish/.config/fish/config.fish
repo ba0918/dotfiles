@@ -16,7 +16,8 @@ if status is-interactive
     alias cat 'batcat --paging=never'
     alias bat batcat
     alias fd fdfind
-    alias clip 'powershell.exe -noprofile -command "Set-Clipboard"'
+    # WSL → Windows クリップボード (UTF-8 → UTF-16LE + BOM 変換で文字化け回避)
+    alias clip 'iconv -t utf16 | clip.exe'
 
     # config 再読込（設定変更を即時反映）
     alias reload 'source ~/.config/fish/config.fish'
