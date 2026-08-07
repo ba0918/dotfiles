@@ -55,8 +55,6 @@ install_apt_repos() {
 install_apt_repos
 
 export MISE_GLOBAL_CONFIG_FILE="${REPO_ROOT}/mise/config.toml"
-# 自作ツールの aqua カスタムレジストリはツール repo が公開する URL を参照
-export MISE_AQUA_REGISTRIES="https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"
 mise trust "${MISE_GLOBAL_CONFIG_FILE}"
 
 mise bootstrap "$@"

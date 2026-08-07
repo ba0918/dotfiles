@@ -5,6 +5,8 @@ _.path = ["~/.bun/bin", "~/.cargo/bin"]
 [settings]
 dotfiles.default_mode = "symlink"
 minimum_release_age = "7d"
+# 自作ツールの aqua カスタムレジストリ（ツール repo が公開する URL）
+aqua.registries = ["https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"]
 
 [settings.node]
 compile = false

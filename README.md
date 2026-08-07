@@ -114,11 +114,11 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
 ### その他の依存
 
 - **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。クリップボードの
-  画像をファイル保存してパスを返す daemon。binary はツール repo が公開する aqua registry
-  （`https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml`）
-  を `[tools]` から参照して導入し、systemd user service と wl-paste wrapper は
-  `clipboard2path-wsl init --no-hook` が生成する（fish hook のみ
-  `conf.d/clipboard2path.fish` を dotfiles 管理）。動作確認は `clipboard2path-wsl status`。
+  画像をファイル保存してパスを返す daemon。binary は `[settings] aqua.registries`
+  で参照するツール repo 公開の aqua registry 経由で `[tools]` から導入し、
+  systemd user service と wl-paste wrapper は `clipboard2path-wsl init --no-hook`
+  が生成する（fish hook のみ `conf.d/clipboard2path.fish` を dotfiles 管理）。
+  動作確認は `clipboard2path-wsl status`。
 
 ## パッケージの追加手順
 

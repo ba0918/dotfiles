@@ -48,8 +48,9 @@ dotfiles/
 binary の導入は `[tools]` の宣言に集約されるが、自作ツール
 (`clipboard2path-wsl`) は aqua 標準レジストリに無いため、ツール repo が公開する
 カスタム aqua レジストリ（`https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml`）
-を `MISE_AQUA_REGISTRIES` で参照する（fish の config.fish と bootstrap.sh の両方で設定、
-repo 位置非依存）。systemd unit / wl-paste wrapper は repo 内に置かず、
+を `mise/config.toml` の `[settings] aqua.registries` で参照する（設定ベースなので
+repo 位置非依存、fish の config.fish や bootstrap.sh では env 設定不要）。
+systemd unit / wl-paste wrapper は repo 内に置かず、
 `clipboard2path-wsl init --no-hook` が生成する（fish hook のみ dotfiles 管理）。
 
 新しいパッケージを追加するときは:
@@ -177,7 +178,7 @@ systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mis
 | `~/.gitconfig` に突然大量の差分 | `gcm configure` などツールが symlink 先に書き込んだ可能性。差分を確認して整理する |
 | `.gitconfig` などの apply で repo 内ファイルが symlink 化する | `[dotfiles]` がディレクトリ symlink を指す場合、file-level 宣言でなくディレクトリ単位で宣言する（secretlint の例） |
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore で除外済み (`~/.config/git/ignore`) |
-| `clipboard2path-wsl` が起動しない / `command not found` | `mise bootstrap` が aqua カスタムレジストリ (`MISE_AQUA_REGISTRIES`) 前提。fish 外のシェルでは同 env を export する。導入後は `systemctl --user restart clipboard2path` で再起動 |
+| `clipboard2path-wsl` が起動しない / `command not found` | aqua カスタムレジストリは `mise/config.toml` の `[settings] aqua.registries` で設定済み。導入は `mise bootstrap`、手動再起動は `systemctl --user restart clipboard2path` |
 | `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。シェル経由（shim）では問題ない |
 
 ## 関連ドキュメント
