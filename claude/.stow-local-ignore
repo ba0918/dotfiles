@@ -1,9 +1,0 @@
-# Entries are regexes (see `man stow`). Leading "/" anchors at the package
-# root; otherwise the regex matches any path segment by name.
-
-# Python / pytest artifacts — generated locally, never deployed.
-__pycache__
-\.pytest_cache
-
-# Test suite stays in-repo only; Claude Code never invokes it from $HOME.
-/\.claude/hooks/tests
