@@ -52,6 +52,11 @@ if status is-interactive
     abbr gcm 'git commit -m'
     abbr gp 'git push'
     abbr gpl 'git pull'
+    abbr gcb 'git checkout -b'
+    abbr gdst 'git diff --stat'
+    abbr gpsup 'git push --set-upstream origin HEAD'
+    abbr gap 'git add -p'
+    abbr gls 'git log --oneline --grep'
 
     # __auto_ls: cd / ディレクトリ移動時に eza で自動表示
     function __auto_ls --on-variable PWD
@@ -77,6 +82,18 @@ if status is-interactive
         ghq list | fzf --preview "eza --tree --icons --color=always --level=1 $ghq_root/{}" | read -l repo
         if test -n "$repo"
             cd "$ghq_root/$repo"
+        end
+    end
+
+    # git worktree 一覧から fzf で選択して移動
+    function gwt
+        git worktree list --porcelain | sed -n 's/^worktree //p' | fzf --preview '
+	if test -d {}
+	    eza --tree --icons --color=always --level=1 {}
+	end
+' | read -l wt
+        if test -n "$wt"
+            cd "$wt"
         end
     end
 
