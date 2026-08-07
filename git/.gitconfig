@@ -12,8 +12,7 @@
 [color]
 	ui = auto
 [credential]
-	helper = /usr/local/bin/git-credential-manager
-	credentialStore = wincredman
+	helper = !gh auth git-credential
 [commit]
 	verbose = true
 [help]
@@ -67,5 +66,3 @@
 	last = log -1 HEAD --stat
 	unstage = reset HEAD --
 	amend = commit --amend --no-edit
-[credential "https://dev.azure.com"]
-	useHttpPath = true

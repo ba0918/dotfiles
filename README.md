@@ -64,7 +64,6 @@ dotfiles/
 ├── meta/
 │   └── MIGRATION.md        # 既存設定の取り込み手順
 ├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
-├── install.sh              # GCM 専用インストーラ（apt）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
 
@@ -78,7 +77,8 @@ mise bootstrap --skip packages   # 一部スキップ
 mise bootstrap dotfiles status   # dotfiles の適用状態
 mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
-./install.sh                     # GCM のみ導入（略式: --check で状態確認）
+gh auth setup-git                # GitHub の credential helper に gh を登録
+glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行・登録
 ```
 
 `./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
@@ -96,9 +96,11 @@ mise bootstrap packages status --missing
   で宣言する
 - **[delta](https://github.com/dandavison/delta)** — `core.pager` /
   `interactive.diffFilter` に使う色付き diff（`apt:git-delta`）
-- **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)**
-  — `credential.helper = manager`。WSL では Windows Credential Manager (DPAPI)。
-  mise registry に無いため `./install.sh` で導入
+- **[gh](https://cli.github.com/)** — GitHub の credential helper
+  （`!gh auth git-credential`）。HTTPS リモートに遭遇しても自動認証される
+- **[glab](https://gitlab.com/gitlab-org/cli)** — GitLab の認証は
+  `glab auth login` で SSH 鍵を発行・GitLab へ登録する（GitLab の push は SSH）。
+  `[tools]` の `glab` で導入
 - **fish シェル本体と shell ツール** — fish / bat / fd-find / eza / zoxide / fzf
   は apt で配布（`[bootstrap.packages]` の `apt:*` 宣言）。
 - **yazi** — TUI ファイルマネージャ（`[tools]` の `yazi`）。`ya` 関数で起動すると

@@ -40,7 +40,6 @@ dotfiles/
 ├── meta/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
 ├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust + apt 設定）
-├── install.sh                  # GCM 専用インストーラ（apt）
 ├── CLAUDE.md                  # Claude Code 用エントリ（AGENTS.md を参照）
 ├── AGENTS.md                  # このファイル（本体）
 └── .gitignore                 # secret / runtime artifact をブロック
@@ -68,9 +67,9 @@ mise bootstrap packages status --missing
 mise bootstrap dotfiles apply --dry-run
 mise bootstrap dotfiles unapply --dry-run
 
-# GCM のみ（mise registry に無いため）
-./install.sh                      # 導入
-./install.sh --check              # 状態確認
+# 認証（gh / glab、SSH 運用）
+gh auth setup-git                # GitHub の credential helper に gh を登録
+glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行・登録
 ```
 
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
@@ -95,13 +94,13 @@ mise bootstrap dotfiles unapply --dry-run
 
 - `~/.gitconfig` などツール経由で書き換えられるファイルは **symlink 経由で
   repo ファイルそのものが変更される**
-- 例: `git-credential-manager configure` が `~/.gitconfig` に `helper = ...` を
-  追記 → `git/.gitconfig` に差分発生 → `git status` で検出される
+- 例: `gh auth setup-git` / `glab auth login` が `~/.gitconfig` や `~/.ssh/config`
+  に追記 → `git/.gitconfig` や repo 外の diff として検出される
 - こうした外部書き込みは整理してからコミットする
 
 ### 3. スクリプトの出力は中立英語
 
-- `install.sh` などスクリプトの stdout/stderr、ヘッダコメント、エラーメッセージは
+- スクリプトの stdout/stderr、ヘッダコメント、エラーメッセージは
   **ニュートラルな英語**で書く（ペルソナ / 絵文字 / 親しみ口調は入れない）
 - ユーザー向け会話文・README・コミットメッセージは**日本語**
 - ドキュメントとスクリプトで言語を分けてる点に注意
@@ -130,9 +129,8 @@ mise bootstrap dotfiles unapply --dry-run
 
 - **[delta](https://github.com/dandavison/delta)** — `core.pager` と
   `interactive.diffFilter`（mise の `apt:git-delta` で導入）
-- **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)**
-  — `credential.helper` / WSL では `credentialStore = wincredman` で Windows
-  Credential Manager (DPAPI) に資格情報を保存。`./install.sh` で導入
+- **[gh](https://cli.github.com/)** — GitHub の credential helper
+  （`!gh auth git-credential`）。`[tools]` の `gh` で導入
 
 `fish/.config/fish` は以下に依存（すべて `[bootstrap.packages]` の `apt:*` 宣言）:
 
