@@ -4,24 +4,22 @@
 
 ## セットアップ（新マシン / WSL 内）
 
-前提: mutable前の WSL。Windows 側の環境構築は対象外。
+前提: まっさらな WSL。Windows 側の環境構築は対象外。
 
 ```bash
 # 1. mise を入れる (まだ無ければ)
 curl https://mise.run | sh
 
-# 2. repo を clone（場所は自由。相対パスは repo 内 config 基準で解決される）
+# 2. repo を clone（場所は自由。repo 内の相対パスで解決される）
 git clone <this-repo> ~/develop/dotfiles
 
-# 3. global config の場所を mise に伝える
-#    fish:  ~/.config/fish/config.fish に下記を追記
-#    set -gx MISE_GLOBAL_CONFIG_FILE ~/develop/dotfiles/mise/config.toml
-#    （fish 本体は現在 repo 管理対象外。dotfiles 適用前に手動で 1 行入れる）
-
-# 4. 一括適用
-mise trust ~/develop/dotfiles
-mise bootstrap
+# 3. 一括適用（wrapper が config の場所解決・trust まで行う）
+~/develop/dotfiles/bootstrap.sh
 ```
+
+初回実行後、対話シェルでは fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を
+設定するので、以後はそのまま `mise bootstrap` を直接叩ける。
+repo を別の場所に置いた場合は bootstrap.sh を使えば場所非依存で適用できる。
 
 `mise bootstrap` は [bootstrap.packages] / [dotfiles] / [tools] を順に適用し、
 システムパッケージ・dotfiles・開発ツールを一つで再現する。再実行は冪等。
@@ -51,6 +49,7 @@ dotfiles/
 │   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
 ├── meta/
 │   └── MIGRATION.md        # 既存設定の取り込み手順
+├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + mise bootstrap）
 ├── install.sh              # GCM 専用インストーラ（apt）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
@@ -58,13 +57,14 @@ dotfiles/
 ## よく使うコマンド
 
 ```bash
-mise bootstrap                     # [bootstrap.packages] + [dotfiles] + [tools] を適用
-mise bootstrap --dry-run           # 何が起きるか確認
-mise bootstrap --skip packages     # 一部スキップ
-mise bootstrap dotfiles status     # dotfiles の適用状態
+./bootstrap.sh                   # 新規マシンで一括適用（config 解決 + trust 込み）
+mise bootstrap                   # 2回目以降（config.fish が env を設定済み）
+mise bootstrap --dry-run         # 何が起きるか確認
+mise bootstrap --skip packages   # 一部スキップ
+mise bootstrap dotfiles status   # dotfiles の適用状態
 mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
-./install.sh                       # GCM のみ導入（略式: --check で状態確認）
+./install.sh                     # GCM のみ導入（略式: --check で状態確認）
 ```
 
 グローバル config は `mise/config.toml` が実体。

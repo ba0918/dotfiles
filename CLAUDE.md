@@ -33,7 +33,8 @@ dotfiles/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
-├── install.sh                 # GCM 専用インストーラ（apt）
+├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust）
+├── install.sh                  # GCM 専用インストーラ（apt）
 ├── CLAUDE.md                  # このファイル（本体）
 ├── AGENTS.md                  # → CLAUDE.md（symlink）
 └── .gitignore                 # secret / runtime artifact をブロック
@@ -49,7 +50,10 @@ dotfiles/
 ## コマンドリファレンス
 
 ```bash
-# mise で一括適用（新マシン/IWSL 内の再現）
+# 新規マシンでの一括適用（config 場所解決 + trust 込み）
+./bootstrap.sh                     # 新マシン / repo をどこに置いても 1 コマンド
+
+# mise で一括適用（2 回目以降 / fish 経由）
 mise bootstrap                     # packages → dotfiles → tools を順に適用
 mise bootstrap --dry-run           # 何が起きるか確認
 mise bootstrap dotfiles status     # dotfiles の適用状態 (applied/missing/differs)
