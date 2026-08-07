@@ -55,5 +55,15 @@ install_apt_repos() {
 install_apt_repos
 
 export MISE_GLOBAL_CONFIG_FILE="${REPO_ROOT}/mise/config.toml"
+# 自作ツールの aqua カスタムレジストリはツール repo が公開する URL を参照
+export MISE_AQUA_REGISTRIES="https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"
 mise trust "${MISE_GLOBAL_CONFIG_FILE}"
-exec mise bootstrap "$@"
+
+mise bootstrap "$@"
+
+# Clipboard2path service: unit / wl-paste wrapper はツールの init が生成する。
+# fish hook は dotfiles 管理なので --no-hook（冪等 — 再実行しても既存は上書き）。
+if [ "${DRY_RUN}" = false ]; then
+	mise x aqua:ba0918/clipboard2path-wsl -- init --no-hook 2>/dev/null || \
+		clipboard2path-wsl init --no-hook 2>/dev/null || true
+fi

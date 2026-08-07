@@ -48,7 +48,7 @@ dotfiles/
 │       ├── config.fish
 │       ├── fish_plugins
 │       ├── functions/up.fish
-│       └── conf.d/clipboard2path.fish
+│       └── conf.d/clipboard2path.fish     # Alt+V ペースト hook（dotfiles 管理）
 ├── nvim/                   # 育成中
 │   └── .config/nvim/
 ├── claude/                 # → ~/.claude/* （secret 除外）
@@ -57,7 +57,7 @@ dotfiles/
 │   └── .codex/
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/
-├── apt/                    # 同梱 apt リポジトリ（bootstrap.sh が導入）
+├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入)
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
 │   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
@@ -111,18 +111,14 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
 使うか、一時的にページャを戻す (`git -c core.pager=less diff`) で回避可能。
 
-### 別タスク化している依存
+### その他の依存
 
-以下は WSL 固有の手動インストール依存で、dotfiles / mise では管理していない
-（再現タスクは未対応）:
-
-- **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。crates.io 未公開のため
-  `cargo install --git https://github.com/ba0918/clipboard2path-wsl` が必要。
-  さらに systemd user service と `.bashrc` hook を別途組む。config.fish の
-  `conf.d/clipboard2path.fish` はこのツールの生成物（wl-paste wrapper を含む）を前提とする。
-- **wl-paste (WSL ラッパー)** — clipboard2path-wsl が自動生成する `~/.local/bin/wl-paste`
-
-これらは fish / clipboard 周りの完全再現を狙うタスクで統合予定。
+- **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。クリップボードの
+  画像をファイル保存してパスを返す daemon。binary はツール repo が公開する aqua registry
+  （`https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml`）
+  を `[tools]` から参照して導入し、systemd user service と wl-paste wrapper は
+  `clipboard2path-wsl init --no-hook` が生成する（fish hook のみ
+  `conf.d/clipboard2path.fish` を dotfiles 管理）。動作確認は `clipboard2path-wsl status`。
 
 ## パッケージの追加手順
 

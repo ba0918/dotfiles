@@ -40,11 +40,15 @@ compile = false
 "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
 "~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
 
+# clipboard2path-wsl: fish hook のみ dotfiles 管理（unit / wl-paste wrapper は
+# ツールの `init --no-hook` が生成。binary は aqua ([tools]) で導入）
+
 # Yazi: 設定のみ（プラグイン・キャッシュは yazi が自分のディレクトリで管理）
 "~/.config/yazi/yazi.toml" = "../yazi/.config/yazi/yazi.toml"
 "~/.config/yazi/keymap.toml" = "../yazi/.config/yazi/keymap.toml"
 
 [tools]
+"aqua:ba0918/clipboard2path-wsl" = "latest"
 ast-grep = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
 bun = "latest"

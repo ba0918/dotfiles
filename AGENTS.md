@@ -45,6 +45,13 @@ dotfiles/
 └── .gitignore                 # secret / runtime artifact をブロック
 ```
 
+binary の導入は `[tools]` の宣言に集約されるが、自作ツール
+(`clipboard2path-wsl`) は aqua 標準レジストリに無いため、ツール repo が公開する
+カスタム aqua レジストリ（`https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml`）
+を `MISE_AQUA_REGISTRIES` で参照する（fish の config.fish と bootstrap.sh の両方で設定、
+repo 位置非依存）。systemd unit / wl-paste wrapper は repo 内に置かず、
+`clipboard2path-wsl init --no-hook` が生成する（fish hook のみ dotfiles 管理）。
+
 新しいパッケージを追加するときは:
 
 1. `mkdir -p <pkg>/<$HOME からの相対パス>` でツリーを作る
@@ -70,6 +77,12 @@ mise bootstrap dotfiles unapply --dry-run
 # 認証（gh / glab、SSH 運用）
 gh auth setup-git                # GitHub の credential helper に gh を登録
 glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行・登録
+
+# clipboard2path-wsl（自作ツール。ツール repo 公開の aqua レジストリで導入）
+mise bootstrap                   # [tools] の aqua:ba0918/clipboard2path-wsl が入る
+clipboard2path-wsl init --no-hook # unit / wl-paste wrapper を生成（destructive なので再実行注意）
+clipboard2path-wsl status        # service / hook / wrapper の状態
+systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mise の latest パスを参照）
 ```
 
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
@@ -140,6 +153,15 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
   プロンプト連携（`apt:bat` / `apt:fd-find` / `apt:eza` / `apt:zoxide` / `apt:fzf`）
 - **opencode** — `mise bootstrap` の `[tools]` で導入（`aqua:anomalyco/opencode`）
 
+`fish/.config/fish` は以下に依存:
+
+- **clipboard2path-wsl** — 自作ツール。`conf.d/clipboard2path.fish`（fish hook）だけ
+  dotfiles が管理する。binary は `[tools]` の `aqua:ba0918/clipboard2path-wsl`（ツール repo
+  公開の aqua レジストリ）で導入
+- **systemd user サービス / wl-paste wrapper** — `clipboard2path-wsl init --no-hook`
+  が生成する（dotfiles 管轄外）。unit の `ExecStart` は mise installs の `latest`
+  シンボリックパスを参照するため、`mise up` 後の再起動で追従
+
 `yazi/.config/yazi` は以下に依存:
 
 - **yazi** — `[tools]` の `yazi` で導入（mise 管轄）
@@ -155,6 +177,8 @@ glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行�
 | `~/.gitconfig` に突然大量の差分 | `gcm configure` などツールが symlink 先に書き込んだ可能性。差分を確認して整理する |
 | `.gitconfig` などの apply で repo 内ファイルが symlink 化する | `[dotfiles]` がディレクトリ symlink を指す場合、file-level 宣言でなくディレクトリ単位で宣言する（secretlint の例） |
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore で除外済み (`~/.config/git/ignore`) |
+| `clipboard2path-wsl` が起動しない / `command not found` | `mise bootstrap` が aqua カスタムレジストリ (`MISE_AQUA_REGISTRIES`) 前提。fish 外のシェルでは同 env を export する。導入後は `systemctl --user restart clipboard2path` で再起動 |
+| `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。シェル経由（shim）では問題ない |
 
 ## 関連ドキュメント
 

@@ -10,6 +10,8 @@ set -l dotfiles_root (dirname (dirname (dirname (dirname (realpath (status filen
 # repo 内の config をグローバル config として使用。
 # 新規マシンの初回のみ ./bootstrap.sh が設定する（ここは対話シェル用）。
 set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
+# 自作ツール用の aqua カスタムレジストリ（ツール repo が公開する URL を参照）
+set -gx MISE_AQUA_REGISTRIES "https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"
 if status is-interactive
     mise activate fish | source
 else
