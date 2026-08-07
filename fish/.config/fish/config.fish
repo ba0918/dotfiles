@@ -19,7 +19,7 @@ end
 # environment
 set -gx EDITOR nvim
 set -gx BROWSER powershell.exe
-set -gx PAGER less
+set -gx PAGER 'less -R'
 set -gx BAT_THEME OneHalfDark
 
 # fish greeting 抑止（tide がプロンプトを描くため起動挨拶は不要）
