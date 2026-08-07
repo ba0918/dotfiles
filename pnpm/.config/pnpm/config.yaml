@@ -1,0 +1,4 @@
+# pnpm グローバル設定（~/.config/pnpm/config.yaml へ symlink 展開）
+# サプライチェーン攻撃対策: リリースから 7 日未満のパッケージを導入しない
+# 単位は「分」（7 日 = 7 * 24 * 60 = 10080）
+minimumReleaseAge: 10080
