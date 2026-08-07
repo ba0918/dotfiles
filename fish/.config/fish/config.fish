@@ -58,6 +58,9 @@ if status is-interactive
     abbr gap 'git add -p'
     abbr gls 'git log --oneline --grep'
 
+    # mise
+    abbr mui 'mise up --interactive'
+
     # __auto_ls: cd / ディレクトリ移動時に eza で自動表示
     function __auto_ls --on-variable PWD
         if status --is-interactive
