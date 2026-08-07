@@ -14,7 +14,8 @@
 
 トップレベルの各ディレクトリがパッケージ（旧 Stow パッケージ）で、
 `[dotfiles]` の source 宣言を通じて `$HOME` の下に symlink 展開される。
-`~/.config/mise/config.toml` の `[dotfiles]` が repo ツリーを source に指す。
+グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）で、
+その `[dotfiles]` が repo 内の相対パスを source に指す。
 
 ```
 dotfiles/
@@ -28,6 +29,8 @@ dotfiles/
 ├── nvim/                      # 育成中
 ├── claude/                    # 育成中（secret 混入厳禁）
 ├── codex/                     # 育成中（secret 混入厳禁）
+├── mise/
+│   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
 ├── install.sh                 # GCM 専用インストーラ（apt）
@@ -41,7 +44,7 @@ dotfiles/
 1. `mkdir -p <pkg>/<$HOME からの相対パス>` でツリーを作る
 2. 設定ファイルを配置する
 3. `.gitignore` に runtime / secret パターンを追記する
-4. `~/.config/mise/config.toml` の `[dotfiles]` に source を追記して適用する
+4. `mise/config.toml` の `[dotfiles]` に source を追記して適用する
 
 ## コマンドリファレンス
 
@@ -59,6 +62,11 @@ mise bootstrap dotfiles unapply --dry-run
 ./install.sh                      # 導入
 ./install.sh --check              # 状態確認
 ```
+
+グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
+`~/.config/mise/config.toml` は存在しない（撤去済み）。config 編集は repo 内
+`mise/config.toml` に対して行い、`mise` コマンドは fish 経由で使う
+（fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を設定する）。
 
 ## 変更時に守るルール
 

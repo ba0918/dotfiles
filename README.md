@@ -10,11 +10,13 @@
 # 1. mise を入れる (まだ無ければ)
 curl https://mise.run | sh
 
-# 2. repo を clone
+# 2. repo を clone（場所は自由。相対パスは repo 内 config 基準で解決される）
 git clone <this-repo> ~/develop/dotfiles
 
-# 3. グローバル config に repo への source を宣言
-#    ~/.config/mise/config.toml に [dotfiles] などを追記（段階移行中は install..sh 参照）
+# 3. global config の場所を mise に伝える
+#    fish:  ~/.config/fish/config.fish に下記を追記
+#    set -gx MISE_GLOBAL_CONFIG_FILE ~/develop/dotfiles/mise/config.toml
+#    （fish 本体は現在 repo 管理対象外。dotfiles 適用前に手動で 1 行入れる）
 
 # 4. 一括適用
 mise trust ~/develop/dotfiles
@@ -45,6 +47,8 @@ dotfiles/
 │   └── .claude/
 ├── codex/                  # → ~/.codex/*   （secret 除外）
 │   └── .codex/
+├── mise/
+│   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
 ├── meta/
 │   └── MIGRATION.md        # 既存設定の取り込み手順
 ├── install.sh              # GCM 専用インストーラ（apt）
@@ -62,6 +66,10 @@ mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
 ./install.sh                       # GCM のみ導入（略式: --check で状態確認）
 ```
+
+グローバル config は `mise/config.toml` が実体。
+`MISE_GLOBAL_CONFIG_FILE` が未設定の環境（fish 外の sh 等）では tools が読めないので、
+非対話シェルでも使いたい場合は同環境変数を export して使う。
 
 ## 外部ツール依存
 
@@ -81,7 +89,7 @@ mise bootstrap packages status --missing
 
 1. 新しいディレクトリを作る: `mkdir -p newpkg/.config/newpkg`
 2. そこに設定ファイルを置く（`$HOME` からの相対パスをそのまま再現）
-3. `~/.config/mise/config.toml` の `[dotfiles]` に source を追記
+3. `mise/config.toml` の `[dotfiles]` に source を追記（repo 内からの相対パス）
 4. `.gitignore` に runtime / secret パスを追記
 
 既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を見る。

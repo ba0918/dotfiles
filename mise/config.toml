@@ -1,0 +1,45 @@
+[env]
+# bun global installs (e.g. codex) are not in mise-managed paths
+_.path = ["~/.bun/bin", "~/.cargo/bin"]
+
+[settings]
+dotfiles.default_mode = "symlink"
+
+[settings.node]
+compile = false
+
+[bootstrap.packages]
+"apt:stow" = "latest"
+"apt:git-delta" = "latest"
+
+[dotfiles]
+"~/.gitconfig" = "../git/.gitconfig"
+"~/.config/git/attributes" = "../git/.config/git/attributes"
+"~/.config/git/ignore" = "../git/.config/git/ignore"
+"~/.config/git/template" = "../git/.config/git/template"
+"~/.config/secretlint" = "../git/.config/secretlint"
+
+# Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
+"~/.claude/.gitkeep" = "../claude/.claude/.gitkeep"
+"~/.claude/CLAUDE.md" = "../claude/.claude/CLAUDE.md"
+"~/.claude/bash-env.sh" = "../claude/.claude/bash-env.sh"
+"~/.claude/output-styles/gal.md" = "../claude/.claude/output-styles/gal.md"
+"~/.claude/hooks/block_dangerous_command.py" = "../claude/.claude/hooks/block_dangerous_command.py"
+"~/.claude/hooks/detect_mojibake.py" = "../claude/.claude/hooks/detect_mojibake.py"
+"~/.claude/hooks/detect_secret.py" = "../claude/.claude/hooks/detect_secret.py"
+
+[tools]
+ast-grep = "latest"
+aws-cli = { version = "latest", symlink_bins = "true" }
+bun = "latest"
+chezmoi = "latest"
+deno = "latest"
+gh = "latest"
+ghq = "latest"
+go = "latest"
+just = "latest"
+lazygit = "latest"
+node = "25.6.1"
+pnpm = "latest"
+rust = "latest"
+shellcheck = "latest"

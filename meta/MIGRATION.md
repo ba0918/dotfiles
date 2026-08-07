@@ -18,8 +18,8 @@ mv ~/.config/fish/config.fish    ~/develop/dotfiles/fish/.config/fish/
 mv ~/.config/fish/functions      ~/develop/dotfiles/fish/.config/fish/
 mv ~/.config/fish/conf.d         ~/develop/dotfiles/fish/.config/fish/
 
-# ~/.config/mise/config.toml の [dotfiles] に宣言
-#   "~/.config/fish" = "~/develop/dotfiles/fish/.config/fish"
+# mise/config.toml の [dotfiles] に宣言（repo 内からの相対パス）
+#   "~/.config/fish" = "../fish/.config/fish"
 mise bootstrap dotfiles apply --dry-run   # 衝突確認
 mise bootstrap dotfiles apply --force     # 実ファイルを symlink に置換
 ```
