@@ -21,6 +21,12 @@ git clone <this-repo> ~/develop/dotfiles
 設定するので、以後はそのまま `mise bootstrap` を直接叩ける。
 repo を別の場所に置いた場合は bootstrap.sh を使えば場所非依存で適用できる。
 
+## fish プラグイン
+
+tide / fzf.fish / z は fisher 管理。`fish_plugins` で宣言されているので
+新規マシンでは `fisher install` で再現する（関数・completions 等の生成物は
+repo に含めない）。
+
 `mise bootstrap` は [bootstrap.packages] / [dotfiles] / [tools] を順に適用し、
 システムパッケージ・dotfiles・開発ツールを一つで再現する。再実行は冪等。
 
@@ -37,8 +43,12 @@ dotfiles/
 │       ├── ignore          # global gitignore (XDG, 自動検出)
 │       ├── attributes      # global gitattributes (XDG, 自動検出)
 │       └── template/       # git init テンプレート (global pre-commit 等)
-├── fish/                   # 育成中
+├── fish/                   # 手動ファイルのみ（プラグインは fish_plugins + fisher）
 │   └── .config/fish/
+│       ├── config.fish
+│       ├── fish_plugins
+│       ├── functions/up.fish
+│       └── conf.d/clipboard2path.fish
 ├── nvim/                   # 育成中
 │   └── .config/nvim/
 ├── claude/                 # → ~/.claude/* （secret 除外）

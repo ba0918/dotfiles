@@ -67,3 +67,20 @@ Thumbs.db
 # ===== LLM Artifacts =====
 .agents/artifacts/
 .agents/runtime/
+
+# ===== Fish runtime (never commit universal vars / plugin-generated) =====
+fish/.config/fish/fish_variables*
+fish/.config/fish/fish_history*
+fish/.config/fish/themes/
+fish/.config/fish/completions/
+fish/.config/fish/functions/fisher.fish
+fish/.config/fish/functions/tide.fish
+fish/.config/fish/functions/fish_prompt.fish
+fish/.config/fish/functions/fish_mode_prompt.fish
+fish/.config/fish/functions/_tide_*
+fish/.config/fish/functions/_.*_*
+fish/.config/fish/conf.d/_tide_init.fish
+fish/.config/fish/conf.d/fzf.fish
+fish/.config/fish/conf.d/z.fish
+fish/.config/fish/conf.d/fish_frozen_*
+fish/.config/fish/conf.d/nix.fish

@@ -9,19 +9,27 @@
 
 ## 例: fish config を取り込む
 
+fish は tide/fzf/z などプラグイン由来のファイルが大量に生成されるため、
+**手動管理ファイルだけを file-level で取り込む**（ディレクトリ丸ごと symlink にすると
+プラグイン生成物が repo に混入する）。
+
 ```fish
 # バックアップ
 cp -a ~/.config/fish ~/.config/fish.bak.(date +%Y%m%d)
 
-# リポジトリ側に移動（取り込みたいファイルだけ！ history は不要）
-mv ~/.config/fish/config.fish    ~/develop/dotfiles/fish/.config/fish/
-mv ~/.config/fish/functions      ~/develop/dotfiles/fish/.config/fish/
-mv ~/.config/fish/conf.d         ~/develop/dotfiles/fish/.config/fish/
+# リポジトリ側に移動（手動管理ファイルのみ！ プラグイン生成物は移さない）
+mv ~/.config/fish/config.fish                  ~/develop/dotfiles/fish/.config/fish/
+mv ~/.config/fish/fish_plugins                 ~/develop/dotfiles/fish/.config/fish/
+mv ~/.config/fish/functions/up.fish            ~/develop/dotfiles/fish/.config/fish/functions/
+mv ~/.config/fish/conf.d/clipboard2path.fish   ~/develop/dotfiles/fish/.config/fish/conf.d/
 
-# mise/config.toml の [dotfiles] に宣言（repo 内からの相対パス）
-#   "~/.config/fish" = "../fish/.config/fish"
+# mise/config.toml の [dotfiles] に file-level 宣言
+#   "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
+#   "~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
+#   "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
+#   "~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
 mise bootstrap dotfiles apply --dry-run   # 衝突確認
-mise bootstrap dotfiles apply --force     # 実ファイルを symlink に置換
+mise bootstrap dotfiles apply             # 適用（実ファイルは移動済みなので置換不要）
 ```
 
 ## 例: Claude Code の設定を取り込む

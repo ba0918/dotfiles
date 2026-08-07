@@ -27,6 +27,12 @@ compile = false
 "~/.claude/hooks/detect_mojibake.py" = "../claude/.claude/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../claude/.claude/hooks/detect_secret.py"
 
+# Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
+"~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
+"~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
+"~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
+"~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
+
 [tools]
 ast-grep = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }

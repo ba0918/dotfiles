@@ -26,7 +26,8 @@ dotfiles/
 │       ├── ignore             # → ~/.config/git/ignore   (XDG 自動検出)
 │       ├── attributes         # → ~/.config/git/attributes (XDG 自動検出)
 │       └── template/          # → ~/.config/git/template
-├── fish/                      # 育成中
+├── fish/                      # 手動ファイルのみ（プラグインは fish_plugins で管理）
+│   └── .config/fish/          # config.fish / fish_plugins / up.fish / clipboard2path.fish
 ├── nvim/                      # 育成中
 ├── claude/                    # 育成中（secret 混入厳禁）
 ├── codex/                     # 育成中（secret 混入厳禁）
