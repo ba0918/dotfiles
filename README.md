@@ -67,7 +67,7 @@ dotfiles/
 ## よく使うコマンド
 
 ```bash
-./bootstrap.sh                   # 新規マシンで一括適用（config 解決 + trust 込み）
+./bootstrap.sh                   # 新規マシンで一括適用（config 解決 + trust + apt 設定込み）
 mise bootstrap                   # 2回目以降（config.fish が env を設定済み）
 mise bootstrap --dry-run         # 何が起きるか確認
 mise bootstrap --skip packages   # 一部スキップ
@@ -76,6 +76,10 @@ mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
 ./install.sh                     # GCM のみ導入（略式: --check で状態確認）
 ```
+
+`./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
+未設定なら導入し、`apt-get update` する（sudo を要求。新規マシンでプロンプトが出る）。
+`--dry-run` は「何をすべきか」を常に表示するため、実際の導入済み/未導入は反映しない。
 
 グローバル config は `mise/config.toml` が実体。
 `MISE_GLOBAL_CONFIG_FILE` が未設定の環境（fish 外の sh 等）では tools が読めないので、
@@ -90,10 +94,25 @@ mise bootstrap packages status --missing
 - **[git-credential-manager](https://github.com/git-ecosystem/git-credential-manager)**
   — `credential.helper = manager`。WSL では Windows Credential Manager (DPAPI)。
   mise registry に無いため `./install.sh` で導入
+- **fish シェル本体と shell ツール** — fish / bat / fd-find / eza / zoxide / fzf
+  は apt で配布（`[bootstrap.packages]` の `apt:*` 宣言）。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
 使うか、一時的にページャを戻す (`git -c core.pager=less diff`) で回避可能。
+
+### 別タスク化している依存
+
+以下は WSL 固有の手動インストール依存で、dotfiles / mise では管理していない
+（再現タスクは未対応）:
+
+- **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。crates.io 未公開のため
+  `cargo install --git https://github.com/ba0918/clipboard2path-wsl` が必要。
+  さらに systemd user service と `.bashrc` hook を別途組む。config.fish の
+  `conf.d/clipboard2path.fish` はこのツールの生成物（wl-paste wrapper を含む）を前提とする。
+- **wl-paste (WSL ラッパー)** — clipboard2path-wsl が自動生成する `~/.local/bin/wl-paste`
+
+これらは fish / clipboard 周りの完全再現を狙うタスクで統合予定。
 
 ## パッケージの追加手順
 

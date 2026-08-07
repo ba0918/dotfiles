@@ -43,10 +43,14 @@ if status is-interactive
 
 end
 
+# repo 配置を実体パスから導出（repo をどの場所に置いても self-contained）
+# config.fish は symlink 経由で読まれるため realpath で実体に解決してから 4 段上る
+set -l dotfiles_root (dirname (dirname (dirname (dirname (realpath (status filename))))))
+
 # mise setting
 # repo 内の config をグローバル config として使用。
 # 新規マシンの初回のみ ./bootstrap.sh が設定する（ここは対話シェル用）。
-set -gx MISE_GLOBAL_CONFIG_FILE ~/develop/dotfiles/mise/config.toml
+set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
 if status is-interactive
     mise activate fish | source
 else
@@ -55,6 +59,3 @@ end
 
 # for Playwright tests...
 export DBUS_SESSION_BUS_ADDRESS=/dev/null
-
-# opencode
-fish_add_path /home/mizumi/.opencode/bin

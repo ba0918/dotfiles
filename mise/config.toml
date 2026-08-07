@@ -10,6 +10,12 @@ compile = false
 
 [bootstrap.packages]
 "apt:git-delta" = "latest"
+"apt:fish" = "latest"
+"apt:bat" = "latest"
+"apt:fd-find" = "latest"
+"apt:eza" = "latest"
+"apt:zoxide" = "latest"
+"apt:fzf" = "latest"
 
 [dotfiles]
 "~/.gitconfig" = "../git/.gitconfig"
@@ -44,6 +50,7 @@ go = "latest"
 just = "latest"
 lazygit = "latest"
 node = "25.6.1"
+opencode = "latest"
 pnpm = "latest"
 rust = "latest"
 shellcheck = "latest"
