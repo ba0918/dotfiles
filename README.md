@@ -52,9 +52,10 @@ dotfiles/
 ├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
 │   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
 ├── ai/                      # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/.claude/      # → ~/.claude/*   （CLAUDE.md / hooks / bash-env / output-styles）
-│   ├── codex/.codex/        # → ~/.codex/*     （AGENTS.md）
-│   ├── opencode/            # → ~/.opencode/opencode.json
+│   ├── claude/              # → ~/.claude/*（CLAUDE.md / hooks / bash-env / output-styles。
+│   │                        #   CLAUDE.md / gal.md は template 配布 → rendered 実ファイル）
+│   ├── codex/               # → ~/.codex/AGENTS.md（template 配布 → rendered 実ファイル）
+│   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
 │   └── shared/              # 共通契約（persona / human-readable / interaction / commit-rules）
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/

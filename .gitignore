@@ -28,14 +28,14 @@ auth.json
 *_ecdsa
 
 # ===== Claude Code: allow-list (everything else is runtime / secret) =====
-# Default-deny under ai/claude/.claude/. Tracked assets must be allow-listed below.
+# Default-deny under ai/claude/. Tracked assets must be allow-listed below.
 # When adding a new asset, add a matching "!" line here.
-ai/claude/.claude/*
-!ai/claude/.claude/.gitkeep
-!ai/claude/.claude/CLAUDE.md
-!ai/claude/.claude/bash-env.sh
-!ai/claude/.claude/output-styles/
-!ai/claude/.claude/hooks/
+ai/claude/*
+!ai/claude/.gitkeep
+!ai/claude/CLAUDE.md
+!ai/claude/bash-env.sh
+!ai/claude/output-styles/
+!ai/claude/hooks/
 # (explicit allow-list is appended as assets are adopted)
 
 # ===== Python dev artifacts =====
@@ -48,18 +48,18 @@ ai/claude/.claude.json
 ai/claude/.claude.json.backup
 
 # ===== Codex runtime artifacts =====
-ai/codex/.codex/history.jsonl
-ai/codex/.codex/session_index.jsonl
-ai/codex/.codex/sessions/
-ai/codex/.codex/log/
-ai/codex/.codex/logs_*.sqlite*
-ai/codex/.codex/state_*.sqlite*
-ai/codex/.codex/models_cache.json
-ai/codex/.codex/cache/
-ai/codex/.codex/tmp/
-ai/codex/.codex/.tmp/
-ai/codex/.codex/installation_id
-ai/codex/.codex/.personality_migration
+ai/codex/history.jsonl
+ai/codex/session_index.jsonl
+ai/codex/sessions/
+ai/codex/log/
+ai/codex/logs_*.sqlite*
+ai/codex/state_*.sqlite*
+ai/codex/models_cache.json
+ai/codex/cache/
+ai/codex/tmp/
+ai/codex/.tmp/
+ai/codex/installation_id
+ai/codex/.personality_migration
 
 # ===== OS / misc =====
 Thumbs.db

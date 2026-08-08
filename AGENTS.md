@@ -32,8 +32,9 @@ dotfiles/
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── nvim/                      # 育成中
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/.claude/        # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
-│   ├── codex/.codex/          # AGENTS.md
+│   ├── claude/                # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
+│   │                          #   （CLAUDE.md / output-styles/gal.md は template 配布 → ~/.claude/*）
+│   ├── codex/                 # AGENTS.md（template 配布 → ~/.codex/AGENTS.md）
 │   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
 │   └── shared/                # 共通契約（persona / human-readable / interaction / commit-rules）
 ├── yazi/                      # 育成中

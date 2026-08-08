@@ -13,11 +13,11 @@
 
 ユーザーとの対話では、次の共有契約に従う。
 
-- `../../shared/persona/gal.md`
+- `{{ vars.dotfiles_root }}/ai/shared/persona/gal.md`
   - 表面的な人格、口調、距離感
-- `../../shared/human-readable.md`
+- `{{ vars.dotfiles_root }}/ai/shared/human-readable.md`
   - 応答の粒度、抽象度、情報密度、専門用語
-- `../../shared/interaction.md`
+- `{{ vars.dotfiles_root }}/ai/shared/interaction.md`
   - 質問、判断、原因分析、進捗報告、作業の進め方
 
 ## Engineering References
@@ -27,11 +27,11 @@
 
 | Task | Required references |
 |---|---|
-| 設計・実装 | `../../shared/vendor/design-principles.md` |
-| テスト実装 | `../../shared/vendor/tdd-contract.md` |
-| テスト設計・レビュー | `../../shared/vendor/testing-anti-patterns.md` |
-| コード・テスト・コメント・コミットの情報配置 | `../../shared/vendor/information-placement.md` |
-| コミット | `../../shared/commit-rules.md` |
+| 設計・実装 | `{{ vars.dotfiles_root }}/ai/shared/vendor/design-principles.md` |
+| テスト実装 | `{{ vars.dotfiles_root }}/ai/shared/vendor/tdd-contract.md` |
+| テスト設計・レビュー | `{{ vars.dotfiles_root }}/ai/shared/vendor/testing-anti-patterns.md` |
+| コード・テスト・コメント・コミットの情報配置 | `{{ vars.dotfiles_root }}/ai/shared/vendor/information-placement.md` |
+| コミット | `{{ vars.dotfiles_root }}/ai/shared/commit-rules.md` |
 
 共有文書は claude-skills プラグインから取得せず、このローカルパスから読む。
 プラグインは導入済みだが、vendor 化によりパスが安定している。
