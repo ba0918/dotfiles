@@ -8,6 +8,11 @@ minimum_release_age = "7d"
 # 自作ツールの aqua カスタムレジストリ（ツール repo が公開する URL）
 aqua.registries = ["https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"]
 
+[vars]
+# MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
+# config_root を repo ルートへ解決し、dotfiles の template から参照できる
+dotfiles_root = "{{ config_root }}"
+
 [settings.node]
 compile = false
 
@@ -59,8 +64,11 @@ compile = false
 # Herdr: 設定のみ（plugins.json / session.json / logs は生成物として除外）
 "~/.config/herdr/config.toml" = "../herdr/.config/herdr/config.toml"
 
-# opencode: グローバル設定のみ（opencode.json。plugin は plugin 宣言で管理）
-"~/.opencode/opencode.json" = "../ai/opencode/opencode.json"
+# opencode: グローバル設定のみ（opencode.json）。plugin は plugin 宣言で管理。
+# instructions が repo ルート相対パス（{{ vars.dotfiles_root }}）を指すため symlink ではなく
+# template で配布する（rendered 実ファイルになる）。MISE_GLOBAL_CONFIG_ROOT が
+# config_root を repo ルートに解決する（bootstrap.sh / fish config.fish で設定）
+"~/.opencode/opencode.json" = { source = "../ai/opencode/opencode.json", mode = "template" }
 
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"
