@@ -31,16 +31,17 @@ dotfiles/
 ├── apt/                       # 同梱 apt リポジトリ（bootstrap.sh が導入）
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── nvim/                      # 育成中
-├── claude/                    # 育成中（secret 混入厳禁）
-├── codex/                     # 育成中（secret 混入厳禁）
+├── ai/                        # LLM 設定を集約（secret 混入厳禁）
+│   ├── claude/.claude/        # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
+│   ├── codex/.codex/          # AGENTS.md
+│   ├── opencode/              # opencode.json → ~/.opencode/opencode.json
+│   └── shared/                # 共通契約（persona / human-readable / interaction / commit-rules）
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
 │   └── .config/glow/          # glow.yml（スタイル等）
 ├── herdr/                     # 確定
 │   └── .config/herdr/         # config.toml（プラグインは herdr plugin install で導入）
-├── opencode/                  # 確定
-│   └── opencode.json          # → ~/.opencode/opencode.json（permission / plugin 宣言）
 ├── npm/                       # 確定（JS サプライチェーン対策）
 │   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
 ├── pnpm/                      # 確定（JS サプライチェーン対策）
@@ -115,7 +116,7 @@ herdr plugin list                # 導入済みプラグインの確認
 
 - `.env*` / `*.pem` / `*.key` / `auth.json` / `.credentials.json` / `.git-credentials`
   等は `.gitignore` で鉄壁ブロック済み
-- `claude/` や `codex/` に新しいファイルを足すときは **credentials / history /
+- `ai/claude/` や `ai/codex/` に新しいファイルを足すときは **credentials / history /
   sqlite / sessions / cache / backups が混入していないか必ず確認**する
 - 新しい secret パスが発覚したら `.gitignore` に追記する
 - `[bootstrap.secrets]` を使う場合も平文 secret を repo / config に永続化しない
@@ -199,7 +200,7 @@ herdr plugin list                # 導入済みプラグインの確認
 - **glow** — `[tools]` の `glow`（`aqua:charmbracelet/glow`）で導入（mise 管轄）。
   snap 版から移行済み（snap は削除対象）
 
-`opencode/opencode.json` は以下に依存:
+`ai/opencode/opencode.json` は以下に依存:
 
 - **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入（mise 管轄）。
   グローバル config（`~/.opencode/opencode.json`）は dotfiles が管理する

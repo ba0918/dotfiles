@@ -51,10 +51,11 @@ dotfiles/
 │       └── conf.d/clipboard2path.fish     # Alt+V ペースト hook（dotfiles 管理）
 ├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
 │   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
-├── claude/                 # → ~/.claude/* （secret 除外）
-│   └── .claude/
-├── codex/                  # → ~/.codex/*   （secret 除外）
-│   └── .codex/
+├── ai/                      # LLM 設定を集約（secret 混入厳禁）
+│   ├── claude/.claude/      # → ~/.claude/*   （CLAUDE.md / hooks / bash-env / output-styles）
+│   ├── codex/.codex/        # → ~/.codex/*     （AGENTS.md）
+│   ├── opencode/            # → ~/.opencode/opencode.json
+│   └── shared/              # 共通契約（persona / human-readable / interaction / commit-rules）
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/
 ├── glow/                   # → ~/.config/glow/glow.yml
