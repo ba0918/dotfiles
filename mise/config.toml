@@ -28,17 +28,17 @@ compile = false
 "~/.config/secretlint" = "../git/.config/secretlint"
 
 # Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
-# wrapper (CLAUDE.md) は ai/ 配下、hooks / bash-env は従来の claude/.claude 配下
-"~/.claude/.gitkeep" = "../claude/.claude/.gitkeep"
-"~/.claude/CLAUDE.md" = "../ai/claude/CLAUDE.md"
-"~/.claude/bash-env.sh" = "../claude/.claude/bash-env.sh"
-"~/.claude/output-styles/gal.md" = "../claude/.claude/output-styles/gal.md"
-"~/.claude/hooks/block_dangerous_command.py" = "../claude/.claude/hooks/block_dangerous_command.py"
-"~/.claude/hooks/detect_mojibake.py" = "../claude/.claude/hooks/detect_mojibake.py"
-"~/.claude/hooks/detect_secret.py" = "../claude/.claude/hooks/detect_secret.py"
+# 実体はすべて ai/claude/.claude 配下に集約
+"~/.claude/.gitkeep" = "../ai/claude/.claude/.gitkeep"
+"~/.claude/CLAUDE.md" = "../ai/claude/.claude/CLAUDE.md"
+"~/.claude/bash-env.sh" = "../ai/claude/.claude/bash-env.sh"
+"~/.claude/output-styles/gal.md" = "../ai/claude/.claude/output-styles/gal.md"
+"~/.claude/hooks/block_dangerous_command.py" = "../ai/claude/.claude/hooks/block_dangerous_command.py"
+"~/.claude/hooks/detect_mojibake.py" = "../ai/claude/.claude/hooks/detect_mojibake.py"
+"~/.claude/hooks/detect_secret.py" = "../ai/claude/.claude/hooks/detect_secret.py"
 
-# Codex: グローバル AGENTS.md（wrapper は ai/ 配下）
-"~/.codex/AGENTS.md" = "../ai/codex/AGENTS.md"
+# Codex: グローバル AGENTS.md（実体は ai/codex/.codex 配下に集約）
+"~/.codex/AGENTS.md" = "../ai/codex/.codex/AGENTS.md"
 
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
