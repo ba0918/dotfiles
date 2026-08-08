@@ -120,3 +120,10 @@ yazi = "latest"
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
 [tasks.bootstrap]
 run = "bash ${MISE_TASK_DIR}/../scripts/sync-shared.sh"
+
+# pre-dotfiles: dotfiles の template 配布（CLAUDE.md / AGENTS.md / opencode.json）は
+# {{ vars.dotfiles_root }} = {{ config_root }} を参照し、MISE_GLOBAL_CONFIG_ROOT が repo ルートを
+# 指す前提で絶対パスにレンダリングされる。未設定 / 不一致のまま apply すると壊れたパス
+# （$HOME/ai/shared/...）で静かに上書きされるため、ここで検証して失敗させる。
+[bootstrap.hooks.pre-dotfiles]
+run = "test -n \"${MISE_GLOBAL_CONFIG_FILE:-}\" && [ \"${MISE_GLOBAL_CONFIG_ROOT:-}\" = \"$(dirname \"$(dirname \"${MISE_GLOBAL_CONFIG_FILE}\")\")\" ] || { echo 'bootstrap: aborting: MISE_GLOBAL_CONFIG_ROOT must equal the repo root (set by bootstrap.sh / fish config.fish)' >&2; exit 1; }"
