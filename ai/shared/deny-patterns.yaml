@@ -1,0 +1,141 @@
+# deny-patterns.yaml
+#
+# Single source of truth for file patterns that LLM agents must never read.
+# generate-deny.sh converts these into tool-specific formats (pure transformer,
+# no patterns of its own).
+#
+# Pattern types:
+#   - "file.ext"        → file pattern (matched as **/file.ext)
+#   - "*.ext"           → wildcard file pattern
+#   - ".dir/**"         → directory tree ($HOME-relative, generates ~/ and //$HOME/ forms)
+#   - "~/path"          → tilde-prefixed (used as-is in Read(~/...))
+#   - "//$HOME/path"    → absolute deny ($HOME expanded by build-settings)
+#
+# Categories group patterns for readability only — all are merged at generation.
+
+credentials:
+  - "credentials"
+  - "credentials.json"
+  - "credentials.toml"
+  - "credentials.yaml"
+  - "credentials.yml"
+  - "*.credentials.json"
+  - ".credentials.json"
+  - "secrets.json"
+  - "secrets.toml"
+  - "secrets.yaml"
+  - "secrets.yml"
+  - "service-account*.json"
+  - "service_account*.json"
+  - "serviceaccount*.json"
+  - "auth.json"
+  - ".auth.json"
+  - "*auth_token*"
+
+keys:
+  - "*.pem"
+  - "*.key"
+  - "*.p12"
+  - "*.pfx"
+  - "*.jks"
+  - "*.keystore"
+
+ssh:
+  - "id_rsa"
+  - "id_rsa.*"
+  - "id_dsa"
+  - "id_ed25519"
+  - "id_ed25519.*"
+  - "id_ecdsa"
+  - "id_ecdsa.*"
+  - "known_hosts"
+
+environment:
+  - ".env"
+  - ".env.*"
+  - "*.vars"
+
+package_manager:
+  - ".npmrc"
+  - ".yarnrc"
+  - ".pypirc"
+  - ".serverlessrc"
+
+database:
+  - ".pgpass"
+  - ".my.cnf"
+
+network:
+  - ".netrc"
+  - ".git-credentials"
+
+# Directory patterns (trailing /** = entire tree, generates ~/ and //$HOME/ forms)
+directories:
+  - ".ssh/**"
+  - ".aws/**"
+  - ".aws-sam/**"
+  - ".gnupg/**"
+  - ".docker/**"
+  - ".kube/**"
+  - ".gcloud/**"
+  - ".config/**"
+  - ".codex/**"
+  - ".local/share/keyrings/**"
+  - ".local/share/secret-service/**"
+  - ".password-store/**"
+  - ".mozilla/**"
+
+history:
+  - ".bash_history"
+  - ".zsh_history"
+  - ".python_history"
+  - ".node_repl_history"
+  - ".lesshst"
+  - ".viminfo"
+
+# Absolute-path denials for personal directories under $HOME
+personal_directories:
+  - "//$HOME/snap/**"
+  - "//$HOME/Documents/**"
+  - "//$HOME/Downloads/**"
+  - "//$HOME/Pictures/**"
+  - "//$HOME/Videos/**"
+  - "//$HOME/Music/**"
+  - "//$HOME/Desktop/**"
+  - "//$HOME/.gitconfig"
+
+# Write denials (patterns that must never be written by LLM)
+write_deny:
+  - ".env*"
+  - "id_rsa*"
+  - "*.key"
+  - "*.pem"
+
+# Short-form Read denials (relative path patterns)
+read_shortform:
+  - ".env*"
+  - "*.vars"
+  - "id_rsa*"
+  - "id_ed25519*"
+  - "*.key"
+  - "*.pem"
+
+# Bash command denials — destructive operations
+bash_destructive:
+  - "rm -rf:*"
+  - "rm -r:*"
+  - "sudo rm:*"
+  - "rmdir:*"
+  - "rm --recursive:*"
+  - "rm --force:*"
+  - "rm -f:*"
+  - "rm -R:*"
+  - "find * -delete:*"
+  - "find * -exec rm:*"
+  - "xargs rm:*"
+  - "sudo:*"
+  - "git config --global *"
+  - "git config --system *"
+  - "git reset:*"
+  - "brew install *"
+  - "chmod 777 *"
