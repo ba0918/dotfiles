@@ -50,7 +50,33 @@ def test_apply_patch_event_scans_extracted_file(tmp_path, monkeypatch):
         "password = 'S3cr3tV@lueL0ngEnough1234'\n", encoding="utf-8"
     )
     monkeypatch.chdir(tmp_path)
-    diff = "--- a/sub/config.py\n+++ b/sub/config.py\n@@ -1 +1 @@\n-x\n+y\n"
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: sub/config.py\n"
+        "@@\n"
+        "-x\n"
+        "+y\n"
+        "*** End Patch\n"
+    )
+    rc = run_main(
+        {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
+    )
+    assert rc == 2
+
+
+def test_apply_patch_github_token_detected(tmp_path, monkeypatch):
+    (tmp_path / "config.py").write_text(
+        'GITHUB_TOKEN = "ghp_' + "A" * 36 + '"\n', encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: config.py\n"
+        "@@\n"
+        "-x\n"
+        "+y\n"
+        "*** End Patch\n"
+    )
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
@@ -60,7 +86,14 @@ def test_apply_patch_event_scans_extracted_file(tmp_path, monkeypatch):
 def test_apply_patch_clean_file_ok(tmp_path, monkeypatch):
     (tmp_path / "clean.py").write_text("x = 1\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
-    diff = "--- a/clean.py\n+++ b/clean.py\n@@ -1 +1 @@\n-x\n+x\n"
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: clean.py\n"
+        "@@\n"
+        "-x\n"
+        "+x = 1\n"
+        "*** End Patch\n"
+    )
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
@@ -72,7 +105,13 @@ def test_apply_patch_example_path_skipped(tmp_path, monkeypatch):
         "api_key = AKIAIOSFODNN7EXAMPLE\n", encoding="utf-8"
     )
     monkeypatch.chdir(tmp_path)
-    diff = "+++ b/.env.example\n"
+    diff = (
+        "*** Begin Patch\n"
+        "*** Add File: .env.example\n"
+        "@@\n"
+        "+api_key = AKIAIOSFODNN7EXAMPLE\n"
+        "*** End Patch\n"
+    )
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
@@ -84,7 +123,7 @@ def test_apply_patch_without_files_ok(tmp_path, monkeypatch):
     rc = run_main(
         {
             "tool_name": "apply_patch",
-            "tool_input": {"command": "--- a/x\n+++ /dev/null\n"},
+            "tool_input": {"command": "*** Begin Patch\n*** Delete File: x\n*** End Patch\n"},
         },
         monkeypatch,
     )
@@ -94,7 +133,19 @@ def test_apply_patch_without_files_ok(tmp_path, monkeypatch):
 def test_missing_file_in_diff_ok(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     rc = run_main(
-        {"tool_name": "apply_patch", "tool_input": {"command": "+++ b/nope.py\n"}},
+        {
+            "tool_name": "apply_patch",
+            "tool_input": {
+                "command": (
+                    "*** Begin Patch\n"
+                    "*** Update File: nope.py\n"
+                    "@@\n"
+                    "-x\n"
+                    "+x\n"
+                    "*** End Patch\n"
+                )
+            },
+        },
         monkeypatch,
     )
     assert rc == 0

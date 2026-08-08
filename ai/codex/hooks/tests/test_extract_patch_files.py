@@ -1,43 +1,78 @@
 from codex_input import extract_patch_files
 
 
-def test_extracts_git_prefixed_new_file():
-    diff = "--- a/foo.py\n+++ b/foo.py\n@@ -0,0 +1 @@\n+x = 1\n"
+def test_add_file_marker_yields_path():
+    diff = "*** Begin Patch\n*** Add File: foo.py\n@@\n+print(1)\n*** End Patch\n"
     assert extract_patch_files(diff) == ["foo.py"]
 
 
-def test_extracts_bare_path_without_prefix():
-    diff = "--- foo.py\n+++ foo.py\n@@ -1 +1 @@\n-x\n+x\n"
+def test_update_file_marker_yields_path():
+    diff = "*** Begin Patch\n*** Update File: foo.py\n@@\n-x\n+x\n*** End Patch\n"
     assert extract_patch_files(diff) == ["foo.py"]
 
 
-def test_strips_b_prefix_for_nested_path():
-    assert extract_patch_files("+++ b/sub/deep/file.py\n") == ["sub/deep/file.py"]
-
-
-def test_ignores_source_header():
-    assert extract_patch_files("--- a/foo.py\n") == []
-
-
-def test_skips_dev_null_deletion():
-    diff = "--- a/foo.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-x\n"
+def test_delete_file_marker_is_skipped():
+    diff = "*** Begin Patch\n*** Delete File: gone.py\n*** End Patch\n"
     assert extract_patch_files(diff) == []
+
+
+def test_move_to_returns_new_path():
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: old.py\n"
+        "*** Move to: new.py\n"
+        "@@\n"
+        "-x\n"
+        "+y\n"
+        "*** End Patch\n"
+    )
+    assert extract_patch_files(diff) == ["new.py"]
 
 
 def test_extracts_multiple_files_in_order():
     diff = (
-        "diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1 +1 @@\n-x\n+x\n"
-        "diff --git a/b.py b/b.py\n--- a/b.py\n+++ b/b.py\n@@ -1 +1 @@\n-y\n+y\n"
+        "*** Begin Patch\n"
+        "*** Add File: a.py\n@@\n+1\n"
+        "*** Update File: b.py\n@@\n-x\n+x\n"
+        "*** Delete File: c.py\n"
+        "*** Update File: d.py\n@@\n-y\n+y\n"
+        "*** End Patch\n"
     )
-    assert extract_patch_files(diff) == ["a.py", "b.py"]
+    assert extract_patch_files(diff) == ["a.py", "b.py", "d.py"]
 
 
-def test_added_line_starting_with_plus_plus_not_treated_as_header():
-    # `++b` is an added line whose content is `+b`; only the real `+++ ` header
-    # (with a trailing space) must be parsed as a file marker.
-    diff = "--- a/f.txt\n+++ b/f.txt\n@@ -1 +1,2 @@\n-a\n++b\n"
-    assert extract_patch_files(diff) == ["f.txt"]
+def test_repeated_paths_are_deduplicated():
+    diff = (
+        "*** Begin Patch\n"
+        "*** Add File: a.py\n@@\n+1\n"
+        "*** Update File: a.py\n@@\n-x\n+x\n"
+        "*** End Patch\n"
+    )
+    assert extract_patch_files(diff) == ["a.py"]
 
 
-def test_empty_diff_returns_no_files():
+def test_path_with_spaces_is_kept_whole():
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: my dir/settings file.toml\n"
+        "@@\n"
+        "-x\n"
+        "+x\n"
+        "*** End Patch\n"
+    )
+    assert extract_patch_files(diff) == ["my dir/settings file.toml"]
+
+
+def test_begin_end_markers_alone_yield_no_files():
+    assert extract_patch_files("*** Begin Patch\n*** End Patch\n") == []
+
+
+def test_empty_patch_yields_no_files():
     assert extract_patch_files("") == []
+
+
+def test_git_format_headers_yield_no_files():
+    # Codex's apply_patch is freeform (*** markers); git unified diff headers
+    # are never produced, so parsing them would silently miss every file.
+    diff = "--- a/foo.py\n+++ b/foo.py\n@@ -1 +1 @@\n-x\n+x\n"
+    assert extract_patch_files(diff) == []

@@ -47,7 +47,14 @@ def test_edit_event_scans_file(tmp_path, monkeypatch):
 def test_apply_patch_event_scans_extracted_file(tmp_path, monkeypatch):
     (tmp_path / "data.txt").write_text("mojibake: \ufffd\ufffd\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
-    diff = "--- a/data.txt\n+++ b/data.txt\n@@ -1 +1 @@\n-x\n+y\n"
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: data.txt\n"
+        "@@\n"
+        "-x\n"
+        "+y\n"
+        "*** End Patch\n"
+    )
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
@@ -57,7 +64,14 @@ def test_apply_patch_event_scans_extracted_file(tmp_path, monkeypatch):
 def test_apply_patch_clean_file_ok(tmp_path, monkeypatch):
     (tmp_path / "clean.txt").write_text("fine\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
-    diff = "--- a/clean.txt\n+++ b/clean.txt\n@@ -1 +1 @@\n-fine\n+ok\n"
+    diff = (
+        "*** Begin Patch\n"
+        "*** Update File: clean.txt\n"
+        "@@\n"
+        "-fine\n"
+        "+fine\n"
+        "*** End Patch\n"
+    )
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
@@ -69,7 +83,7 @@ def test_apply_patch_without_files_ok(tmp_path, monkeypatch):
     rc = run_main(
         {
             "tool_name": "apply_patch",
-            "tool_input": {"command": "--- a/x\n+++ /dev/null\n"},
+            "tool_input": {"command": "*** Begin Patch\n*** Delete File: x\n*** End Patch\n"},
         },
         monkeypatch,
     )
