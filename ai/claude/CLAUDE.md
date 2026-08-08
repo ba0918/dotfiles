@@ -21,6 +21,7 @@
 | テスト設計・レビュー | @{{ vars.dotfiles_root }}/ai/shared/vendor/testing-anti-patterns.md |
 | コード・テスト・コメント・コミットの情報配置 | @{{ vars.dotfiles_root }}/ai/shared/vendor/information-placement.md |
 | コミット | @{{ vars.dotfiles_root }}/ai/shared/commit-rules.md |
+| 開発ツールの利用 | @{{ vars.dotfiles_root }}/ai/shared/tools-guide.md |
 
 複数のタスク種別に該当する場合は、対応する文書をすべて読む。
 

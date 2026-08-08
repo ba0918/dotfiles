@@ -32,6 +32,7 @@
 | テスト設計・レビュー | `{{ vars.dotfiles_root }}/ai/shared/vendor/testing-anti-patterns.md` |
 | コード・テスト・コメント・コミットの情報配置 | `{{ vars.dotfiles_root }}/ai/shared/vendor/information-placement.md` |
 | コミット | `{{ vars.dotfiles_root }}/ai/shared/commit-rules.md` |
+| 開発ツールの利用 | `{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` |
 
 共有文書は claude-skills プラグインから取得せず、このローカルパスから読む。
 プラグインは導入済みだが、vendor 化によりパスが安定している。
