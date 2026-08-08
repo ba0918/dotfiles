@@ -47,7 +47,10 @@ dotfiles/
 │   │   │   ├── 50-sandbox.json #  sandbox 設定
 │   │   │   └── 60-plugins.json #  enabledPlugins / extraKnownMarketplaces
 │   │   └── build-settings     # conf.d/ → ~/.claude/settings.json 合成スクリプト
-│   ├── codex/                 # AGENTS.md（template 配布 → ~/.codex/AGENTS.md）
+│   ├── codex/                 # AGENTS.md / hooks.json / hooks/（security hooks）
+│   │   │                      #   AGENTS.md は template 配布 → ~/.codex/AGENTS.md
+│   │   │                      #   hooks.json / hooks/ は symlink 配布 → ~/.codex/*
+│   │   └── hooks/             # block_dangerous / detect_secret / detect_mojibake + tests
 │   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
 │   └── shared/                # 共通契約 + deny-patterns.yaml（deny パターン正本）
 ├── yazi/                      # 育成中
@@ -243,7 +246,7 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 - **claude-skills** — `plugin` 宣言で導入（`ba0918/claude-skills`。更新は `opencode plugin ba0918/claude-skills --force --global`）。
   スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
-`~/.claude/*`（ai/claude）と `~/.codex/AGENTS.md`（ai/codex）は以下に依存:
+`~/.claude/*`（ai/claude）と `~/.codex/*`（ai/codex）は以下に依存:
 
 - **claude-code** — `[tools]` の `claude`（`aqua:anthropics/claude-code`）で導入（mise 管轄）。
   リリース高頻度の AI CLI のため最新追従が優先で、グローバルの `minimum_release_age = "7d"`
@@ -254,7 +257,10 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
   分割管理し `build-settings` で合成（詳細は [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md)）
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
   per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
-  撤去済み。設定（`~/.codex/`）は dotfiles 管理のまま
+  撤去済み。設定（`~/.codex/`）は dotfiles 管理。`AGENTS.md` は template 配布（rendered 実ファイル）、
+  `hooks.json` / `hooks/`（security hooks: block_dangerous / detect_secret / detect_mojibake）は
+  symlink 配布。hooks の導入後は `codex /hooks` で trust が必要（trust state は config.toml の
+  `[hooks.state]` に保存される。`herdr-agent-state.sh` は herdr 管轄で dotfiles 配布外）
 
 `herdr/.config/herdr` は以下に依存:
 
@@ -277,6 +283,7 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 | `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。シェル経由（shim）では問題ない |
 | `herdr/.config/herdr/config.toml` に意図しない差分が出る | herdr が実行時に config.toml を書き戻す（write-through。onboarding / [ui] 等の変更で upsert）。差分を確認して整理する。`herdr/.config/herdr/config.toml` は repo 実体と一致させる |
 | `herdr plugin` の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
+| `codex` の security hook（危険コマンドブロック / secret / mojibake 検出）が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または `~/.codex/hooks.json` / `~/.codex/hooks` の symlink が未適用（`mise bootstrap dotfiles status` で確認） |
 
 ## 関連ドキュメント
 

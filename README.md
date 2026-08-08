@@ -55,7 +55,8 @@ dotfiles/
 │   ├── claude/              # → ~/.claude/*（CLAUDE.md / hooks / bash-env / output-styles）
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
-│   ├── codex/               # → ~/.codex/AGENTS.md（template 配布 → rendered 実ファイル）
+│   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json / hooks は symlink）
+│   │   └── hooks/           #   security hooks（block_dangerous / detect_secret / detect_mojibake）
 │   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
 │   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
@@ -145,7 +146,9 @@ safe-chain --version             # safe-chain のバージョン確認
   旧 apt 版（14.1.0）から mise 管理（15.2.0）へ移行済み。
 - **claude / codex** — AI コーディング CLI（`[tools]` の `claude`（`aqua:anthropics/claude-code`）/
   `codex`（`aqua:openai/codex`）で導入、mise 管轄）。設定は `~/.claude/` / `~/.codex/` を
-  dotfiles 管理（`ai/claude` / `ai/codex`）。AI CLI はリリース高頻度のため
+  dotfiles 管理（`ai/claude` / `ai/codex`）。codex の security hooks（危険コマンドブロック /
+  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/codex/hooks` を symlink 配布し、導入後 `codex /hooks`
+  で trust する。AI CLI はリリース高頻度のため
   `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
   導入は撤去済み。
 
