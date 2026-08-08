@@ -58,6 +58,16 @@ export MISE_GLOBAL_CONFIG_FILE="${REPO_ROOT}/mise/config.toml"
 # Resolves {{ config_root }} in the global config so dotfile templates render
 # with repo-root paths (used by ai/opencode/opencode.json instructions).
 export MISE_GLOBAL_CONFIG_ROOT="${REPO_ROOT}"
+
+# Guard: dotfile templates depend on MISE_GLOBAL_CONFIG_ROOT == repo root. If an
+# inherited shell value differs (or an env-less invocation slipped through), a
+# render would silently write wrong absolute paths. Refuse to apply in that case.
+if [ "${DRY_RUN}" = false ] && [ "${MISE_GLOBAL_CONFIG_ROOT}" != "${REPO_ROOT}" ]; then
+	echo "bootstrap: aborting because MISE_GLOBAL_CONFIG_ROOT (${MISE_GLOBAL_CONFIG_ROOT}) != repo root (${REPO_ROOT})" >&2
+	echo "bootstrap: dotfile templates (ai/opencode/opencode.json) would render with wrong paths" >&2
+	exit 1
+fi
+
 mise trust "${MISE_GLOBAL_CONFIG_FILE}"
 
 mise bootstrap "$@"
