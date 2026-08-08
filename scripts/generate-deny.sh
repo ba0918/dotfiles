@@ -5,8 +5,9 @@
 # ai/shared/deny-patterns.yaml.
 #
 # Usage:
-#   generate-deny.sh claude   # Output Claude Code deny JSON fragment
-#   generate-deny.sh opencode # Output OpenCode deny JSON fragment
+#   generate-deny.sh claude         # Output Claude Code deny JSON fragment
+#   generate-deny.sh opencode       # Output OpenCode deny JSON fragment
+#   generate-deny.sh opencode-apply # Patch ~/.opencode/opencode.json in place
 #
 set -euo pipefail
 
@@ -28,9 +29,11 @@ fi
 # Usage: extract_category "category_name"
 extract_category() {
   local cat="$1"
-  sed -n "/^${cat}:/,/^[a-z_]*:/{ /^${cat}:/d; /^[a-z_]*:/d; p; }" "$DENY_FILE" \
-    | grep -E '^\s+-\s+"' \
-    | sed 's/^[[:space:]]*-[[:space:]]*"\(.*\)"/\1/'
+  awk -v cat="$cat" '
+    $0 ~ "^"cat":" { found=1; next }
+    found && /^[a-zA-Z_]+:/ { exit }
+    found && /^\s+-\s+"/ { gsub(/^[[:space:]]*-[[:space:]]*"/, ""); gsub(/"$/, ""); print }
+  ' "$DENY_FILE"
 }
 
 # Extract all file/directory patterns (categories that produce Read(**/) patterns)
@@ -92,8 +95,35 @@ case "${1:-}" in
       map({ ("**/" + .): "deny" }) | add
     '
     ;;
+  opencode-apply)
+    # Patch ~/.opencode/opencode.json in place with deny patterns from yaml.
+    # Runs after mise template rendering to inject the canonical deny set.
+    OC_TARGET="$HOME/.opencode/opencode.json"
+    if [ ! -f "$OC_TARGET" ]; then
+      echo "error: $OC_TARGET not found (run mise bootstrap dotfiles apply first)" >&2
+      exit 1
+    fi
+
+    DENY_OBJ=$("$0" opencode)
+
+    # Merge deny patterns into permission.read (preserve existing allows)
+    # and permission.external_directory (preserve existing non-deny entries)
+    jq --argjson deny "$DENY_OBJ" '
+      .permission.read = (
+        (.permission.read | to_entries | map(select(.value != "deny"))) +
+        ($deny | to_entries)
+        | from_entries
+      ) |
+      .permission.external_directory = (
+        (.permission.external_directory | to_entries | map(select(.value != "deny"))) +
+        ($deny | to_entries)
+        | from_entries
+      )
+    ' "$OC_TARGET" > "${OC_TARGET}.tmp" && mv "${OC_TARGET}.tmp" "$OC_TARGET"
+    echo "opencode deny patterns updated in $OC_TARGET"
+    ;;
   *)
-    echo "usage: generate-deny.sh {claude|opencode}" >&2
+    echo "usage: generate-deny.sh {claude|opencode|opencode-apply}" >&2
     exit 1
     ;;
 esac
