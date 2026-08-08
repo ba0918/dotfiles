@@ -81,6 +81,8 @@ dotfiles/
 
 - **mise `minimum_release_age = "7d"`** — ツールバイナリ（gh / glow / neovim 等）の導入を
   リリースから 7 日以上経過したものに制限
+  （ただし **claude / codex** は AI CLI の最新追従が優先のため per-tool で 1d に短縮。
+  aqua の cosign / GitHub Artifact Attestations 検証は有効）
 - **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
   （`min-release-age` / `minimumReleaseAge`。単位はエコシステムごとに異なる）
 - **Aikido Safe Chain** — npm / pnpm / bun / pip 等のパッケージマネージャをラップし、
@@ -134,6 +136,11 @@ safe-chain --version             # safe-chain のバージョン確認
   旧 appimage（`/opt/nvim`）は廃止済み。
 - **ripgrep** — `[tools]` の `ripgrep`。`S` 検索（yazi）や `grep` の代替に使用。
   旧 apt 版（14.1.0）から mise 管理（15.2.0）へ移行済み。
+- **claude / codex** — AI コーディング CLI（`[tools]` の `claude`（`aqua:anthropics/claude-code`）/
+  `codex`（`aqua:openai/codex`）で導入、mise 管轄）。設定は `~/.claude/` / `~/.codex/` を
+  dotfiles 管理（`ai/claude` / `ai/codex`）。AI CLI はリリース高頻度のため
+  `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
+  導入は撤去済み。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
@@ -170,6 +177,7 @@ safe-chain --version             # safe-chain のバージョン確認
 - `mise bootstrap dotfiles unapply --dry-run` で剥がす前に確認できる
 - サプライチェーン対策: mise の `minimum_release_age` / npm・pnpm・bun の
   リリース年齢設定 / Aikido Safe Chain の 3 層でカバー
+  （claude / codex は最新追従のため per-tool で 1d に短縮。上記「サプライチェーン対策」参照）
 
 [AikidoSec/safe-chain]: https://github.com/AikidoSec/safe-chain
 [ba0918/clipboard2path-wsl]: https://github.com/ba0918/clipboard2path-wsl

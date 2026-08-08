@@ -1,5 +1,5 @@
 [env]
-# bun global installs (e.g. codex) are not in mise-managed paths
+# bun global installs (e.g. agent-browser) are not in mise-managed paths
 _.path = ["~/.bun/bin", "~/.cargo/bin", "~/.safe-chain/shims"]
 
 [settings]
@@ -98,6 +98,11 @@ compile = false
 ast-grep = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
 bun = "latest"
+# AI CLI (claude / codex) は最新追従が優先のため、グローバルの minimum_release_age (7d)
+# を per-tool で 1d に短縮する（当日リリースを 1 日待つだけ）。aqua の cosign /
+# GitHub Artifact Attestations 検証はそのまま効く。急ぎの最新は明示ピンで回避可能
+claude = { version = "latest", minimum_release_age = "1d" }
+codex = { version = "latest", minimum_release_age = "1d" }
 deno = "latest"
 gh = "latest"
 ghq = "latest"

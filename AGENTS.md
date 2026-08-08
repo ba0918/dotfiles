@@ -214,6 +214,18 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 - **claude-skills** — `plugin` 宣言で導入（`ba0918/claude-skills`。更新は `opencode plugin ba0918/claude-skills --force --global`）。
   スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
+`~/.claude/*`（ai/claude）と `~/.codex/AGENTS.md`（ai/codex）は以下に依存:
+
+- **claude-code** — `[tools]` の `claude`（`aqua:anthropics/claude-code`）で導入（mise 管轄）。
+  リリース高頻度の AI CLI のため最新追従が優先で、グローバルの `minimum_release_age = "7d"`
+  を per-tool で短縮（`minimum_release_age = "1d"`）している。aqua の cosign /
+  GitHub Artifact Attestations 検証は有効のまま（ポリシー緩和は claude / codex に限定）。
+  旧ネイティブ install（`~/.local/bin/claude` + `~/.local/share/claude`）は撤去済み。
+  設定（`~/.claude/`）は dotfiles 管理のまま
+- **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
+  per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
+  撤去済み。設定（`~/.codex/`）は dotfiles 管理のまま
+
 `herdr/.config/herdr` は以下に依存:
 
 - **herdr** — `[tools]` の `herdr`（`aqua:herdrdev/herdr`）で導入（mise 管轄）
