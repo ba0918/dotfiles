@@ -55,6 +55,9 @@ install_apt_repos() {
 install_apt_repos
 
 export MISE_GLOBAL_CONFIG_FILE="${REPO_ROOT}/mise/config.toml"
+# Resolves {{ config_root }} in the global config so dotfile templates render
+# with repo-root paths (used by ai/opencode/opencode.json instructions).
+export MISE_GLOBAL_CONFIG_ROOT="${REPO_ROOT}"
 mise trust "${MISE_GLOBAL_CONFIG_FILE}"
 
 mise bootstrap "$@"
