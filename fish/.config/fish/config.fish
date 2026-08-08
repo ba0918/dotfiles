@@ -130,6 +130,9 @@ if status is-interactive
     "
     zoxide init fish | source
 
+    # atuin: fish 履歴を atuin DB に置き換え（Ctrl-R で高速履歴検索）
+    atuin init fish | source
+
 end
 
 # for Playwright tests...
