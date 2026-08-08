@@ -123,8 +123,15 @@ rust = "latest"
 # mise の cargo backend で管理（手動の ~/.cargo/bin 版から移行済み）
 "cargo:cargo-audit" = "latest"
 "cargo:cargo-deny" = "latest"
+# cargo 開発ツール一式（テスト実行 / カバレッジ / 依存更新 / ミューテーションテスト）も
+# cargo install 相当を mise の cargo backend で管理
+"cargo:cargo-llvm-cov" = "latest"
+"cargo:cargo-mutants" = "latest"
+"cargo:cargo-nextest" = "latest"
+"cargo:cargo-outdated" = "latest"
 shellcheck = "latest"
 yazi = "latest"
+zellij = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
