@@ -9,7 +9,10 @@ set -l dotfiles_root (dirname (dirname (dirname (dirname (realpath (status filen
 # mise setting
 # repo 内の config をグローバル config として使用。
 # 新規マシンの初回のみ ./bootstrap.sh が設定する（ここは対話シェル用）。
+# MISE_GLOBAL_CONFIG_ROOT は {{ config_root }} を repo ルートへ解決し、
+# dotfiles の template レンダリング（opencode.json の instructions）で使われる。
 set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
+set -gx MISE_GLOBAL_CONFIG_ROOT "$dotfiles_root"
 if status is-interactive
     mise activate fish | source
 else
