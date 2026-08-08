@@ -28,13 +28,17 @@ compile = false
 "~/.config/secretlint" = "../git/.config/secretlint"
 
 # Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
+# wrapper (CLAUDE.md) は ai/ 配下、hooks / bash-env は従来の claude/.claude 配下
 "~/.claude/.gitkeep" = "../claude/.claude/.gitkeep"
-"~/.claude/CLAUDE.md" = "../claude/.claude/CLAUDE.md"
+"~/.claude/CLAUDE.md" = "../ai/claude/CLAUDE.md"
 "~/.claude/bash-env.sh" = "../claude/.claude/bash-env.sh"
 "~/.claude/output-styles/gal.md" = "../claude/.claude/output-styles/gal.md"
 "~/.claude/hooks/block_dangerous_command.py" = "../claude/.claude/hooks/block_dangerous_command.py"
 "~/.claude/hooks/detect_mojibake.py" = "../claude/.claude/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../claude/.claude/hooks/detect_secret.py"
+
+# Codex: グローバル AGENTS.md（wrapper は ai/ 配下）
+"~/.codex/AGENTS.md" = "../ai/codex/AGENTS.md"
 
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
@@ -56,7 +60,7 @@ compile = false
 "~/.config/herdr/config.toml" = "../herdr/.config/herdr/config.toml"
 
 # opencode: グローバル設定のみ（opencode.json。plugin は plugin 宣言で管理）
-"~/.opencode/opencode.json" = "../opencode/opencode.json"
+"~/.opencode/opencode.json" = "../ai/opencode/opencode.json"
 
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"
@@ -101,3 +105,8 @@ ripgrep = "latest"
 rust = "latest"
 shellcheck = "latest"
 yazi = "latest"
+
+# bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
+# ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
+[tasks.bootstrap]
+run = "bash ${MISE_TASK_DIR}/../scripts/sync-shared.sh"
