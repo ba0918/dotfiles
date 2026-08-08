@@ -119,6 +119,10 @@ opencode = "latest"
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"
+# cargo サプライチェーン対策（crates.io 依存の脆弱性 / ライセンス検査）。cargo install 相当を
+# mise の cargo backend で管理（手動の ~/.cargo/bin 版から移行済み）
+"cargo:cargo-audit" = "latest"
+"cargo:cargo-deny" = "latest"
 shellcheck = "latest"
 yazi = "latest"
 
