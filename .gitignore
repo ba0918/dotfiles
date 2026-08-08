@@ -26,6 +26,10 @@ auth.json
 *_rsa
 *_ed25519
 *_ecdsa
+.serverlessrc
+
+# ===== Claude Code conf.d generated files =====
+ai/claude/conf.d/20-deny.json
 
 # ===== Claude Code: allow-list (everything else is runtime / secret) =====
 # Default-deny under ai/claude/. Tracked assets must be allow-listed below.
@@ -36,6 +40,8 @@ ai/claude/*
 !ai/claude/bash-env.sh
 !ai/claude/output-styles/
 !ai/claude/hooks/
+!ai/claude/conf.d/
+!ai/claude/build-settings
 # (explicit allow-list is appended as assets are adopted)
 
 # ===== Python dev artifacts =====
