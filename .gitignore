@@ -43,7 +43,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Top-level runtime files (outside .claude/ dir) should never be committed.
+# Top-level runtime files (next to ~/.claude/) should never be committed.
 ai/claude/.claude.json
 ai/claude/.claude.json.backup
 
