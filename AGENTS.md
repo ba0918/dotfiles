@@ -22,15 +22,19 @@ Codex / Cursor / Aider などで読み込まれる標準ファイル。Claude Co
 dotfiles/
 ├── git/                       # 確定
 │   ├── .gitconfig             # → ~/.gitconfig
-│   └── .config/git/
-│       ├── ignore             # → ~/.config/git/ignore   (XDG 自動検出)
-│       ├── attributes         # → ~/.config/git/attributes (XDG 自動検出)
-│       └── template/          # → ~/.config/git/template
+│   └── .config/
+│       ├── git/
+│       │   ├── ignore         # → ~/.config/git/ignore   (XDG 自動検出)
+│       │   ├── attributes     # → ~/.config/git/attributes (XDG 自動検出)
+│       │   └── template/      # → ~/.config/git/template
+│       └── secretlint/
+│           └── .secretlintrc.json  # → ~/.config/secretlint/.secretlintrc.json
 ├── fish/                      # 手動ファイルのみ（プラグインは fish_plugins で管理）
 │   └── .config/fish/          # config.fish / fish_plugins / up.fish / clipboard2path.fish
 ├── apt/                       # 同梱 apt リポジトリ（bootstrap.sh が導入）
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
-├── nvim/                      # 育成中
+├── nvim/                      # 確定（LazyVim ベース）
+│   └── .config/nvim/          # init.lua / lazyvim.json / stylua.toml / lua/{config,plugins}
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
 │   ├── claude/                # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
 │   │                          #   （CLAUDE.md / output-styles/gal.md は template 配布 → ~/.claude/*）
@@ -53,6 +57,9 @@ dotfiles/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
+├── scripts/
+│   ├── sync-shared.sh         # claude-skills 共有文書を ai/shared/vendor/ に同期
+│   └── test_sync_shared.sh    # sync-shared.sh のテスト
 ├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust + apt 設定）
 ├── CLAUDE.md                  # Claude Code 用エントリ（AGENTS.md を参照）
 ├── AGENTS.md                  # このファイル（本体）
