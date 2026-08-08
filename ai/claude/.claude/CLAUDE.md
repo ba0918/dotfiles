@@ -16,11 +16,11 @@
 
 | Task | Required references |
 |---|---|
-| 設計・実装 | `@../shared/vendor/design-principles.md` |
-| テスト実装 | `@../shared/vendor/tdd-contract.md` |
-| テスト設計・レビュー | `@../shared/vendor/testing-anti-patterns.md` |
-| コード・テスト・コメント・コミットの情報配置 | `@../shared/vendor/information-placement.md` |
-| コミット | `@../shared/commit-rules.md` |
+| 設計・実装 | `@../../shared/vendor/design-principles.md` |
+| テスト実装 | `@../../shared/vendor/tdd-contract.md` |
+| テスト設計・レビュー | `@../../shared/vendor/testing-anti-patterns.md` |
+| コード・テスト・コメント・コミットの情報配置 | `@../../shared/vendor/information-placement.md` |
+| コミット | `@../../shared/commit-rules.md` |
 
 複数のタスク種別に該当する場合は、対応する文書をすべて読む。
 
