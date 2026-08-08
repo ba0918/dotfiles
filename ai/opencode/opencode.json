@@ -80,6 +80,6 @@
     "doom_loop": "ask"
   },
   "plugin": [
-    "claude-skills@git+https://github.com/ba0918/claude-skills.git"
+    "ba0918/claude-skills"
   ]
 }

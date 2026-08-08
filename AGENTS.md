@@ -211,7 +211,7 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
   （`mode = "template"` + `{{ vars.dotfiles_root }}`）にしてあり、rendered 実ファイルに
   なる（symlink ではない）。`MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh / config.fish が設定）で
   `{{ config_root }}` が repo ルートへ解決される
-- **claude-skills** — `plugin` 宣言で導入（`claude-skills@git+https://github.com/ba0918/claude-skills.git`）。
+- **claude-skills** — `plugin` 宣言で導入（`ba0918/claude-skills`。更新は `opencode plugin ba0918/claude-skills --force --global`）。
   スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
 `herdr/.config/herdr` は以下に依存:
