@@ -97,7 +97,9 @@ compile = false
 [tools]
 "aqua:ba0918/clipboard2path-wsl" = "latest"
 ast-grep = "latest"
+atuin = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
+bottom = "latest"
 bun = "latest"
 # AI CLI (claude / codex) は最新追従が優先のため、グローバルの minimum_release_age (7d)
 # を per-tool で 1d に短縮する（当日リリースを 1 日待つだけ）。aqua の cosign /
@@ -105,12 +107,15 @@ bun = "latest"
 claude = { version = "latest", minimum_release_age = "1d" }
 codex = { version = "latest", minimum_release_age = "1d" }
 deno = "latest"
+dust = "latest"
 gh = "latest"
 ghq = "latest"
 glab = "latest"
 glow = "latest"
 go = "latest"
+gum = "latest"
 herdr = "latest"
+hyperfine = "latest"
 just = "latest"
 lazygit = "latest"
 neovim = "latest"
