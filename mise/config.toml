@@ -48,6 +48,11 @@ compile = false
 # symlink ではなく template で配布する（rendered 実ファイルになる）
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
+# Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
+# hooks ディレクトリは秘密情報を含まない（テストを除くスクリプトのみ）
+"~/.codex/hooks.json" = "../ai/codex/hooks.json"
+"~/.codex/hooks" = "../ai/codex/hooks"
+
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
 "~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
