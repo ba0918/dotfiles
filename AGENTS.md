@@ -65,6 +65,7 @@ dotfiles/
 ├── mise/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/
+│   ├── LLM-SETTINGS.md        # LLM 設定の conf.d / deny-patterns パイプライン仕様書
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
 ├── scripts/
 │   ├── sync-shared.sh         # claude-skills 共有文書を ai/shared/vendor/ に同期
@@ -147,7 +148,9 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
   等は `.gitignore` で鉄壁ブロック済み
 - `ai/claude/` や `ai/codex/` に新しいファイルを足すときは **credentials / history /
   sqlite / sessions / cache / backups が混入していないか必ず確認**する
-- 新しい secret パスが発覚したら `.gitignore` に追記する
+- 新しい secret パスが発覚したら `.gitignore` と `ai/shared/deny-patterns.yaml` に
+  追記する（deny-patterns.yaml が LLM の deny 設定の正本。
+  詳細は [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md)）
 - `[bootstrap.secrets]` を使う場合も平文 secret を repo / config に永続化しない
 
 ### 2. symlink の副作用を意識する
@@ -247,7 +250,8 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
   を per-tool で短縮（`minimum_release_age = "1d"`）している。aqua の cosign /
   GitHub Artifact Attestations 検証は有効のまま（ポリシー緩和は claude / codex に限定）。
   旧ネイティブ install（`~/.local/bin/claude` + `~/.local/share/claude`）は撤去済み。
-  設定（`~/.claude/`）は dotfiles 管理のまま
+  設定（`~/.claude/`）は dotfiles 管理。`settings.json` は `ai/claude/conf.d/` で
+  分割管理し `build-settings` で合成（詳細は [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md)）
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
   per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
   撤去済み。設定（`~/.codex/`）は dotfiles 管理のまま
@@ -277,4 +281,5 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 ## 関連ドキュメント
 
 - [README.md](README.md) — 外向け / ユーザー向けの案内
+- [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md) — LLM 設定の conf.d / deny-patterns パイプライン仕様書
 - [meta/MIGRATION.md](meta/MIGRATION.md) — 既存 `~/.config/*` を取り込む手順

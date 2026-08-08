@@ -52,11 +52,12 @@ dotfiles/
 ├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
 │   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
 ├── ai/                      # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/              # → ~/.claude/*（CLAUDE.md / hooks / bash-env / output-styles。
-│   │                        #   CLAUDE.md / gal.md は template 配布 → rendered 実ファイル）
+│   ├── claude/              # → ~/.claude/*（CLAUDE.md / hooks / bash-env / output-styles）
+│   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
+│   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/               # → ~/.codex/AGENTS.md（template 配布 → rendered 実ファイル）
 │   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
-│   └── shared/              # 共通契約（persona / human-readable / interaction / commit-rules）
+│   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/
 ├── glow/                   # → ~/.config/glow/glow.yml
@@ -67,12 +68,18 @@ dotfiles/
 │   └── .config/pnpm/       # minimumReleaseAge 10080 分（7 日）
 ├── bun/                    # → ~/.bunfig.toml
 │   └── .bunfig.toml        # minimumReleaseAge 604800 秒（7 日）
+├── herdr/                  # → ~/.config/herdr/config.toml
+│   └── .config/herdr/
 ├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入)
 │   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
 ├── mise/
 │   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
 ├── meta/
+│   ├── LLM-SETTINGS.md     # LLM 設定の conf.d / deny-patterns パイプライン仕様書
 │   └── MIGRATION.md        # 既存設定の取り込み手順
+├── scripts/
+│   ├── generate-deny.sh    # deny-patterns.yaml → 各ツール形式に変換
+│   └── sync-shared.sh      # claude-skills 共有文書を ai/shared/vendor/ に同期
 ├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
