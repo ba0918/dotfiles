@@ -37,10 +37,19 @@ dotfiles/
 │   └── .config/nvim/          # init.lua / lazyvim.json / stylua.toml / lua/{config,plugins}
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
 │   ├── claude/                # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
-│   │                          #   （CLAUDE.md / output-styles/gal.md は template 配布 → ~/.claude/*）
+│   │   │                      #   （CLAUDE.md / output-styles/gal.md は template 配布 → ~/.claude/*）
+│   │   ├── conf.d/            # settings.json の分割管理（→ build-settings で合成）
+│   │   │   ├── 10-base.json   #   model / effort / language 等
+│   │   │   ├── 20-deny.json   #   GENERATED: deny-patterns.yaml から生成（gitignore 済み）
+│   │   │   ├── 25-allow.json  #   permissions.allow / ask ベースライン
+│   │   │   ├── 30-hooks.json  #   hooks 設定
+│   │   │   ├── 40-env.json    #   env 設定
+│   │   │   ├── 50-sandbox.json #  sandbox 設定
+│   │   │   └── 60-plugins.json #  enabledPlugins / extraKnownMarketplaces
+│   │   └── build-settings     # conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/                 # AGENTS.md（template 配布 → ~/.codex/AGENTS.md）
 │   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
-│   └── shared/                # 共通契約（persona / human-readable / interaction / commit-rules）
+│   └── shared/                # 共通契約 + deny-patterns.yaml（deny パターン正本）
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
@@ -59,6 +68,7 @@ dotfiles/
 │   └── MIGRATION.md           # 既存 $HOME ファイルの取り込み手順
 ├── scripts/
 │   ├── sync-shared.sh         # claude-skills 共有文書を ai/shared/vendor/ に同期
+│   ├── generate-deny.sh       # deny-patterns.yaml → 各ツール形式に変換（純粋変換器）
 │   └── test_sync_shared.sh    # sync-shared.sh のテスト
 ├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust + apt 設定）
 ├── CLAUDE.md                  # Claude Code 用エントリ（AGENTS.md を参照）
@@ -105,6 +115,15 @@ mise bootstrap                   # [tools] の aqua:ba0918/clipboard2path-wsl �
 clipboard2path-wsl init --no-hook # unit / wl-paste wrapper を生成（destructive なので再実行注意）
 clipboard2path-wsl status        # service / hook / wrapper の状態
 systemctl --user restart clipboard2path    # 手動再起動（ExecStart は mise の latest パスを参照）
+
+# Claude Code settings.json の管理（conf.d → build-settings）
+ai/claude/build-settings              # conf.d/ を合成して ~/.claude/settings.json に書き込み
+ai/claude/build-settings --dry-run    # 書き込まず stdout に出力
+ai/claude/build-settings --clean      # runtime allow をリセットしてベースラインに戻す
+ai/claude/build-settings --status     # managed vs runtime allow の内訳を表示
+scripts/generate-deny.sh claude       # deny-patterns.yaml → Claude Code 形式で stdout
+scripts/generate-deny.sh opencode     # deny-patterns.yaml → OpenCode 形式で stdout
+scripts/generate-deny.sh opencode-apply # ~/.opencode/opencode.json の deny を上書き
 
 # herdr（ターミナルマルチプレクサ。config.toml のみ dotfiles 管理）
 herdr plugin install smarzban/herdr-file-viewer   # プラグイン導入（plugins.json は生成物として repo 除外）
