@@ -34,7 +34,7 @@ dotfiles/
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
 │   ├── claude/.claude/        # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
 │   ├── codex/.codex/          # AGENTS.md
-│   ├── opencode/              # opencode.json → ~/.opencode/opencode.json
+│   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
 │   └── shared/                # 共通契約（persona / human-readable / interaction / commit-rules）
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
@@ -106,7 +106,9 @@ herdr plugin list                # 導入済みプラグインの確認
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
 `~/.config/mise/config.toml` は存在しない（撤去済み）。config 編集は repo 内
 `mise/config.toml` に対して行い、`mise` コマンドは fish 経由で使う
-（fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を設定する）。
+（fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` と `MISE_GLOBAL_CONFIG_ROOT` を設定する）。
+`MISE_GLOBAL_CONFIG_ROOT` は `{{ config_root }}` を repo ルートへ解決し、
+dotfiles の template（opencode.json 等）で repo ルート相対パスを使えるようにする。
 `./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
 未設定なら導入して `apt-get update` する（sudo を要求）。
 
@@ -203,7 +205,11 @@ herdr plugin list                # 導入済みプラグインの確認
 `ai/opencode/opencode.json` は以下に依存:
 
 - **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入（mise 管轄）。
-  グローバル config（`~/.opencode/opencode.json`）は dotfiles が管理する
+  グローバル config（`~/.opencode/opencode.json`）は dotfiles が管理する。
+  `instructions` が repo ルート相対パスを指すため **template 配布**
+  （`mode = "template"` + `{{ vars.dotfiles_root }}`）にしてあり、rendered 実ファイルに
+  なる（symlink ではない）。`MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh / config.fish が設定）で
+  `{{ config_root }}` が repo ルートへ解決される
 - **claude-skills** — `plugin` 宣言で導入（`claude-skills@git+https://github.com/ba0918/claude-skills.git`）。
   スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
