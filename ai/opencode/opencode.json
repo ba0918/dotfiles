@@ -1,6 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["../shared/interaction.md", "../shared/human-readable.md", "../shared/persona/gal.md"],
+  "instructions": [
+    "{{ vars.dotfiles_root }}/ai/shared/interaction.md",
+    "{{ vars.dotfiles_root }}/ai/shared/human-readable.md",
+    "{{ vars.dotfiles_root }}/ai/shared/persona/gal.md"
+  ],
   "permission": {
     "*": "ask",
     "read": {
