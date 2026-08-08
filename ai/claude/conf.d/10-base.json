@@ -1,0 +1,15 @@
+{
+  "cleanupPeriodDays": 360,
+  "includeCoAuthoredBy": false,
+  "model": "claude-opus-4-6[1m]",
+  "effortLevel": "high",
+  "advisorModel": "fable",
+  "outputStyle": "オタクにやさしいギャル",
+  "language": "Japanese",
+  "tui": "fullscreen",
+  "skipAutoPermissionPrompt": true,
+  "statusLine": {
+    "type": "command",
+    "command": "python3 ~/.claude/statusline.py"
+  }
+}

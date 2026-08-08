@@ -24,6 +24,7 @@ compile = false
 "apt:eza" = "latest"
 "apt:zoxide" = "latest"
 "apt:fzf" = "latest"
+"apt:jq" = "latest"
 
 [dotfiles]
 "~/.gitconfig" = "../git/.gitconfig"
@@ -132,3 +133,8 @@ run = "bash ${MISE_TASK_DIR}/../scripts/sync-shared.sh"
 # （$HOME/ai/shared/...）で静かに上書きされるため、ここで検証して失敗させる。
 [bootstrap.hooks.pre-dotfiles]
 run = "test -n \"${MISE_GLOBAL_CONFIG_FILE:-}\" && [ \"${MISE_GLOBAL_CONFIG_ROOT:-}\" = \"$(dirname \"$(dirname \"${MISE_GLOBAL_CONFIG_FILE}\")\")\" ] || { echo 'bootstrap: aborting: MISE_GLOBAL_CONFIG_ROOT must equal the repo root (set by bootstrap.sh / fish config.fish)' >&2; exit 1; }"
+
+# post-dotfiles: Claude Code の settings.json を conf.d/ から合成して配布
+# [dotfiles] 管轄外（runtime 追記との merge が必要なため直接書き込み）
+[bootstrap.hooks.post-dotfiles]
+run = "bash \"$(dirname \"$(dirname \"${MISE_GLOBAL_CONFIG_FILE}\")\")/ai/claude/build-settings\""

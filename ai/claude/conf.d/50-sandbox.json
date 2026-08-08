@@ -1,0 +1,24 @@
+{
+  "sandbox": {
+    "network": {
+      "allowedDomains": [
+        "api.github.com"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "$HOME/.cargo/registry",
+        "$HOME/.cargo/git",
+        "$HOME/.cache",
+        "$HOME/.local/share/pnpm"
+      ]
+    },
+    "excludedCommands": [
+      "git push",
+      "git fetch",
+      "git pull",
+      "git ls-remote",
+      "gh"
+    ]
+  }
+}

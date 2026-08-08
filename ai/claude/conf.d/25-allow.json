@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(codex:*)",
+      "Skill(claude-skills:*)",
+      "Bash(rg *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(diff *)",
+      "Bash(mkdir *)",
+      "Bash(wc *)",
+      "Bash(cat *)",
+      "Bash(docker *)",
+      "Bash(docker compose *)",
+      "Bash(python3 -:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(npm test*)",
+      "Bash(npm run *)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:crates.io)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "Read(//$HOME/develop/**)",
+      "Read(//$HOME/.claude/**)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(pnpm add *)",
+      "Bash(bun add *)",
+      "Bash(apt *)",
+      "Bash(apt-get *)"
+    ],
+    "defaultMode": "auto",
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

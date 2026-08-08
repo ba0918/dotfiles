@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+#
+# Build ~/.claude/settings.json from conf.d/ fragments.
+#
+# Merges conf.d/*.json in numeric order, then preserves runtime-added
+# permissions.allow and permissions.ask from the existing settings.json
+# (unless --clean is passed).
+#
+# Usage:
+#   build-settings              # build with runtime allow preservation
+#   build-settings --clean      # reset runtime allow to baseline
+#   build-settings --dry-run    # print result without writing
+#   build-settings --status     # show managed vs runtime allow entries
+#
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+CONF_DIR="$SCRIPT_DIR/conf.d"
+TARGET="$HOME/.claude/settings.json"
+GENERATE_DENY="$REPO_ROOT/scripts/generate-deny.sh"
+
+CLEAN=false
+DRY_RUN=false
+STATUS=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --clean)   CLEAN=true ;;
+    --dry-run) DRY_RUN=true ;;
+    --status)  STATUS=true ;;
+    *)
+      echo "usage: build-settings [--clean] [--dry-run] [--status]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required but not found" >&2
+  exit 1
+fi
+
+# Step 1: Generate 20-deny.json from deny-patterns.yaml
+if [ -x "$GENERATE_DENY" ]; then
+  "$GENERATE_DENY" claude > "$CONF_DIR/20-deny.json"
+else
+  echo "error: generate-deny.sh not found or not executable at $GENERATE_DENY" >&2
+  exit 1
+fi
+
+# Step 2: Merge conf.d/*.json in numeric order (deep merge)
+BASE=$(jq -n '{}')
+for f in "$CONF_DIR"/*.json; do
+  [ -f "$f" ] || continue
+  BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
+done
+
+# Step 3: Expand $HOME in merged base, then fix triple-slash from //$HOME → //home/...
+HOME_NO_SLASH="${HOME#/}"
+BASE=$(echo "$BASE" | jq --arg home_abs "$HOME" --arg home_rel "$HOME_NO_SLASH" \
+  'walk(if type == "string" then gsub("//\\$HOME/"; "//" + $home_rel + "/") | gsub("\\$HOME"; $home_abs) else . end)')
+
+# Step 4: Handle --status
+if $STATUS; then
+  if [ -f "$TARGET" ]; then
+    BASE_ALLOW=$(echo "$BASE" | jq -r '.permissions.allow // [] | .[]' | sort)
+    CURRENT_ALLOW=$(jq -r '.permissions.allow // [] | .[]' "$TARGET" | sort)
+    RUNTIME_ALLOW=$(comm -13 <(echo "$BASE_ALLOW") <(echo "$CURRENT_ALLOW"))
+
+    echo "=== Managed allow entries (from conf.d/25-allow.json) ==="
+    echo "$BASE_ALLOW" | wc -l | xargs printf "%d entries\n"
+    echo ""
+    echo "=== Runtime-added allow entries ==="
+    if [ -n "$RUNTIME_ALLOW" ]; then
+      echo "$RUNTIME_ALLOW"
+      echo "$RUNTIME_ALLOW" | wc -l | xargs printf "\n%d runtime entries\n"
+    else
+      echo "(none)"
+    fi
+  else
+    echo "no existing settings.json found at $TARGET"
+  fi
+  exit 0
+fi
+
+# Step 5: Merge runtime allow/ask from existing settings.json
+if ! $CLEAN && [ -f "$TARGET" ]; then
+  # Extract runtime-added allow entries (in existing but not in base)
+  RUNTIME_ALLOW=$(jq -n \
+    --argjson base "$(echo "$BASE" | jq '.permissions.allow // []')" \
+    --argjson current "$(jq '.permissions.allow // []' "$TARGET")" \
+    '$current - $base')
+
+  # Extract runtime-added ask entries
+  RUNTIME_ASK=$(jq -n \
+    --argjson base "$(echo "$BASE" | jq '.permissions.ask // []')" \
+    --argjson current "$(jq '.permissions.ask // []' "$TARGET")" \
+    '$current - $base')
+
+  # Append runtime entries to base
+  RESULT=$(echo "$BASE" | jq \
+    --argjson runtime_allow "$RUNTIME_ALLOW" \
+    --argjson runtime_ask "$RUNTIME_ASK" \
+    '.permissions.allow = (.permissions.allow + $runtime_allow | unique) |
+     .permissions.ask = (.permissions.ask + $runtime_ask | unique)')
+else
+  RESULT="$BASE"
+fi
+
+# Step 6: Output
+if $DRY_RUN; then
+  echo "$RESULT" | jq .
+else
+  mkdir -p "$(dirname "$TARGET")"
+  echo "$RESULT" | jq . > "$TARGET"
+  echo "settings.json written to $TARGET"
+fi
