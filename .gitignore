@@ -68,6 +68,9 @@ Thumbs.db
 .agents/artifacts/
 .agents/runtime/
 
+# ===== AI shared docs: vendored fetch (reproduced by `mise bootstrap`) =====
+ai/shared/vendor/
+
 # ===== Fish runtime (never commit universal vars / plugin-generated) =====
 fish/.config/fish/fish_variables*
 fish/.config/fish/fish_history*
