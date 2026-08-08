@@ -2,7 +2,7 @@
 """PostToolUse hook: detect mojibake, BOM, control chars, question-mark runs (Codex port).
 
 Codex triggers this for Write|Edit (target path in `tool_input.file_path`)
-and apply_patch (unified diff in `tool_input.command`). Pure detection logic
+and apply_patch (freeform patch in `tool_input.command`). Pure detection logic
 (`scan`) is identical to the Claude Code version. Exits 2 so the surfaced
 warning comes back to the assistant for immediate fix.
 

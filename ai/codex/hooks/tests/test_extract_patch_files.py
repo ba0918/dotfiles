@@ -1,4 +1,4 @@
-from codex_input import extract_patch_files
+from codex_input import edited_files, extract_patch_files
 
 
 def test_add_file_marker_yields_path():
@@ -76,3 +76,73 @@ def test_git_format_headers_yield_no_files():
     # are never produced, so parsing them would silently miss every file.
     diff = "--- a/foo.py\n+++ b/foo.py\n@@ -1 +1 @@\n-x\n+x\n"
     assert extract_patch_files(diff) == []
+
+
+def test_edited_files_drops_absolute_path(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    event = {
+        "tool_name": "apply_patch",
+        "tool_input": {
+            "command": "*** Begin Patch\n*** Update File: /etc/passwd\n@@\n-x\n+x\n*** End Patch\n"
+        },
+    }
+    assert edited_files(event) == []
+
+
+def test_edited_files_drops_escape(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    event = {
+        "tool_name": "apply_patch",
+        "tool_input": {
+            "command": (
+                "*** Begin Patch\n"
+                "*** Update File: ../../etc/passwd\n"
+                "@@\n"
+                "-x\n"
+                "+x\n"
+                "*** End Patch\n"
+            )
+        },
+    }
+    assert edited_files(event) == []
+
+
+def test_edited_files_keeps_contained_path(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    event = {
+        "tool_name": "apply_patch",
+        "tool_input": {
+            "command": (
+                "*** Begin Patch\n"
+                "*** Update File: sub/config.py\n"
+                "@@\n"
+                "-x\n"
+                "+x\n"
+                "*** End Patch\n"
+            )
+        },
+    }
+    assert edited_files(event) == ["sub/config.py"]
+
+
+def test_edited_files_honors_event_cwd(tmp_path, monkeypatch):
+    inner = tmp_path / "inner"
+    inner.mkdir()
+    (tmp_path / "outer.py").write_text("x = 1\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    event = {
+        "cwd": str(inner),
+        "tool_name": "apply_patch",
+        "tool_input": {
+            "command": (
+                "*** Begin Patch\n"
+                "*** Update File: ../outer.py\n"
+                "@@\n"
+                "-x\n"
+                "+x\n"
+                "*** End Patch\n"
+            )
+        },
+    }
+    # ../outer.py resolves outside inner/ (the event cwd) → dropped
+    assert edited_files(event) == []

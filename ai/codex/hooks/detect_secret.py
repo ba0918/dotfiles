@@ -2,7 +2,7 @@
 """PostToolUse hook: detect likely secrets in edited files (Codex port).
 
 Codex triggers this for Write|Edit (target path in `tool_input.file_path`)
-and apply_patch (unified diff in `tool_input.command`). Pure detection logic
+and apply_patch (freeform patch in `tool_input.command`). Pure detection logic
 (`scan` / patterns) is identical to the Claude Code version.
 
 Strategy:

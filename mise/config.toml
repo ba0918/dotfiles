@@ -49,7 +49,7 @@ compile = false
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
 # Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
-# hooks ディレクトリは秘密情報を含まない（テストを除くスクリプトのみ）
+# ディレクトリ全体を配布するため tests/ も含まれる（実行に無害）
 "~/.codex/hooks.json" = "../ai/codex/hooks.json"
 "~/.codex/hooks" = "../ai/codex/hooks"
 

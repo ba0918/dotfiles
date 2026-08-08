@@ -7,6 +7,8 @@ and Codex's `apply_patch` events carrying a freeform patch in
 file paths.
 """
 
+import os
+
 _ADD_PREFIX = "*** Add File: "
 _UPDATE_PREFIX = "*** Update File: "
 _DELETE_PREFIX = "*** Delete File: "
@@ -47,11 +49,30 @@ def extract_patch_files(patch: str) -> list[str]:
     return files
 
 
+def _contained(patch_paths: list[str], base: str) -> list[str]:
+    """Drop patch paths that resolve outside `base` (absolute or `..` escape).
+
+    apply_patch input is model-authored text; the path it names must not be
+    able to point the scan at files outside the session working directory.
+    """
+    root = os.path.realpath(base or os.getcwd())
+    kept: list[str] = []
+    for p in patch_paths:
+        if os.path.isabs(p):
+            continue
+        resolved = os.path.realpath(os.path.join(root, p))
+        if resolved == root or resolved.startswith(root + os.sep):
+            kept.append(p)
+    return kept
+
+
 def edited_files(event: dict) -> list[str]:
     """Resolve the edited file paths for a hook event (dual-format).
 
     `Write`/`Edit` events carry the target path directly; `apply_patch` events
-    carry a freeform patch whose touched files are extracted.
+    carry a freeform patch whose touched files are extracted. apply_patch paths
+    are kept only when they resolve inside the session cwd — absolute paths and
+    `..` escapes are dropped.
     """
     tool = event.get("tool_name")
     tool_input = event.get("tool_input") or {}
@@ -59,5 +80,6 @@ def edited_files(event: dict) -> list[str]:
         path = tool_input.get("file_path")
         return [path] if path else []
     if tool == "apply_patch":
-        return extract_patch_files(tool_input.get("command", ""))
+        base = event.get("cwd") or os.getcwd()
+        return _contained(extract_patch_files(tool_input.get("command", "")), base)
     return []
