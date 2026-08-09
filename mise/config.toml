@@ -34,12 +34,15 @@ compile = false
 "~/.config/secretlint" = "../git/.config/secretlint"
 
 # Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
-# CLAUDE.md / output-styles/gal.md は共有文書への絶対パス参照があるため template 配布
-# （rendered 実ファイルになる。MISE_GLOBAL_CONFIG_ROOT が config_root を repo ルートへ解決）
+# CLAUDE.md のみ template 配布（shared 文書への @ 参照をハーネスが展開するため）。
+# output-styles/gal.md は shared/persona/gal.md への symlink、共通契約
+# （interaction.md / human-readable.md）は ~/.claude/rules/ の symlink で常時適用
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
 "~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
 "~/.claude/bash-env.sh" = "../ai/claude/bash-env.sh"
-"~/.claude/output-styles/gal.md" = { source = "../ai/claude/output-styles/gal.md", mode = "template" }
+"~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
+"~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
+"~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
 "~/.claude/hooks/block_dangerous_command.py" = "../ai/claude/hooks/block_dangerous_command.py"
 "~/.claude/hooks/detect_mojibake.py" = "../ai/claude/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../ai/claude/hooks/detect_secret.py"
