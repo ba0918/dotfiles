@@ -52,7 +52,8 @@ dotfiles/
 ├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
 │   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
 ├── ai/                      # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/              # → ~/.claude/*（CLAUDE.md / hooks / bash-env / output-styles）
+│   ├── claude/              # → ~/.claude/*（CLAUDE.md は template 配布、bash-env.sh / hooks は symlink）
+│   │   │                    #   output-styles/gal.md は shared/persona/gal.md の symlink
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json / hooks は symlink）

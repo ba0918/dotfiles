@@ -40,11 +40,13 @@ mise bootstrap dotfiles apply             # 適用（実ファイルは移動済
 - `~/.claude/CLAUDE.md`
 - `~/.claude/settings.json`（secret を含まない方）
 - `~/.claude/keybindings.json`
-- `~/.claude/output-styles/`
 - `~/.claude/commands/`
 - `~/.claude/hooks/`（ただし secret が埋め込まれてないか確認）
 - `~/.claude/skills/`
 - `~/.claude/rules/`
+- `~/.claude/output-styles/`（ローカル style がある場合。ただし repo の受け皿は
+  `ai/shared/persona/gal.md`（output-styles/gal.md の symlink 実体）のみ。追加の
+  style を取り込む場合は `ai/shared/persona/` 等に置いて symlink を張る）
 
 絶対取り込まない:
 - `~/.claude/.credentials.json`
