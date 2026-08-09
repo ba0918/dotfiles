@@ -54,6 +54,7 @@ dotfiles/
 ├── ai/                      # LLM 設定を集約（secret 混入厳禁）
 │   ├── claude/              # → ~/.claude/*（CLAUDE.md は template 配布、bash-env.sh / hooks は symlink）
 │   │   │                    #   output-styles/gal.md は shared/persona/gal.md の symlink
+│   │   │                    #   rules/{interaction,human-readable}.md は shared/ の symlink（常時適用）
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json / hooks は symlink）
