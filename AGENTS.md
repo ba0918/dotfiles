@@ -36,8 +36,9 @@ dotfiles/
 ├── nvim/                      # 確定（LazyVim ベース）
 │   └── .config/nvim/          # init.lua / lazyvim.json / stylua.toml / lua/{config,plugins}
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/                # CLAUDE.md / bash-env.sh / hooks / output-styles/gal.md
-│   │   │                      #   （CLAUDE.md / output-styles/gal.md は template 配布 → ~/.claude/*）
+│   ├── claude/                # CLAUDE.md / bash-env.sh / hooks
+│   │   │                      #   （CLAUDE.md は template 配布、bash-env.sh / hooks は symlink 配布）
+│   │   │                      #   output-styles/gal.md は shared/persona/gal.md の symlink
 │   │   ├── conf.d/            # settings.json の分割管理（→ build-settings で合成）
 │   │   │   ├── 10-base.json   #   model / effort / language 等
 │   │   │   ├── 20-deny.json   #   GENERATED: deny-patterns.yaml から生成（gitignore 済み）
@@ -254,7 +255,11 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
   GitHub Artifact Attestations 検証は有効のまま（ポリシー緩和は claude / codex に限定）。
   旧ネイティブ install（`~/.local/bin/claude` + `~/.local/share/claude`）は撤去済み。
   設定（`~/.claude/`）は dotfiles 管理。`settings.json` は `ai/claude/conf.d/` で
-  分割管理し `build-settings` で合成（詳細は [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md)）
+  分割管理し `build-settings` で合成（詳細は [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md)）。
+  共通契約（`interaction.md` / `human-readable.md`）は `~/.claude/rules/` の symlink で
+  常時適用（model-routing.md と同じ場所）。output-style の `gal.md` は
+  `ai/shared/persona/gal.md` の symlink（`@` 参照を使わないためモデルの Read 依存がなく、
+  どのモデルでも persona が効く）
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
   per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
   撤去済み。設定（`~/.codex/`）は dotfiles 管理。`AGENTS.md` は template 配布（rendered 実ファイル）、
