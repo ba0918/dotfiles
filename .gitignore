@@ -38,7 +38,6 @@ ai/claude/*
 !ai/claude/.gitkeep
 !ai/claude/CLAUDE.md
 !ai/claude/bash-env.sh
-!ai/claude/output-styles/
 !ai/claude/hooks/
 !ai/claude/conf.d/
 !ai/claude/build-settings
