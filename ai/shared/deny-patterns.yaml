@@ -11,6 +11,10 @@
 #   - "~/path"          → tilde-prefixed (used as-is in Read(~/...))
 #   - "//$HOME/path"    → absolute deny ($HOME expanded by build-settings)
 #
+# Every pattern MUST be written with double quotes. generate-deny.sh's parser
+# (awk) only reads `- "..."` lines, and the coverage check counts the same
+# lines, so a single-quoted pattern is neither extracted nor noticed.
+#
 # Categories group patterns for readability only — all are merged at generation.
 
 credentials:
