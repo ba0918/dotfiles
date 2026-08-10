@@ -149,7 +149,7 @@ safe-chain --version             # safe-chain のバージョン確認
 - **claude / codex** — AI コーディング CLI（`[tools]` の `claude`（`aqua:anthropics/claude-code`）/
   `codex`（`aqua:openai/codex`）で導入、mise 管轄）。設定は `~/.claude/` / `~/.codex/` を
   dotfiles 管理（`ai/claude` / `ai/codex`）。codex の security hooks（危険コマンドブロック /
-  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/codex/hooks` を symlink 配布し、導入後 `codex /hooks`
+  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/codex/hooks/*.py` を symlink 配布し、導入後 `codex /hooks`
   で trust する。AI CLI はリリース高頻度のため
   `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
   導入は撤去済み。

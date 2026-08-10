@@ -10,6 +10,6 @@
   "skipAutoPermissionPrompt": true,
   "statusLine": {
     "type": "command",
-    "command": "python3 ~/.claude/statusline.py"
+    "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""
   }
 }
