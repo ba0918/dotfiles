@@ -50,10 +50,13 @@ dotfiles/
 │   │   └── build-settings     # conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/                 # AGENTS.md / hooks.json / hooks/（security hooks）
 │   │   │                      #   AGENTS.md は template 配布 → ~/.codex/AGENTS.md
-│   │   │                      #   hooks.json / hooks/ は symlink 配布 → ~/.codex/*
+│   │   │                      #   hooks.json / hooks/*.py は symlink 配布 → ~/.codex/*
 │   │   └── hooks/             # block_dangerous / detect_secret / detect_mojibake + tests
+│   │                          #   （tests/ を $HOME に出さないためファイル単位で配布）
 │   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
+│   │                          #   read/external_directory の deny は書かない（生成物が正本）
 │   └── shared/                # 共通契約 + deny-patterns.yaml（deny パターン正本）
+│       └── hooks/             # run-optional.sh（外部依存を存在チェックして起動）
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
@@ -74,7 +77,9 @@ dotfiles/
 ├── scripts/
 │   ├── sync-shared.sh         # claude-skills 共有文書を ai/shared/vendor/ に同期
 │   ├── generate-deny.sh       # deny-patterns.yaml → 各ツール形式に変換（純粋変換器）
-│   └── test_sync_shared.sh    # sync-shared.sh のテスト
+│   ├── test_sync_shared.sh    # sync-shared.sh のテスト
+│   ├── test_generate_deny.sh  # generate-deny.sh のテスト
+│   └── test_run_optional.sh   # run-optional.sh のテスト
 ├── bootstrap.sh                # 新規マシン用 wrapper（config 解決 + trust + apt 設定）
 ├── CLAUDE.md                  # Claude Code 用エントリ（AGENTS.md を参照）
 ├── AGENTS.md                  # このファイル（本体）
@@ -129,6 +134,12 @@ ai/claude/build-settings --status     # managed vs runtime allow の内訳を表
 scripts/generate-deny.sh claude       # deny-patterns.yaml → Claude Code 形式で stdout
 scripts/generate-deny.sh opencode     # deny-patterns.yaml → OpenCode 形式で stdout
 scripts/generate-deny.sh opencode-apply # ~/.opencode/opencode.json の deny を上書き
+
+# テスト（スクリプト側の検証。CI は無いので変更時は手で回す）
+bash scripts/test_generate_deny.sh   # deny 生成のカバレッジ / opencode-apply
+bash scripts/test_run_optional.sh    # 外部依存ラッパのスキップ挙動
+bash scripts/test_sync_shared.sh     # claude-skills 同期
+python3 -m pytest ai/claude/hooks/tests ai/codex/hooks/tests
 
 # herdr（ターミナルマルチプレクサ。config.toml のみ dotfiles 管理）
 herdr plugin install smarzban/herdr-file-viewer   # プラグイン導入（plugins.json は生成物として repo 除外）
@@ -187,8 +198,23 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 ### 6. テストスキップの禁止
 
 グローバル指針と同じ: 失敗するテストはスキップ (`skip` / `xit` / 削除) ではなく
-修正で対応する。dotfiles には今のところテストがないが、将来スクリプト化された
-検証を足すときの方針として保持。
+修正で対応する。
+
+この repo のテストは 2 系統ある。CI は無いので、対応する対象を触ったら手で回すこと
+（コマンドは「コマンドリファレンス」参照）。
+
+- **pytest** — `ai/{claude,codex}/hooks/tests/`（security hooks）
+- **bash ハーネス** — `scripts/test_*.sh`（生成スクリプト / ラッパ）
+
+### 7. 生成物は「空でも成功」させない
+
+deny 設定のように**生成に失敗しても形だけ妥当なものが出る**種類の成果物は、
+件数なり不変条件なりを検査して落とすところまで書く。過去に
+`generate-deny.sh` が mawk 環境で 0 件を返しながら終了コード 0 で成功し、
+deny が空の `settings.json` が黙って配布された。
+
+同じ理由で、シェルスクリプトの正規表現は **POSIX 互換に保つ**。`\s` / `\d` などの
+GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる。
 
 ## 外部ツール依存
 
@@ -263,9 +289,32 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
   per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
   撤去済み。設定（`~/.codex/`）は dotfiles 管理。`AGENTS.md` は template 配布（rendered 実ファイル）、
-  `hooks.json` / `hooks/`（security hooks: block_dangerous / detect_secret / detect_mojibake）は
+  `hooks.json` / `hooks/*.py`（security hooks: block_dangerous / detect_secret / detect_mojibake）は
   symlink 配布。hooks の導入後は `codex /hooks` で trust が必要（trust state は config.toml の
   `[hooks.state]` に保存される。`herdr-agent-state.sh` は herdr 管轄で dotfiles 配布外）
+
+### LLM hook が参照する repo 外の依存
+
+`~/.claude` / `~/.codex` の hook 設定には、この repo が導入しない対象を叩くものがある。
+**新マシンではこれらは存在しない**ので、すべて `run-optional.sh`
+（`ai/shared/hooks/run-optional.sh` → `~/.claude/hooks/` と `~/.codex/hooks/` に配布）
+経由で起動し、対象が無ければ黙って何もしない。
+
+| 参照先 | 使う設定 | 誰の管轄か |
+|--------|----------|-----------|
+| `~/.claude/statusline.py` | `10-base.json` の `statusLine` | ローカル専用。repo 未管理 |
+| `$HOME/develop/claude-notify` | `30-hooks.json` の Notification / Stop | 別 repo。手動 clone |
+| `~/.claude/hooks/herdr-agent-state.sh`<br>`~/.codex/herdr-agent-state.sh` | 両者の SessionStart | herdr 管轄。dotfiles 配布外 |
+
+これらを叩く hook を足すときは、直接コマンドを書かずに必ずラッパを挟むこと:
+
+```
+bash "$HOME/.claude/hooks/run-optional.sh" <存在チェックするパス> -- <実行するコマンド>
+bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パス> -- <コマンド>
+```
+
+ラッパが飲み込むのは「依存が無い」ケースだけで、コマンド自体の失敗は
+そのまま終了コードとして伝播する（壊れた依存は見えたままにする）。
 
 `herdr/.config/herdr` は以下に依存:
 
@@ -288,7 +337,10 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 | `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。シェル経由（shim）では問題ない |
 | `herdr/.config/herdr/config.toml` に意図しない差分が出る | herdr が実行時に config.toml を書き戻す（write-through。onboarding / [ui] 等の変更で upsert）。差分を確認して整理する。`herdr/.config/herdr/config.toml` は repo 実体と一致させる |
 | `herdr plugin` の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
-| `codex` の security hook（危険コマンドブロック / secret / mojibake 検出）が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または `~/.codex/hooks.json` / `~/.codex/hooks` の symlink が未適用（`mise bootstrap dotfiles status` で確認） |
+| `codex` の security hook（危険コマンドブロック / secret / mojibake 検出）が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または `~/.codex/hooks.json` / `~/.codex/hooks/*.py` の symlink が未適用（`mise bootstrap dotfiles status` で確認） |
+| `~/.codex/hooks` の apply が "refusing to overwrite existing files" になる | 旧方式のディレクトリ symlink が残っている。`rm ~/.codex/hooks`（symlink 自体を消す。repo の実体は消えない）してから `mise bootstrap dotfiles apply` でファイル単位に張り直す |
+| `generate-deny.sh` が "deny pattern extraction is incomplete" で落ちる | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する（この検査が無いと deny が黙って欠ける） |
+| statusline が空 / 通知が飛ばない | 参照先（`~/.claude/statusline.py`、`$HOME/develop/claude-notify`）が未導入。`run-optional.sh` が意図的に無音でスキップしている。導入すればそのまま有効になる |
 
 ## 関連ドキュメント
 
