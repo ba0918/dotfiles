@@ -46,15 +46,23 @@ compile = false
 "~/.claude/hooks/block_dangerous_command.py" = "../ai/claude/hooks/block_dangerous_command.py"
 "~/.claude/hooks/detect_mojibake.py" = "../ai/claude/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../ai/claude/hooks/detect_secret.py"
+# 外部依存（statusline.py / claude-notify / herdr-agent-state.sh）を存在チェック
+# 付きで起動する共通ラッパ。未導入マシンで hook が毎回エラーになるのを防ぐ
+"~/.claude/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
 
 # Codex: グローバル AGENTS.md。共有文書への絶対パス参照（{{ vars.dotfiles_root }}）があるため
 # symlink ではなく template で配布する（rendered 実ファイルになる）
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
 # Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
-# ディレクトリ全体を配布するため tests/ も含まれる（実行に無害）
+# Claude 側と同じくファイル単位で宣言する（ディレクトリ単位だと tests/ や
+# __pycache__ まで ~/.codex/hooks に露出し、$HOME 側から repo に書き戻す経路も生む）
 "~/.codex/hooks.json" = "../ai/codex/hooks.json"
-"~/.codex/hooks" = "../ai/codex/hooks"
+"~/.codex/hooks/block_dangerous_command.py" = "../ai/codex/hooks/block_dangerous_command.py"
+"~/.codex/hooks/codex_input.py" = "../ai/codex/hooks/codex_input.py"
+"~/.codex/hooks/detect_mojibake.py" = "../ai/codex/hooks/detect_mojibake.py"
+"~/.codex/hooks/detect_secret.py" = "../ai/codex/hooks/detect_secret.py"
+"~/.codex/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
 
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"

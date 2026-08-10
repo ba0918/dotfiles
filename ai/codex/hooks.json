@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "bash '/home/mizumi/.codex/herdr-agent-state.sh' session",
+            "command": "bash ~/.codex/hooks/run-optional.sh ~/.codex/herdr-agent-state.sh -- bash ~/.codex/herdr-agent-state.sh session",
             "timeout": 10,
             "type": "command"
           }
