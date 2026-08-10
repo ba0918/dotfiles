@@ -19,19 +19,21 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-case "${1:-}" in
-	--help|-h)
-		sed -n '2,16p' "${BASH_SOURCE[0]}"
-		exit 0
-		;;
-esac
-
+# Scan every argument, not just the first. `mise bootstrap` accepts subcommands
+# before its flags (e.g. `bootstrap.sh dotfiles --dry-run`), and treating that as
+# a real run would let the destructive post-steps below execute during a dry run.
 DRY_RUN=false
-case "${1:-}" in
-	--dry-run)
-		DRY_RUN=true
-		;;
-esac
+for arg in "$@"; do
+	case "${arg}" in
+		--help|-h)
+			sed -n '2,16p' "${BASH_SOURCE[0]}"
+			exit 0
+			;;
+		--dry-run)
+			DRY_RUN=true
+			;;
+	esac
+done
 
 # Install bundled apt repos (apt/*.sources) into /etc/apt/sources.list.d/.
 install_apt_repos() {
@@ -54,19 +56,23 @@ install_apt_repos() {
 
 install_apt_repos
 
+# Dotfile templates depend on MISE_GLOBAL_CONFIG_ROOT pointing at this repo, so
+# both variables are always set from REPO_ROOT here. An inherited value from
+# another clone is silently replaced; say so, because the surprising outcome is a
+# user who edited one checkout and saw another one applied.
+if [ -n "${MISE_GLOBAL_CONFIG_ROOT:-}" ] && [ "${MISE_GLOBAL_CONFIG_ROOT}" != "${REPO_ROOT}" ]; then
+	echo "bootstrap: overriding inherited MISE_GLOBAL_CONFIG_ROOT (${MISE_GLOBAL_CONFIG_ROOT}) with ${REPO_ROOT}" >&2
+fi
+
 export MISE_GLOBAL_CONFIG_FILE="${REPO_ROOT}/mise/config.toml"
 # Resolves {{ config_root }} in the global config so dotfile templates render
 # with repo-root paths (used by ai/opencode/opencode.json instructions).
 export MISE_GLOBAL_CONFIG_ROOT="${REPO_ROOT}"
 
-# Guard: dotfile templates depend on MISE_GLOBAL_CONFIG_ROOT == repo root. If an
-# inherited shell value differs (or an env-less invocation slipped through), a
-# render would silently write wrong absolute paths. Refuse to apply in that case.
-if [ "${DRY_RUN}" = false ] && [ "${MISE_GLOBAL_CONFIG_ROOT}" != "${REPO_ROOT}" ]; then
-	echo "bootstrap: aborting because MISE_GLOBAL_CONFIG_ROOT (${MISE_GLOBAL_CONFIG_ROOT}) != repo root (${REPO_ROOT})" >&2
-	echo "bootstrap: dotfile templates (ai/opencode/opencode.json) would render with wrong paths" >&2
-	exit 1
-fi
+# NOTE: the invariant "MISE_GLOBAL_CONFIG_ROOT == repo root" cannot be violated
+# from here — it is enforced by the two lines above. It is checked for real in
+# mise/config.toml's [bootstrap.hooks.pre-dotfiles], which also covers the case
+# that matters: `mise bootstrap` invoked directly, without this wrapper.
 
 mise trust "${MISE_GLOBAL_CONFIG_FILE}"
 
@@ -81,19 +87,39 @@ fi
 
 # Aikido Safe Chain: npm/yarn/pnpm/bun/pip 等のパッケージマネージャをラップし、
 # マルウェア検知と最小リリース年齢（デフォルト 48h）を適用する。
-# インストールは sha256 検証付き（実体は ~/.safe-chain/）。未導入でも失敗しても全体は止めない。
 # config.fish 側は "$HOME/.safe-chain/..." が存在する場合のみ source する。
-if [ "${DRY_RUN}" = false ]; then
-	if [ ! -x "$HOME/.safe-chain/bin/safe-chain" ]; then
-		SAFE_CHAIN_VERSION="1.5.15"
-		SAFE_CHAIN_SHA256="de0565e3d6346407a604e84e639e95fea8758748063da2216bbfdca5feda5dd2"
-		echo "safe-chain: installing v${SAFE_CHAIN_VERSION}"
-		if curl -fsSL "https://github.com/AikidoSec/safe-chain/releases/download/${SAFE_CHAIN_VERSION}/install-safe-chain.sh" -o /tmp/install-safe-chain.sh \
-			&& echo "${SAFE_CHAIN_SHA256}  /tmp/install-safe-chain.sh" | sha256sum -c - >/dev/null; then
-			sh /tmp/install-safe-chain.sh || echo "safe-chain: install failed (continuing)"
-		else
-			echo "safe-chain: install script checksum verification failed (skipping)"
+#
+# 検証チェーン（末端のバイナリまで固定される）:
+#   1. SAFE_CHAIN_SHA256 で installer スクリプト自体を検証する
+#   2. その installer は VERSION を自身に埋め込んでおり、追加の取得をしない
+#   3. installer がプラットフォーム別バイナリの sha256 を焼き込んで検証する
+# ゆえに 1 の照合が通れば導入されるバイナリまで一意に決まる。
+# 版を上げるときは SAFE_CHAIN_VERSION と SAFE_CHAIN_SHA256 を必ず同時に更新すること。
+#
+# 未導入でも失敗しても全体は止めない（開発機のブートストラップを塞がないため）。
+if [ "${DRY_RUN}" = false ] && [ ! -x "$HOME/.safe-chain/bin/safe-chain" ]; then
+	SAFE_CHAIN_VERSION="1.5.15"
+	SAFE_CHAIN_SHA256="de0565e3d6346407a604e84e639e95fea8758748063da2216bbfdca5feda5dd2"
+	echo "safe-chain: installing v${SAFE_CHAIN_VERSION}"
+
+	# mktemp: a fixed /tmp path is attacker-predictable on a shared host, and the
+	# file is executed right after the checksum passes.
+	SAFE_CHAIN_INSTALLER="$(mktemp)"
+	trap 'rm -f "${SAFE_CHAIN_INSTALLER}"' EXIT
+
+	if curl -fsSL "https://github.com/AikidoSec/safe-chain/releases/download/${SAFE_CHAIN_VERSION}/install-safe-chain.sh" -o "${SAFE_CHAIN_INSTALLER}" \
+		&& echo "${SAFE_CHAIN_SHA256}  ${SAFE_CHAIN_INSTALLER}" | sha256sum -c - >/dev/null 2>&1; then
+		# The installer honours an inherited SAFE_CHAIN_VERSION, which would both
+		# select a different release than the one this checksum pins and switch the
+		# Linux build from linuxstatic to linux. Clear it so the pin is the only
+		# thing deciding what gets installed.
+		if ! env -u SAFE_CHAIN_VERSION sh "${SAFE_CHAIN_INSTALLER}"; then
+			echo "safe-chain: install failed (continuing)" >&2
 		fi
-		rm -f /tmp/install-safe-chain.sh
+	else
+		echo "safe-chain: installer checksum verification failed (skipping)" >&2
 	fi
+
+	rm -f "${SAFE_CHAIN_INSTALLER}"
+	trap - EXIT
 fi
