@@ -54,6 +54,11 @@ bash_destructive
 # NOTE: the regexes below must stay POSIX. `\s` is a GNU awk extension and does
 # NOT match under mawk, which is the default awk on Debian/Ubuntu — using it here
 # silently yielded an empty deny set on a stock machine.
+#
+# The coverage check counts the same `- "..."` lines that extract_category
+# reads, so a single-quoted pattern (`- 'x'`) would pass both counts and still
+# be silently dropped from the generated deny set. Patterns in deny-patterns.yaml
+# MUST use double quotes (stated in the yaml header).
 extract_category() {
   local cat="$1"
   awk -v cat="$cat" '
