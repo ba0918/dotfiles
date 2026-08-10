@@ -9,11 +9,14 @@
 #   generate-deny.sh opencode       # Output OpenCode deny JSON fragment
 #   generate-deny.sh opencode-apply # Patch ~/.opencode/opencode.json in place
 #
+# Overrides (testing):
+#   DENY_PATTERNS_FILE   YAML source in place of ai/shared/deny-patterns.yaml
+#
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-DENY_FILE="$REPO_ROOT/ai/shared/deny-patterns.yaml"
+DENY_FILE="${DENY_PATTERNS_FILE:-$REPO_ROOT/ai/shared/deny-patterns.yaml}"
 
 if [ ! -f "$DENY_FILE" ]; then
   echo "error: deny-patterns.yaml not found at $DENY_FILE" >&2
@@ -25,16 +28,66 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+# Every category the transformer knows how to consume. The coverage check below
+# compares the sum of these against every pattern line in the YAML, so a category
+# added to deny-patterns.yaml without being registered here fails loudly instead
+# of being silently dropped from the generated deny set.
+ALL_CATEGORIES="
+credentials
+keys
+ssh
+environment
+package_manager
+database
+network
+directories
+history
+personal_directories
+write_deny
+read_shortform
+bash_destructive
+"
+
 # Extract patterns from a specific YAML category
 # Usage: extract_category "category_name"
+#
+# NOTE: the regexes below must stay POSIX. `\s` is a GNU awk extension and does
+# NOT match under mawk, which is the default awk on Debian/Ubuntu — using it here
+# silently yielded an empty deny set on a stock machine.
 extract_category() {
   local cat="$1"
   awk -v cat="$cat" '
     $0 ~ "^"cat":" { found=1; next }
     found && /^[a-zA-Z_]+:/ { exit }
-    found && /^\s+-\s+"/ { gsub(/^[[:space:]]*-[[:space:]]*"/, ""); gsub(/"$/, ""); print }
+    found && /^[[:space:]]+-[[:space:]]+"/ { gsub(/^[[:space:]]*-[[:space:]]*"/, ""); gsub(/"$/, ""); print }
   ' "$DENY_FILE"
 }
+
+# Fail unless every pattern line in the YAML was claimed by exactly one known
+# category. Guards against a broken parser (extracting nothing) and against
+# unregistered categories (extracting only part of the file). Without this, both
+# failure modes produce a valid-looking but empty/partial deny set.
+verify_coverage() {
+  local total extracted cat
+  total=$(grep -c '^[[:space:]]*-[[:space:]]*"' "$DENY_FILE" || true)
+  extracted=0
+  for cat in $ALL_CATEGORIES; do
+    extracted=$((extracted + $(extract_category "$cat" | grep -c . || true)))
+  done
+
+  if [ "$total" -eq 0 ]; then
+    echo "error: no patterns found in $DENY_FILE" >&2
+    exit 1
+  fi
+
+  if [ "$extracted" -ne "$total" ]; then
+    echo "error: deny pattern extraction is incomplete: parsed ${extracted} of ${total} patterns in $DENY_FILE" >&2
+    echo "error: either a category is missing from ALL_CATEGORIES in $0, or the YAML parser failed" >&2
+    exit 1
+  fi
+}
+
+verify_coverage
 
 # Extract all file/directory patterns (categories that produce Read(**/) patterns)
 file_categories() {
