@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""PostToolUse hook: detect likely secrets in edited files (Codex port).
+"""PostToolUse hook: detect likely secrets in edited files.
 
-Codex triggers this for Write|Edit (target path in `tool_input.file_path`)
-and apply_patch (freeform patch in `tool_input.command`). Pure detection logic
-(`scan` / patterns) is identical to the Claude Code version.
+Shared by Claude Code and Codex; distributed to both ~/.claude/hooks/ and
+~/.codex/hooks/. Two event shapes are handled: Write|Edit carries the target in
+`tool_input.file_path` (both tools), and apply_patch carries a freeform patch in
+`tool_input.command` (Codex only — the branch is simply never taken under Claude
+Code). Input normalization lives in `hook_input.edited_files`.
 
 Strategy:
   - High-confidence patterns (cloud keys, PEM blocks, JWT) are matched directly.
@@ -20,7 +22,7 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-from codex_input import edited_files
+from hook_input import edited_files
 
 
 class SecretFinding(NamedTuple):

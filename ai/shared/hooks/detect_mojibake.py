@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """PostToolUse hook: detect mojibake, BOM, control chars, question-mark runs.
 
-Triggered for Write|Edit events. Scans the edited file and, if any of the
-patterns is found, exits 2 so Claude Code surfaces the warning back to the
-assistant for immediate fix.
+Shared by Claude Code and Codex; distributed to both ~/.claude/hooks/ and
+~/.codex/hooks/. Two event shapes are handled: Write|Edit carries the target in
+`tool_input.file_path` (both tools), and apply_patch carries a freeform patch in
+`tool_input.command` (Codex only — the branch is simply never taken under Claude
+Code). Input normalization lives in `hook_input.edited_files`.
+
+Exits 2 so the surfaced warning comes back to the assistant for immediate fix.
 
 Pure detection logic lives in `scan()` so it is testable without I/O.
 """
@@ -14,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
+
+from hook_input import edited_files
 
 
 MOJIBAKE_CHAR = "\ufffd"
@@ -72,30 +78,27 @@ def main() -> int:
     except (json.JSONDecodeError, ValueError):
         return 0
 
-    if event.get("tool_name") not in ("Write", "Edit"):
+    paths = edited_files(event)
+    if not paths:
         return 0
 
-    file_str = event.get("tool_input", {}).get("file_path")
-    if not file_str:
-        return 0
+    findings: list[Finding] = []
+    for file_str in paths:
+        path = Path(file_str)
+        if not path.is_file():
+            continue
+        if _is_binary(path):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        findings.extend(scan(text))
 
-    path = Path(file_str)
-    if not path.is_file():
-        return 0
-
-    if _is_binary(path):
-        return 0
-
-    try:
-        text = path.read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return 0
-
-    findings = scan(text)
     if not findings:
         return 0
 
-    print(f"MOJIBAKE/CONTROL CHAR DETECTED in {path}", file=sys.stderr)
+    print(f"MOJIBAKE/CONTROL CHAR DETECTED in {', '.join(paths)}", file=sys.stderr)
     for f in findings[:10]:
         print(f"  line {f.line_no} [{f.reason}]: {f.snippet}", file=sys.stderr)
     print("", file=sys.stderr)

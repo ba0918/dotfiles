@@ -1,4 +1,4 @@
-from codex_input import edited_files, extract_patch_files
+from hook_input import edited_files, extract_patch_files
 
 
 def test_add_file_marker_yields_path():
