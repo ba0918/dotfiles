@@ -43,9 +43,12 @@ compile = false
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
-"~/.claude/hooks/block_dangerous_command.py" = "../ai/claude/hooks/block_dangerous_command.py"
-"~/.claude/hooks/detect_mojibake.py" = "../ai/claude/hooks/detect_mojibake.py"
-"~/.claude/hooks/detect_secret.py" = "../ai/claude/hooks/detect_secret.py"
+# hook スクリプトは ai/shared/hooks/ の単一実体を Claude / Codex 両方に配布する。
+# detect_* は hook_input を import するため、同じディレクトリに揃える必要がある
+"~/.claude/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
+"~/.claude/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
+"~/.claude/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
+"~/.claude/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
 # 外部依存（statusline.py / claude-notify / herdr-agent-state.sh）を存在チェック
 # 付きで起動する共通ラッパ。未導入マシンで hook が毎回エラーになるのを防ぐ
 "~/.claude/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
@@ -55,13 +58,14 @@ compile = false
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
 # Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
-# Claude 側と同じくファイル単位で宣言する（ディレクトリ単位だと tests/ や
-# __pycache__ まで ~/.codex/hooks に露出し、$HOME 側から repo に書き戻す経路も生む）
+# スクリプト実体は Claude と共有（ai/shared/hooks/）。ファイル単位で宣言するのは、
+# ディレクトリ単位だと tests/ や __pycache__ まで ~/.codex/hooks に露出し、
+# $HOME 側から repo に書き戻す経路も生むため
 "~/.codex/hooks.json" = "../ai/codex/hooks.json"
-"~/.codex/hooks/block_dangerous_command.py" = "../ai/codex/hooks/block_dangerous_command.py"
-"~/.codex/hooks/codex_input.py" = "../ai/codex/hooks/codex_input.py"
-"~/.codex/hooks/detect_mojibake.py" = "../ai/codex/hooks/detect_mojibake.py"
-"~/.codex/hooks/detect_secret.py" = "../ai/codex/hooks/detect_secret.py"
+"~/.codex/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
+"~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
+"~/.codex/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
+"~/.codex/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
 "~/.codex/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
 
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）

@@ -36,8 +36,9 @@ dotfiles/
 ├── nvim/                      # 確定（LazyVim ベース）
 │   └── .config/nvim/          # init.lua / lazyvim.json / stylua.toml / lua/{config,plugins}
 ├── ai/                        # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/                # CLAUDE.md / bash-env.sh / hooks
-│   │   │                      #   （CLAUDE.md は template 配布、bash-env.sh / hooks は symlink 配布）
+│   ├── claude/                # CLAUDE.md / bash-env.sh / conf.d / build-settings
+│   │   │                      #   （CLAUDE.md は template 配布、bash-env.sh は symlink 配布）
+│   │   │                      #   hook スクリプトの実体は ai/shared/hooks/（両ツール共有）
 │   │   │                      #   output-styles/gal.md は shared/persona/gal.md の symlink
 │   │   ├── conf.d/            # settings.json の分割管理（→ build-settings で合成）
 │   │   │   ├── 10-base.json   #   model / effort / language 等
@@ -48,15 +49,16 @@ dotfiles/
 │   │   │   ├── 50-sandbox.json #  sandbox 設定
 │   │   │   └── 60-plugins.json #  enabledPlugins / extraKnownMarketplaces
 │   │   └── build-settings     # conf.d/ → ~/.claude/settings.json 合成スクリプト
-│   ├── codex/                 # AGENTS.md / hooks.json / hooks/（security hooks）
-│   │   │                      #   AGENTS.md は template 配布 → ~/.codex/AGENTS.md
-│   │   │                      #   hooks.json / hooks/*.py は symlink 配布 → ~/.codex/*
-│   │   └── hooks/             # block_dangerous / detect_secret / detect_mojibake + tests
-│   │                          #   （tests/ を $HOME に出さないためファイル単位で配布）
+│   ├── codex/                 # AGENTS.md / hooks.json（hook 定義のみ。実体は shared/hooks/）
+│   │                          #   AGENTS.md は template 配布 → ~/.codex/AGENTS.md
+│   │                          #   hooks.json は symlink 配布 → ~/.codex/hooks.json
 │   ├── opencode/              # opencode.json（template 配布 → ~/.opencode/opencode.json）
 │   │                          #   read/external_directory の deny は書かない（生成物が正本）
 │   └── shared/                # 共通契約 + deny-patterns.yaml（deny パターン正本）
-│       └── hooks/             # run-optional.sh（外部依存を存在チェックして起動）
+│       └── hooks/             # security hooks の実体。Claude / Codex 両方へ配布
+│                              #   block_dangerous / detect_secret / detect_mojibake
+│                              #   hook_input（イベント正規化）/ run-optional（外部依存ガード）
+│                              #   tests/ を $HOME に出さないためファイル単位で配布
 ├── yazi/                      # 育成中
 │   └── .config/yazi/          # yazi.toml / keymap.toml（WSL 向け explorer opener）
 ├── glow/                      # 確定
@@ -139,7 +141,7 @@ scripts/generate-deny.sh opencode-apply # ~/.opencode/opencode.json の deny を
 bash scripts/test_generate_deny.sh   # deny 生成のカバレッジ / opencode-apply
 bash scripts/test_run_optional.sh    # 外部依存ラッパのスキップ挙動
 bash scripts/test_sync_shared.sh     # claude-skills 同期
-python3 -m pytest ai/claude/hooks/tests ai/codex/hooks/tests
+python3 -m pytest ai/shared/hooks/tests    # security hooks
 
 # herdr（ターミナルマルチプレクサ。config.toml のみ dotfiles 管理）
 herdr plugin install smarzban/herdr-file-viewer   # プラグイン導入（plugins.json は生成物として repo 除外）
@@ -203,7 +205,7 @@ dotfiles の template（opencode.json 等）で repo ルート相対パスを使
 この repo のテストは 2 系統ある。CI は無いので、対応する対象を触ったら手で回すこと
 （コマンドは「コマンドリファレンス」参照）。
 
-- **pytest** — `ai/{claude,codex}/hooks/tests/`（security hooks）
+- **pytest** — `ai/shared/hooks/tests/`（security hooks）
 - **bash ハーネス** — `scripts/test_*.sh`（生成スクリプト / ラッパ）
 
 ### 7. 生成物は「空でも成功」させない
@@ -289,9 +291,18 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入（mise 管轄）。claude と同様に
   per-tool で `minimum_release_age = "1d"` にして最新追従。旧 bun global 導入（`@openai/codex`）は
   撤去済み。設定（`~/.codex/`）は dotfiles 管理。`AGENTS.md` は template 配布（rendered 実ファイル）、
-  `hooks.json` / `hooks/*.py`（security hooks: block_dangerous / detect_secret / detect_mojibake）は
-  symlink 配布。hooks の導入後は `codex /hooks` で trust が必要（trust state は config.toml の
+  `hooks.json` は symlink 配布。security hooks（block_dangerous / detect_secret /
+  detect_mojibake）のスクリプト実体は Claude Code と共有で `ai/shared/hooks/` にあり、
+  `~/.claude/hooks/` と `~/.codex/hooks/` の両方に同じファイルを配布する。
+  hooks の導入後は `codex /hooks` で trust が必要（trust state は config.toml の
   `[hooks.state]` に保存される。`herdr-agent-state.sh` は herdr 管轄で dotfiles 配布外）
+
+  hook スクリプトを 1 つに統合しているのは、以前 Claude 用と Codex 用に同じ検出
+  ロジックを 2 部持っていて、`scan()` とパターン定義が完全に重複していたため。
+  イベント形式の差（Codex だけが `apply_patch` を出す）は `hook_input.edited_files`
+  が吸収するので、検出器側はどちらから呼ばれたかを気にしない。
+  `detect_*.py` は同じディレクトリの `hook_input.py` を import するため、
+  **配布先ごとに hook_input.py も併せて配る必要がある**（`[dotfiles]` で宣言済み）
 
 ### LLM hook が参照する repo 外の依存
 
@@ -339,6 +350,7 @@ bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パ�
 | `herdr plugin` の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
 | `codex` の security hook（危険コマンドブロック / secret / mojibake 検出）が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または `~/.codex/hooks.json` / `~/.codex/hooks/*.py` の symlink が未適用（`mise bootstrap dotfiles status` で確認） |
 | `~/.codex/hooks` の apply が "refusing to overwrite existing files" になる | 旧方式のディレクトリ symlink が残っている。`rm ~/.codex/hooks`（symlink 自体を消す。repo の実体は消えない）してから `mise bootstrap dotfiles apply` でファイル単位に張り直す |
+| hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`detect_*.py` は同じディレクトリから import する。`mise bootstrap dotfiles status` で `~/.claude/hooks/hook_input.py` と `~/.codex/hooks/hook_input.py` を確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" で落ちる | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する（この検査が無いと deny が黙って欠ける） |
 | statusline が空 / 通知が飛ばない | 参照先（`~/.claude/statusline.py`、`$HOME/develop/claude-notify`）が未導入。`run-optional.sh` が意図的に無音でスキップしている。導入すればそのまま有効になる |
 

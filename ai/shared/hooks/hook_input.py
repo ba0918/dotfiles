@@ -1,10 +1,10 @@
-"""Input parsing helpers shared by Codex file hooks.
+"""Input parsing helpers shared by the file-editing hooks.
 
-Codex triggers hooks with an event JSON on stdin. File edits arrive in two
-shapes: Claude-compatible `Write`/`Edit` events carrying `tool_input.file_path`,
-and Codex's `apply_patch` events carrying a freeform patch in
-`tool_input.command`. This module normalizes both into a plain list of edited
-file paths.
+Both Claude Code and Codex trigger hooks with an event JSON on stdin. File edits
+arrive in two shapes: `Write`/`Edit` events carrying `tool_input.file_path`
+(emitted by both tools), and `apply_patch` events carrying a freeform patch in
+`tool_input.command` (Codex only). This module normalizes both into a plain list
+of edited file paths, so the detectors never branch on which tool called them.
 """
 
 import os

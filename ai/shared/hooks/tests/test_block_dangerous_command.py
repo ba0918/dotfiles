@@ -1,3 +1,15 @@
+"""Tests for the shared block_dangerous_command hook.
+
+`analyze()` is the pure rule engine and carries the bulk of the coverage;
+the `main()` tests at the bottom pin the stdin/exit-code contract that both
+Claude Code and Codex drive the hook through.
+"""
+
+import json
+import sys
+from io import StringIO
+
+import block_dangerous_command
 from block_dangerous_command import analyze
 
 
@@ -183,3 +195,42 @@ def test_multiple_rules_can_match():
     rules = {b.rule for b in blocks}
     assert any("-delete" in r for r in rules)
     assert any("mkfs" in r for r in rules)
+
+
+# --- main(): stdin event → exit code -----------------------------------------
+
+
+def run_main(event, monkeypatch):
+    monkeypatch.setattr(sys, "stdin", StringIO(json.dumps(event)))
+    return block_dangerous_command.main()
+
+
+def test_blocks_dangerous_bash(monkeypatch):
+    rc = run_main(
+        {"tool_name": "Bash", "tool_input": {"command": "find /tmp -delete"}},
+        monkeypatch,
+    )
+    assert rc == 2
+
+
+def test_allows_safe_bash(monkeypatch):
+    rc = run_main(
+        {"tool_name": "Bash", "tool_input": {"command": "ls -la"}}, monkeypatch
+    )
+    assert rc == 0
+
+
+def test_skips_apply_patch(monkeypatch):
+    # apply_patch is a file edit, not a shell command; the detectors handle it.
+    rc = run_main(
+        {"tool_name": "apply_patch", "tool_input": {"command": "+++ b/x\n"}},
+        monkeypatch,
+    )
+    assert rc == 0
+
+
+def test_skips_write(monkeypatch):
+    rc = run_main(
+        {"tool_name": "Write", "tool_input": {"file_path": "/tmp/x"}}, monkeypatch
+    )
+    assert rc == 0

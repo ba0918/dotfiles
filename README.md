@@ -52,15 +52,15 @@ dotfiles/
 ├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
 │   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
 ├── ai/                      # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/              # → ~/.claude/*（CLAUDE.md は template 配布、bash-env.sh / hooks は symlink）
+│   ├── claude/              # → ~/.claude/*（CLAUDE.md は template 配布、bash-env.sh は symlink）
 │   │   │                    #   output-styles/gal.md は shared/persona/gal.md の symlink
 │   │   │                    #   rules/{interaction,human-readable}.md は shared/ の symlink（常時適用）
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
-│   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json / hooks は symlink）
-│   │   └── hooks/           #   security hooks（block_dangerous / detect_secret / detect_mojibake）
+│   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json は symlink）
 │   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
 │   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
+│       └── hooks/           #   security hooks の実体（Claude / Codex 共通）+ tests
 ├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
 │   └── .config/yazi/
 ├── glow/                   # → ~/.config/glow/glow.yml
@@ -82,7 +82,8 @@ dotfiles/
 │   └── MIGRATION.md        # 既存設定の取り込み手順
 ├── scripts/
 │   ├── generate-deny.sh    # deny-patterns.yaml → 各ツール形式に変換
-│   └── sync-shared.sh      # claude-skills 共有文書を ai/shared/vendor/ に同期
+│   ├── sync-shared.sh      # claude-skills 共有文書を ai/shared/vendor/ に同期
+│   └── test_*.sh           # 上記スクリプトのテスト（CI は無いので手動実行）
 ├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
 └── .gitignore              # secret / runtime artifact をブロック
 ```
@@ -149,8 +150,9 @@ safe-chain --version             # safe-chain のバージョン確認
 - **claude / codex** — AI コーディング CLI（`[tools]` の `claude`（`aqua:anthropics/claude-code`）/
   `codex`（`aqua:openai/codex`）で導入、mise 管轄）。設定は `~/.claude/` / `~/.codex/` を
   dotfiles 管理（`ai/claude` / `ai/codex`）。codex の security hooks（危険コマンドブロック /
-  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/codex/hooks/*.py` を symlink 配布し、導入後 `codex /hooks`
-  で trust する。AI CLI はリリース高頻度のため
+  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/shared/hooks/*.py` を symlink 配布し、導入後 `codex /hooks`
+  で trust する。hook スクリプトの実体は Claude Code と共有で `ai/shared/hooks/` にあり、
+  `~/.claude/hooks/` と `~/.codex/hooks/` の両方へ同じファイルが配布される。AI CLI はリリース高頻度のため
   `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
   導入は撤去済み。
 
