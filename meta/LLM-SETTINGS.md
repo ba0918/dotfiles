@@ -70,6 +70,23 @@ build-settings
 `scripts/generate-deny.sh` は deny-patterns.yaml を各ツールの形式に変換する
 **純粋変換器**。パターンは 1 つも持たない。
 
+### カバレッジ検査（必ず通る前提）
+
+変換前に、yaml 内の全パターン行数とカテゴリ経由で抽出できた件数を突き合わせ、
+一致しなければ異常終了する。これは次の 2 つの「静かな失敗」を防ぐためにある。
+
+- **パーサの破損** — 以前は抽出正規表現が GNU awk 専用の `\s` を使っていたため、
+  Debian/Ubuntu 既定の mawk では 1 件も抽出できなかった。それでも終了コードは 0 で
+  JSON も妥当だったので、**deny が空の settings.json** が黙って書かれていた
+- **カテゴリの登録漏れ** — yaml に新カテゴリを足しても、スクリプト側の
+  `ALL_CATEGORIES` に足さなければ丸ごと無視される
+
+新しいカテゴリを追加するときは `ALL_CATEGORIES` にも必ず追加すること
+（忘れた場合はこの検査が落として教えてくれる）。
+
+なお抽出の正規表現は **POSIX 互換に保つこと**。`\s` や `\d` のような GNU 拡張は
+mawk で無言に一致しなくなる。
+
 ### サブコマンド
 
 | コマンド | 出力 |
@@ -185,3 +202,12 @@ OpenCode の `opencode.json` は mise template で配布される。deny パタ�
 
 `opencode-apply` は既存の allow エントリ（`*.env.example` 等）を保持しつつ、
 deny エントリだけを正本で置換する。
+
+そのため repo 内の `ai/opencode/opencode.json` は
+`permission.read` / `permission.external_directory` に **deny を一切書かない**。
+書いても post-dotfiles で必ず捨てられるので、リテラルを残すと正本から静かに
+乖離するだけになる（実際に `.docker/**` や履歴ファイル系がズレていた）。
+`scripts/test_generate_deny.sh` がこの不変条件を検査する。
+
+一方 `permission.bash` の deny（`sudo *` 等）は生成対象外。yaml の
+`bash_destructive` は Claude 専用カテゴリなので、こちらは手書きのまま残す。
