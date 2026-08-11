@@ -1,4 +1,6 @@
-from hook_input import edited_files, extract_patch_files
+from pathlib import Path
+
+from hook_input import edited_files, extract_patch_files, read_files
 
 
 def test_add_file_marker_yields_path():
@@ -146,3 +148,35 @@ def test_edited_files_honors_event_cwd(tmp_path, monkeypatch):
     }
     # ../outer.py resolves outside inner/ (the event cwd) → dropped
     assert edited_files(event) == []
+
+
+# --- read_files(): shared text reading for the file-scanner hooks ------------
+
+
+def test_read_files_returns_path_and_text(tmp_path):
+    f = tmp_path / "note.txt"
+    f.write_text("hello", encoding="utf-8")
+    assert read_files([str(f)]) == [(Path(str(f)), "hello")]
+
+
+def test_read_files_skips_missing_files(tmp_path):
+    assert read_files([str(tmp_path / "nope.txt")]) == []
+
+
+def test_read_files_skips_unreadable_files(tmp_path, monkeypatch):
+    f = tmp_path / "note.txt"
+    f.write_text("hello", encoding="utf-8")
+
+    def boom(self, *args, **kwargs):
+        raise OSError("denied")
+
+    monkeypatch.setattr(Path, "read_text", boom)
+    assert read_files([str(f)]) == []
+
+
+def test_read_files_applies_skip_predicate(tmp_path):
+    f = tmp_path / "bin.dat"
+    f.write_bytes(b"\x00\x01")
+    kept = read_files([str(f)], skip=lambda p: p.suffix == ".dat")
+    assert kept == []
+    assert read_files([str(f)], skip=lambda p: False) == [(Path(str(f)), "\x00\x01")]

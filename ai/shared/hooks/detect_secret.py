@@ -19,10 +19,9 @@ Pure detection logic lives in `scan()` so it is testable without I/O.
 import json
 import re
 import sys
-from pathlib import Path
 from typing import NamedTuple
 
-from hook_input import edited_files
+from hook_input import edited_files, read_files
 
 
 class SecretFinding(NamedTuple):
@@ -108,14 +107,7 @@ def main() -> int:
         return 0
 
     findings: list[SecretFinding] = []
-    for file_str in paths:
-        path = Path(file_str)
-        if not path.is_file():
-            continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
+    for path, text in read_files(paths):
         findings.extend(scan(text, str(path)))
 
     if not findings:
