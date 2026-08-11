@@ -156,11 +156,11 @@ def test_edited_files_honors_event_cwd(tmp_path, monkeypatch):
 def test_read_files_returns_path_and_text(tmp_path):
     f = tmp_path / "note.txt"
     f.write_text("hello", encoding="utf-8")
-    assert read_files([str(f)]) == [(Path(str(f)), "hello")]
+    assert list(read_files([str(f)])) == [(Path(str(f)), "hello")]
 
 
 def test_read_files_skips_missing_files(tmp_path):
-    assert read_files([str(tmp_path / "nope.txt")]) == []
+    assert list(read_files([str(tmp_path / "nope.txt")])) == []
 
 
 def test_read_files_skips_unreadable_files(tmp_path, monkeypatch):
@@ -171,12 +171,32 @@ def test_read_files_skips_unreadable_files(tmp_path, monkeypatch):
         raise OSError("denied")
 
     monkeypatch.setattr(Path, "read_text", boom)
-    assert read_files([str(f)]) == []
+    assert list(read_files([str(f)])) == []
 
 
 def test_read_files_applies_skip_predicate(tmp_path):
     f = tmp_path / "bin.dat"
     f.write_bytes(b"\x00\x01")
-    kept = read_files([str(f)], skip=lambda p: p.suffix == ".dat")
+    kept = list(read_files([str(f)], skip=lambda p: p.suffix == ".dat"))
     assert kept == []
-    assert read_files([str(f)], skip=lambda p: False) == [(Path(str(f)), "\x00\x01")]
+    assert list(read_files([str(f)], skip=lambda p: False)) == [(Path(str(f)), "\x00\x01")]
+
+
+def test_read_files_is_lazy_generator(tmp_path, monkeypatch):
+    # read_files must not load every file into memory up front: a large multi-file
+    # edit would otherwise balloon peak memory to the total size of all targets.
+    seen = []
+    f1 = tmp_path / "a.txt"
+    f2 = tmp_path / "b.txt"
+    f1.write_text("one", encoding="utf-8")
+    f2.write_text("two", encoding="utf-8")
+
+    monkeypatch.setattr(
+        Path,
+        "read_text",
+        lambda self, *a, **k: seen.append(self.name) or self.read_bytes().decode(),
+    )
+    gen = read_files([str(f1), str(f2)])
+    assert seen == []  # nothing read yet
+    next(gen)
+    assert seen == ["a.txt"]  # only the first file was read

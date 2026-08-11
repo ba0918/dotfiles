@@ -9,7 +9,7 @@ of edited file paths, so the detectors never branch on which tool called them.
 
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterator
 
 _ADD_PREFIX = "*** Add File: "
 _UPDATE_PREFIX = "*** Update File: "
@@ -87,14 +87,16 @@ def edited_files(event: dict) -> list[str]:
     return []
 
 
-def read_files(paths: list[str], skip: Callable[[Path], bool] | None = None) -> list[tuple[Path, str]]:
+def read_files(paths: list[str], skip: Callable[[Path], bool] | None = None) -> Iterator[tuple[Path, str]]:
     """Read text files named by `paths`, skipping missing / unreadable ones.
 
     Shared by the file-scanning hooks (detect_secret, detect_mojibake). A
     `skip` predicate (e.g. "is this a binary file?") is consulted before
     reading so binary blobs are never loaded as text.
+
+    Yields one (path, text) at a time so a multi-file edit is scanned
+    incrementally instead of loading every target into memory at once.
     """
-    out: list[tuple[Path, str]] = []
     for p in paths:
         path = Path(p)
         if not path.is_file():
@@ -105,5 +107,4 @@ def read_files(paths: list[str], skip: Callable[[Path], bool] | None = None) -> 
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        out.append((path, text))
-    return out
+        yield path, text
