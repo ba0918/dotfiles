@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
-from hook_input import edited_files
+from hook_input import edited_files, read_files
 
 
 MOJIBAKE_CHAR = "\ufffd"
@@ -83,16 +83,7 @@ def main() -> int:
         return 0
 
     findings: list[Finding] = []
-    for file_str in paths:
-        path = Path(file_str)
-        if not path.is_file():
-            continue
-        if _is_binary(path):
-            continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
+    for _, text in read_files(paths, skip=_is_binary):
         findings.extend(scan(text))
 
     if not findings:
