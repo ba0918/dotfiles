@@ -110,8 +110,12 @@ emit_opencode() {
       directory)
         extract_category "$cat" | awk '{ print "~/" $0 }'
         ;;
+      read|write|bash)
+        # Claude-only emitters are deliberately not emitted for opencode
+        ;;
       *)
-        # read/write/bash are Claude-only
+        echo "error: unknown emitter '$emitter' for category '$cat' in $0" >&2
+        exit 1
         ;;
     esac
   done <<EOF

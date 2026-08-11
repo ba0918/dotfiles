@@ -169,6 +169,17 @@ check "shipped opencode.json declares no literal read/external_directory deny" \
 check "shipped opencode.json keeps its hand-maintained bash denials" \
 	'[ "$(jq -r ".permission.bash[\"sudo *\"]" "${ROOT}/ai/opencode/opencode.json")" = "deny" ]'
 
+# --- 11. a typo'd emitter fails loudly for every subcommand ------------------
+# The CATEGORIES table pairs each category with an emitter name. A misspelled
+# emitter (e.g. `fil` instead of `file`) must abort the run: silently treating
+# it as Claude-only would pass the coverage guard (which never inspects emitter
+# names) while dropping the category from the opencode deny set.
+FX_SCRIPT="${TMP}/generate-deny-typo.sh"
+sed 's/^credentials:file$/credentials:fil/' "${SCRIPT}" > "${FX_SCRIPT}"
+chmod +x "${FX_SCRIPT}"
+check_fails "typo'd emitter fails for claude" "${FX_SCRIPT}" claude
+check_fails "typo'd emitter fails for opencode" "${FX_SCRIPT}" opencode
+
 # --- 10. opencode directory denies are home-scoped ---------------------------
 # deny-patterns.yaml declares `.dir/**` as $HOME-relative. Claude already emits
 # Read(~/.dir/**); opencode must not emit `**/.config/**` because that glob also
