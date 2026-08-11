@@ -48,6 +48,17 @@ check_fails() {
 	fi
 }
 
+# Count patterns under one category, mirroring generate-deny.sh's awk extractor
+# (POSIX regex; must stay in sync with extract_category in the script).
+category_pattern_count() {
+	awk -v cat="$1" '
+		$0 ~ "^"cat":" { found=1; next }
+		found && /^[a-zA-Z_]+:/ { exit }
+		found && /^[[:space:]]+-[[:space:]]+"/ { c++ }
+		END { print c + 0 }
+	' "${REAL_YAML}"
+}
+
 if [ ! -x "${SCRIPT}" ]; then
 	printf 'FAIL: %s does not exist or is not executable\n' "${SCRIPT}" >&2
 	exit 1
@@ -66,6 +77,19 @@ check "opencode deny set is not empty" '[ "${opencode_count}" -gt 0 ]'
 # Directory patterns emit both a ~/ and a //$HOME/ form, so claude always ends up
 # with more entries than there are source patterns.
 check "claude deny covers every yaml pattern" '[ "${claude_count}" -ge "${yaml_total}" ]'
+# Exact count: every non-directory pattern emits one entry, every directory
+# pattern emits two. Any category forgotten in an emitter branch would break
+# this equality even though the coverage guard (which only sums extractions)
+# still passes.
+dir_count="$(category_pattern_count directories)"
+check "claude emit count is exact (patterns + one per directory pattern)" \
+	'[ "${claude_count}" -eq "$((yaml_total + dir_count))" ]'
+# opencode emits file + directory categories only; the Claude-only categories
+# (personal_directories / read_shortform / write_deny / bash_destructive) are
+# deliberately excluded, so its count is yaml_total minus those.
+claude_only_count="$(( $(category_pattern_count personal_directories) + $(category_pattern_count read_shortform) + $(category_pattern_count write_deny) + $(category_pattern_count bash_destructive) ))"
+check "opencode emit count is exact (file + directory categories only)" \
+	'[ "${opencode_count}" -eq "$((yaml_total - claude_only_count))" ]'
 
 # --- 2. known-secret patterns actually survive the conversion ----------------
 claude_json="$("${SCRIPT}" claude)"
@@ -144,6 +168,18 @@ check "shipped opencode.json declares no literal read/external_directory deny" \
 	'[ "$(jq "[(.permission.read, .permission.external_directory) | values[] | select(. == \"deny\")] | length" "${ROOT}/ai/opencode/opencode.json")" -eq 0 ]'
 check "shipped opencode.json keeps its hand-maintained bash denials" \
 	'[ "$(jq -r ".permission.bash[\"sudo *\"]" "${ROOT}/ai/opencode/opencode.json")" = "deny" ]'
+
+# --- 10. opencode directory denies are home-scoped ---------------------------
+# deny-patterns.yaml declares `.dir/**` as $HOME-relative. Claude already emits
+# Read(~/.dir/**); opencode must not emit `**/.config/**` because that glob also
+# matches the repo's own managed config dirs (fish/.config, git/.config, ...),
+# which would block the agent from reading the very files it maintains.
+check "opencode scopes directory denies to home (~/.config/** present)" \
+	'[ "$("${SCRIPT}" opencode | jq -r "has(\"~/.config/**\")")" = "true" ]'
+check "opencode emits no unscoped directory deny (**/.config/** absent)" \
+	'[ "$("${SCRIPT}" opencode | jq -r "has(\"**/.config/**\")")" = "false" ]'
+check "opencode keeps file denies global (**/.env still present)" \
+	'[ "$("${SCRIPT}" opencode | jq -r "has(\"**/.env\")")" = "true" ]'
 
 # --- summary -----------------------------------------------------------------
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"

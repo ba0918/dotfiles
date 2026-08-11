@@ -28,25 +28,96 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-# Every category the transformer knows how to consume. The coverage check below
-# compares the sum of these against every pattern line in the YAML, so a category
-# added to deny-patterns.yaml without being registered here fails loudly instead
-# of being silently dropped from the generated deny set.
-ALL_CATEGORIES="
-credentials
-keys
-ssh
-environment
-package_manager
-database
-network
-directories
-history
-personal_directories
-write_deny
-read_shortform
-bash_destructive
+# Every category the transformer knows, paired with how its patterns are emitted
+# to each tool. This single table drives BOTH the coverage check below and the
+# per-tool output, so a category cannot be registered for extraction but forgotten
+# in an emitter branch — the two can no longer drift apart.
+#
+# Emitters:
+#   file         → claude `Read(**/p)`, opencode `**/p`          (global)
+#   directory    → claude `Read(~/$p)` + `Read(//$HOME/$p)`, opencode `~/p` (home-scoped)
+#   read         → claude `Read(p)` (Claude only, already-prefixed / short-form)
+#   write        → claude `Write(p)` (Claude only)
+#   bash         → claude `Bash(p)` (Claude only)
+#
+# A category added to deny-patterns.yaml MUST be added here (with an emitter).
+# The coverage check below compares every pattern line in the YAML against the
+# sum of these categories, so an unregistered category fails loudly instead of
+# being silently dropped from the generated deny set.
+CATEGORIES="
+credentials:file
+keys:file
+ssh:file
+environment:file
+package_manager:file
+database:file
+network:file
+history:file
+directories:directory
+personal_directories:read
+read_shortform:read
+write_deny:write
+bash_destructive:bash
 "
+
+# Emit every category's patterns as claude deny forms.
+emit_claude() {
+  local entry cat emitter
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    cat="${entry%%:*}"
+    emitter="${entry##*:}"
+    case "$emitter" in
+      file)
+        extract_category "$cat" | while IFS= read -r p; do echo "Read(**/$p)"; done
+        ;;
+      directory)
+        extract_category "$cat" | while IFS= read -r p; do
+          echo "Read(~/$p)"
+          echo 'Read(//$HOME/'"$p"')'
+        done
+        ;;
+      read)
+        extract_category "$cat" | while IFS= read -r p; do echo "Read($p)"; done
+        ;;
+      write)
+        extract_category "$cat" | while IFS= read -r p; do echo "Write($p)"; done
+        ;;
+      bash)
+        extract_category "$cat" | while IFS= read -r p; do echo "Bash($p)"; done
+        ;;
+      *)
+        echo "error: unknown emitter '$emitter' for category '$cat' in $0" >&2
+        exit 1
+        ;;
+    esac
+  done <<EOF
+$CATEGORIES
+EOF
+}
+
+# Emit every category's patterns as opencode deny patterns.
+emit_opencode() {
+  local entry cat emitter
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    cat="${entry%%:*}"
+    emitter="${entry##*:}"
+    case "$emitter" in
+      file)
+        extract_category "$cat"
+        ;;
+      directory)
+        extract_category "$cat" | awk '{ print "~/" $0 }'
+        ;;
+      *)
+        # read/write/bash are Claude-only
+        ;;
+    esac
+  done <<EOF
+$CATEGORIES
+EOF
+}
 
 # Extract patterns from a specific YAML category
 # Usage: extract_category "category_name"
@@ -73,12 +144,16 @@ extract_category() {
 # unregistered categories (extracting only part of the file). Without this, both
 # failure modes produce a valid-looking but empty/partial deny set.
 verify_coverage() {
-  local total extracted cat
+  local total extracted cat entry
   total=$(grep -c '^[[:space:]]*-[[:space:]]*"' "$DENY_FILE" || true)
   extracted=0
-  for cat in $ALL_CATEGORIES; do
+  while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    cat="${entry%%:*}"
     extracted=$((extracted + $(extract_category "$cat" | grep -c . || true)))
-  done
+  done <<EOF
+$CATEGORIES
+EOF
 
   if [ "$total" -eq 0 ]; then
     echo "error: no patterns found in $DENY_FILE" >&2
@@ -87,70 +162,34 @@ verify_coverage() {
 
   if [ "$extracted" -ne "$total" ]; then
     echo "error: deny pattern extraction is incomplete: parsed ${extracted} of ${total} patterns in $DENY_FILE" >&2
-    echo "error: either a category is missing from ALL_CATEGORIES in $0, or the YAML parser failed" >&2
+    echo "error: either a category is missing from CATEGORIES in $0, or the YAML parser failed" >&2
     exit 1
   fi
 }
 
 verify_coverage
 
-# Extract all file/directory patterns (categories that produce Read(**/) patterns)
-file_categories() {
-  extract_category credentials
-  extract_category keys
-  extract_category ssh
-  extract_category environment
-  extract_category package_manager
-  extract_category database
-  extract_category network
-  extract_category history
-}
-
 case "${1:-}" in
   claude)
     {
-      # File patterns → Read(**/pattern)
-      file_categories | while IFS= read -r p; do echo "Read(**/$p)"; done
-
-      # Directory patterns → Read(~/dir) + Read(//$HOME/dir)
-      extract_category directories | while IFS= read -r p; do
-        echo "Read(~/$p)"
-        echo 'Read(//$HOME/'"$p"')'
-      done
-
-      # Personal directory denials (already prefixed with //$HOME/)
-      extract_category personal_directories | while IFS= read -r p; do
-        echo "Read($p)"
-      done
-
-      # Short-form Read denials
-      extract_category read_shortform | while IFS= read -r p; do
-        echo "Read($p)"
-      done
-
-      # Write denials
-      extract_category write_deny | while IFS= read -r p; do
-        echo "Write($p)"
-      done
-
-      # Bash destructive command denials
-      extract_category bash_destructive | while IFS= read -r p; do
-        echo "Bash($p)"
-      done
-
+      emit_claude
     } | jq -R -s '
       split("\n") | map(select(length > 0)) | unique |
       { "permissions": { "deny": . } }
     '
     ;;
   opencode)
-    # OpenCode: file + directory patterns only (no Bash/Write deny concept)
+    # OpenCode: file + directory patterns only (no Bash/Write deny concept).
+    # File patterns are global (**/prefix); directory patterns are $HOME-scoped
+    # (deny-patterns.yaml declares .dir/** as $HOME-relative). An unscoped
+    # `**/.config/**` would also match the repo's own fish/.config, git/.config,
+    # etc., blocking the agent from reading the files it maintains. opencode
+    # expands a leading ~ in patterns (permission docs), so prefix with ~/.
     {
-      file_categories
-      extract_category directories
+      emit_opencode
     } | jq -R -s '
       split("\n") | map(select(length > 0)) |
-      map({ ("**/" + .): "deny" }) | add
+      map(if startswith("~/") then { (.): "deny" } else { ("**/" + .): "deny" } end) | add
     '
     ;;
   opencode-apply)

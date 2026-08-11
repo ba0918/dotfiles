@@ -79,10 +79,16 @@ build-settings
   Debian/Ubuntu 既定の mawk では 1 件も抽出できなかった。それでも終了コードは 0 で
   JSON も妥当だったので、**deny が空の settings.json** が黙って書かれていた
 - **カテゴリの登録漏れ** — yaml に新カテゴリを足しても、スクリプト側の
-  `ALL_CATEGORIES` に足さなければ丸ごと無視される
+  `CATEGORIES` 表に足さなければ丸ごと無視される
 
-新しいカテゴリを追加するときは `ALL_CATEGORIES` にも必ず追加すること
-（忘れた場合はこの検査が落として教えてくれる）。
+カテゴリは「カテゴリ名:エミッタ」形式の 1 つの表（`CATEGORIES`）で管理し、
+カバレッジ検査・claude 出力・opencode 出力のすべてがこの表から駆動される。
+これにより「検査には登録したが出力ブランチに足し忘れる」という不一致が
+構造的に起きない。
+
+新しいカテゴリを追加するときは、yaml と `CATEGORIES` 表の**両方**に追加すること
+（エミッタ: `file` = 両ツール / `directory` = 両ツール・home スコープ /
+`read` `write` `bash` = Claude 専用。忘れた場合は検査が落として教えてくれる）。
 
 なお抽出の正規表現は **POSIX 互換に保つこと**。`\s` や `\d` のような GNU 拡張は
 mawk で無言に一致しなくなる。
@@ -104,7 +110,10 @@ mawk で無言に一致しなくなる。
 - Bash deny → `Bash(command)`
 
 **OpenCode 形式:**
-- 全パターン → `"**/pattern": "deny"`（JSON オブジェクト）
+- ファイルパターン → `"**/pattern": "deny"`（JSON オブジェクト）
+- ディレクトリパターン → `"~/pattern": "deny"`（`~` は opencode がホーム展開する）。
+  `**/` 前置にすると repo 自身の `fish/.config/` 等まで deny されてしまうため、
+  deny-patterns.yaml の `$HOME` 相対の宣言に合わせて home スコープにする
 
 ## conf.d 分割管理
 
