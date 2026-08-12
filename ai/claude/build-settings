@@ -58,10 +58,11 @@ for f in "$CONF_DIR"/*.json; do
   BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
 done
 
-# Step 3: Expand $HOME in merged base, then fix triple-slash from //$HOME → //home/...
+# Step 3: Expand $HOME and $PATH in merged base, then fix triple-slash from //$HOME → //home/...
+# $PATH is needed for env.PATH (plugin stop hooks run under /bin/sh which ignores BASH_ENV)
 HOME_NO_SLASH="${HOME#/}"
-BASE=$(echo "$BASE" | jq --arg home_abs "$HOME" --arg home_rel "$HOME_NO_SLASH" \
-  'walk(if type == "string" then gsub("//\\$HOME/"; "//" + $home_rel + "/") | gsub("\\$HOME"; $home_abs) else . end)')
+BASE=$(echo "$BASE" | jq --arg home_abs "$HOME" --arg home_rel "$HOME_NO_SLASH" --arg path "${PATH:-}" \
+  'walk(if type == "string" then gsub("//\\$HOME/"; "//" + $home_rel + "/") | gsub("\\$HOME"; $home_abs) | gsub("\\$PATH"; $path) else . end)')
 
 # Step 4: Handle --status
 if $STATUS; then
