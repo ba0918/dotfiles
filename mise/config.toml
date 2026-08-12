@@ -163,6 +163,9 @@ rust = "latest"
 shellcheck = "latest"
 yazi = "latest"
 zellij = "latest"
+# zoxide: apt 版 0.9.3 は fish 4.x と互換だが更新が遅い。aqua 管理で最新追従する。
+# 0.9.8 に fish 4.x 退行（embedded cd.fish 未対応）があったが 0.10.0 で修正済み
+zoxide = "latest"
 lefthook = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
