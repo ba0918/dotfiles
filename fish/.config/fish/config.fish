@@ -64,56 +64,6 @@ if status is-interactive
     # mise
     abbr mui 'mise up --interactive'
 
-    # __auto_ls: cd / ディレクトリ移動時に eza で自動表示
-    function __auto_ls --on-variable PWD
-        if status --is-interactive
-            eza --icons --grid --group-directories-first
-        end
-    end
-
-    # fe: fzf でファイル/ディレクトリを選択し、プレビュー表示
-    function fe
-        fzf --preview '
-	    if test -d {}
-	        eza --tree --icons --color=always --level=2 {}
-            else
-	        batcat --color=always --style=numbers {} 2>/dev/null; or cat {}
-            end
-	'
-    end
-
-    # ghq リポジトリ一覧から fzf で選択して移動
-    function gr
-        set -l ghq_root (ghq root)
-        ghq list | fzf --preview "eza --tree --icons --color=always --level=1 $ghq_root/{}" | read -l repo
-        if test -n "$repo"
-            cd "$ghq_root/$repo"
-        end
-    end
-
-    # git worktree 一覧から fzf で選択して移動
-    function gwt
-        git worktree list --porcelain | sed -n 's/^worktree //p' | fzf --preview '
-	if test -d {}
-	    eza --tree --icons --color=always --level=1 {}
-	end
-' | read -l wt
-        if test -n "$wt"
-            cd "$wt"
-        end
-    end
-
-    # ya: yazi で操作し、終了時は最後にいたディレクトリへ cd する
-    function ya
-        set -l tmp (mktemp -t "yazi-cwd.XXXXXX")
-        yazi "$argv" --cwd-file "$tmp"
-        set -l cwd (command cat -- "$tmp")
-        if test -n "$cwd"; and test -d "$cwd"
-            cd -- "$cwd"
-        end
-        rm -f -- "$tmp"
-    end
-
     # fzf default (zoxide の _ZO_FZF_OPTS とは独立)
     set -gx FZF_DEFAULT_OPTS "
         --height 40%

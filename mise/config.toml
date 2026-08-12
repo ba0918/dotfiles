@@ -72,6 +72,12 @@ compile = false
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
 "~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
 "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
+"~/.config/fish/functions/__auto_ls.fish" = "../fish/.config/fish/functions/__auto_ls.fish"
+"~/.config/fish/functions/fe.fish" = "../fish/.config/fish/functions/fe.fish"
+"~/.config/fish/functions/gr.fish" = "../fish/.config/fish/functions/gr.fish"
+"~/.config/fish/functions/gwt.fish" = "../fish/.config/fish/functions/gwt.fish"
+"~/.config/fish/functions/myfuncs.fish" = "../fish/.config/fish/functions/myfuncs.fish"
+"~/.config/fish/functions/ya.fish" = "../fish/.config/fish/functions/ya.fish"
 "~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
 
 # clipboard2path-wsl: fish hook のみ dotfiles 管理（unit / wl-paste wrapper は
