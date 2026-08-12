@@ -11,7 +11,8 @@ Strategy:
   - High-confidence patterns (cloud keys, PEM blocks, JWT) are matched directly.
   - A generic `KEY = "value"` pattern catches long random-looking assignments
     but filters obvious placeholders to cut false positives.
-  - Files that look like examples / templates are skipped entirely.
+  - Example/template files skip generic assignments only; high-confidence
+    token patterns are always checked.
 
 Pure detection logic lives in `scan()` so it is testable without I/O.
 """
@@ -19,9 +20,10 @@ Pure detection logic lives in `scan()` so it is testable without I/O.
 import json
 import re
 import sys
+from pathlib import Path
 from typing import NamedTuple
 
-from hook_input import edited_files, read_files
+from hook_input import FileTooLargeError, edited_files, read_files
 
 
 class SecretFinding(NamedTuple):
@@ -33,10 +35,16 @@ class SecretFinding(NamedTuple):
 # (name, compiled regex). Ordered; first match wins per line per pattern.
 PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("AWS Access Key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
-    ("GitHub Token", re.compile(r"\b(?:ghp|gho|ghs|ghu|ghr)_[A-Za-z0-9]{36}\b")),
+    (
+        "GitHub Token",
+        re.compile(r"\b(?:github_pat_[A-Za-z0-9_]{22,}|(?:ghp|gho|ghs|ghu|ghr)_[A-Za-z0-9_]{20,})\b"),
+    ),
     ("Anthropic API Key", re.compile(r"\bsk-ant-api\d{2}-[A-Za-z0-9_\-]{20,}\b")),
     # OpenAI: sk-... but NOT sk-ant-
-    ("OpenAI API Key", re.compile(r"\bsk-(?!ant)[A-Za-z0-9]{20,}\b")),
+    (
+        "OpenAI API Key",
+        re.compile(r"\bsk-(?!ant)(?:(?:proj|admin|svcacct)-)?[A-Za-z0-9_-]{20,}\b"),
+    ),
     ("Google API Key", re.compile(r"\bAIza[0-9A-Za-z_\-]{35}\b")),
     ("Slack Token", re.compile(r"\bxox[abprs]-[0-9A-Za-z\-]{10,}\b")),
     ("JWT", re.compile(r"\beyJ[A-Za-z0-9_\-]+\.eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\b")),
@@ -64,25 +72,39 @@ _EXAMPLE_PATH_TOKENS = (".example", "example.", ".sample", "sample.", ".template
 
 
 def is_example_path(path: str) -> bool:
-    p = path.lower()
+    p = Path(path).name.lower()
     return any(tok in p for tok in _EXAMPLE_PATH_TOKENS)
 
 
 def _redact(line: str, limit: int = 120) -> str:
-    return line if len(line) <= limit else line[:limit] + "..."
+    redacted = line
+    for _, pattern in PATTERNS:
+        redacted = pattern.sub("<redacted>", redacted)
+    match = _GENERIC_ASSIGN_RE.search(redacted)
+    if match:
+        for group in ("value_sq", "value_dq", "value_nq"):
+            if match.group(group) is not None:
+                start, end = match.span(group)
+                redacted = redacted[:start] + "<redacted>" + redacted[end:]
+                break
+    return redacted if len(redacted) <= limit else redacted[:limit] + "..."
 
 
 def scan(text: str, path: str = "") -> list[SecretFinding]:
     """Return a list of likely secrets in `text`. Pure function."""
-    if is_example_path(path):
-        return []
-
     findings: list[SecretFinding] = []
     for line_no, line in enumerate(text.splitlines(), start=1):
+        high_confidence_match = False
         for kind, pat in PATTERNS:
             if pat.search(line):
                 findings.append(SecretFinding(line_no, kind, _redact(line)))
+                high_confidence_match = True
                 break  # one pattern match per line is enough
+
+        if len(findings) >= 10:
+            break
+        if high_confidence_match or is_example_path(path):
+            continue
 
         m = _GENERIC_ASSIGN_RE.search(line)
         if m:
@@ -92,6 +114,8 @@ def scan(text: str, path: str = "") -> list[SecretFinding]:
             if _VERSION_RE.match(value):
                 continue
             findings.append(SecretFinding(line_no, "generic secret assignment", _redact(line)))
+            if len(findings) >= 10:
+                break
 
     return findings
 
@@ -106,16 +130,34 @@ def main() -> int:
     if not paths:
         return 0
 
-    findings: list[SecretFinding] = []
-    for path, text in read_files(paths):
-        findings.extend(scan(text, str(path)))
+    first_findings: list[tuple[Path, SecretFinding]] = []
+    extra_findings: list[tuple[Path, SecretFinding]] = []
+    try:
+        for path, text in read_files(paths):
+            path_findings = scan(text, str(path))
+            if not path_findings:
+                continue
+            if len(first_findings) < 10:
+                first_findings.append((path, path_findings[0]))
+            remaining = 10 - len(extra_findings)
+            extra_findings.extend(
+                (path, finding) for finding in path_findings[1 : remaining + 1]
+            )
+    except FileTooLargeError as exc:
+        print(f"SECRET SCAN BLOCKED: {exc}", file=sys.stderr)
+        return 2
+
+    findings = first_findings + extra_findings[: max(0, 10 - len(first_findings))]
 
     if not findings:
         return 0
 
     print(f"SECRET DETECTED in {', '.join(paths)}", file=sys.stderr)
-    for f in findings[:10]:
-        print(f"  line {f.line_no} [{f.kind}]: {f.snippet}", file=sys.stderr)
+    for path, finding in findings[:10]:
+        print(
+            f"  {path}:{finding.line_no} [{finding.kind}]: {finding.snippet}",
+            file=sys.stderr,
+        )
     print("", file=sys.stderr)
     print(
         "Remove the secret immediately. Use environment variables or a secret manager.",

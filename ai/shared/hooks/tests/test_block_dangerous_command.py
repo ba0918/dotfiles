@@ -40,6 +40,11 @@ def test_xargs_rm():
     assert any("xargs rm" in b.rule for b in blocks)
 
 
+def test_xargs_detects_options_and_sudo_wrapped_rm():
+    blocks = analyze("printf x | xargs -0 sudo rm")
+    assert any("xargs rm" in block.rule for block in blocks)
+
+
 def test_xargs_cat_is_safe():
     assert analyze("ls | xargs cat") == []
 
@@ -177,10 +182,29 @@ def test_backtick_in_double_quote_does_not_break_quote_parsing():
     assert analyze(cmd) == []
 
 
-def test_dollar_paren_in_double_quote_skipped():
-    # Same idea with $(...) command substitution wrapping a heredoc
+def test_heredoc_inside_double_quoted_substitution_is_safe():
     cmd = 'echo "pre $(cat <<\'EOF\'\nfind -delete\nEOF\n) post"'
     assert analyze(cmd) == []
+
+
+def test_dangerous_command_substitution_inside_double_quotes_is_blocked():
+    blocks = analyze('echo "$(find /tmp -delete)"')
+    assert any("-delete" in block.rule for block in blocks)
+
+
+def test_dangerous_backticks_inside_double_quotes_are_blocked():
+    blocks = analyze('echo "`find /tmp -delete`"')
+    assert any("-delete" in block.rule for block in blocks)
+
+
+def test_hash_inside_word_does_not_start_comment():
+    blocks = analyze("echo foo#tag; find /tmp -delete")
+    assert any("-delete" in block.rule for block in blocks)
+
+
+def test_find_exec_detects_sudo_wrapped_rm():
+    blocks = analyze("find . -exec sudo rm {} \\;")
+    assert any("exec rm" in block.rule for block in blocks)
 
 
 def test_nested_parens_in_dollar_paren():

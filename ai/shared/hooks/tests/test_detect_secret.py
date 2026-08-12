@@ -50,7 +50,8 @@ def test_google_api_key():
 
 
 def test_slack_token():
-    findings = scan("tok = xoxb-1234567890-abcdefg", "config.py")
+    token = "xox" + "b-1234567890-abcdefg"
+    findings = scan(f"tok = {token}", "config.py")
     assert any("Slack" in f.kind for f in findings)
 
 
@@ -80,12 +81,41 @@ def test_generic_api_key_assignment():
     assert any("generic" in f.kind for f in findings)
 
 
-def test_example_path_ignored():
-    assert scan("api_key = AKIAIOSFODNN7EXAMPLE", ".env.example") == []
+def test_example_path_still_checks_high_confidence_patterns():
+    findings = scan("api_key = AKIAIOSFODNN7EXAMPLE", ".env.example")
+    assert any("AWS" in finding.kind for finding in findings)
 
 
-def test_sample_path_ignored():
-    assert scan("api_key = AKIAIOSFODNN7EXAMPLE", "config.sample.json") == []
+def test_example_path_ignores_only_generic_placeholder_assignments():
+    assert scan("api_key = 'example-value-long-enough'", ".env.example") == []
+
+
+def test_current_github_fine_grained_token():
+    findings = scan("github_pat_" + "A" * 40, "config.py")
+    assert any("GitHub" in finding.kind for finding in findings)
+
+
+def test_current_github_stateless_installation_token():
+    findings = scan("ghs_12345_" + "A" * 30, "config.py")
+    assert any("GitHub" in finding.kind for finding in findings)
+
+
+def test_current_openai_token_prefixes():
+    for prefix in ("sk-proj-", "sk-admin-", "sk-svcacct-"):
+        findings = scan(prefix + "A" * 32, "config.py")
+        assert any("OpenAI" in finding.kind for finding in findings)
+
+
+def test_finding_never_contains_secret_value():
+    secret = "S3cr3tValueLongEnough1234"
+    finding = scan(f'password = "{secret}"', "config.py")[0]
+    assert secret not in finding.snippet
+    assert "<redacted>" in finding.snippet
+
+
+def test_scan_stops_collecting_after_display_limit():
+    text = "\n".join("token = ghp_" + "a" * 36 for _ in range(20))
+    assert len(scan(text, "config.py")) == 10
 
 
 def test_placeholder_value_ignored():
@@ -114,6 +144,7 @@ def test_is_example_path():
     assert is_example_path("docker-compose.template.yml")
     assert not is_example_path("config.env")
     assert not is_example_path("production.py")
+    assert not is_example_path("example.com/config.py")
 
 
 def test_reports_correct_line_number():
@@ -233,7 +264,45 @@ def test_apply_patch_example_path_skipped(tmp_path, monkeypatch):
     rc = run_main(
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
-    assert rc == 0
+    assert rc == 2
+
+
+def test_multiple_file_diagnostics_include_each_path(tmp_path, monkeypatch, capsys):
+    first = tmp_path / "first.env"
+    second = tmp_path / "second.env"
+    first.write_text(
+        "\n".join("token = ghp_" + "a" * 36 for _ in range(10)),
+        encoding="utf-8",
+    )
+    second.write_text("token = ghp_" + "b" * 36, encoding="utf-8")
+    diff = (
+        f"*** Update File: {first.name}\n"
+        f"*** Update File: {second.name}\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    rc = run_main(
+        {
+            "tool_name": "apply_patch",
+            "cwd": str(tmp_path),
+            "tool_input": {"command": diff},
+        },
+        monkeypatch,
+    )
+    assert rc == 2
+    stderr = capsys.readouterr().err
+    assert f"{first}:1" in stderr
+    assert f"{second}:1" in stderr
+
+
+def test_oversized_file_blocks_instead_of_passing_clean(tmp_path, monkeypatch, capsys):
+    target = tmp_path / "large.env"
+    target.write_bytes(b"x" * (1024 * 1024 + 1))
+    rc = run_main(
+        {"tool_name": "Write", "tool_input": {"file_path": str(target)}},
+        monkeypatch,
+    )
+    assert rc == 2
+    assert "exceeds" in capsys.readouterr().err
 
 
 def test_apply_patch_without_files_ok(tmp_path, monkeypatch):

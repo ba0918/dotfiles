@@ -14,12 +14,11 @@ Pure detection logic lives in `scan()` so it is testable without I/O.
 
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 from typing import NamedTuple
 
-from hook_input import edited_files, read_files
+from hook_input import FileTooLargeError, edited_files, read_files
 
 
 MOJIBAKE_CHAR = "\ufffd"
@@ -45,31 +44,43 @@ def scan(text: str) -> list[Finding]:
             idx = line.index(MOJIBAKE_CHAR)
             snippet = line[max(0, idx - 20):idx + 20]
             findings.append(Finding(line_no, "U+FFFD replacement character", snippet))
+            if len(findings) >= 10:
+                break
 
         if line_no == 1 and line.startswith(BOM_CHAR):
             findings.append(Finding(line_no, "UTF-8 BOM at file start", line[:40]))
+            if len(findings) >= 10:
+                break
 
         m = _CONTROL_CHAR_RE.search(line)
         if m:
             findings.append(
                 Finding(line_no, f"control char 0x{ord(m.group()):02x}", line[:40])
             )
+            if len(findings) >= 10:
+                break
 
         m = _QUESTION_RUN_RE.search(line)
         if m:
             findings.append(Finding(line_no, "question-mark run (possible lost encoding)", m.group()))
+            if len(findings) >= 10:
+                break
     return findings
 
 
 def _is_binary(path: Path) -> bool:
     try:
-        result = subprocess.run(
-            ["file", str(path)],
-            capture_output=True, text=True, timeout=2,
-        )
-        return "binary" in result.stdout
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        return False
+        with path.open("rb") as stream:
+            sample = stream.read(8192)
+    except OSError:
+        return True
+    if b"\x00" in sample:
+        return True
+    try:
+        sample.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return False
 
 
 def main() -> int:
@@ -82,16 +93,34 @@ def main() -> int:
     if not paths:
         return 0
 
-    findings: list[Finding] = []
-    for _, text in read_files(paths, skip=_is_binary):
-        findings.extend(scan(text))
+    first_findings: list[tuple[Path, Finding]] = []
+    extra_findings: list[tuple[Path, Finding]] = []
+    try:
+        for path, text in read_files(paths, skip=_is_binary):
+            path_findings = scan(text)
+            if not path_findings:
+                continue
+            if len(first_findings) < 10:
+                first_findings.append((path, path_findings[0]))
+            remaining = 10 - len(extra_findings)
+            extra_findings.extend(
+                (path, finding) for finding in path_findings[1 : remaining + 1]
+            )
+    except FileTooLargeError as exc:
+        print(f"MOJIBAKE SCAN BLOCKED: {exc}", file=sys.stderr)
+        return 2
+
+    findings = first_findings + extra_findings[: max(0, 10 - len(first_findings))]
 
     if not findings:
         return 0
 
     print(f"MOJIBAKE/CONTROL CHAR DETECTED in {', '.join(paths)}", file=sys.stderr)
-    for f in findings[:10]:
-        print(f"  line {f.line_no} [{f.reason}]: {f.snippet}", file=sys.stderr)
+    for path, finding in findings[:10]:
+        print(
+            f"  {path}:{finding.line_no} [{finding.reason}]: {finding.snippet}",
+            file=sys.stderr,
+        )
     print("", file=sys.stderr)
     print("Fix the corrupted characters immediately.", file=sys.stderr)
     return 2
