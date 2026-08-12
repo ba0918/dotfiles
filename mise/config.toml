@@ -157,6 +157,7 @@ rust = "latest"
 shellcheck = "latest"
 yazi = "latest"
 zellij = "latest"
+lefthook = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
