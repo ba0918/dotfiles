@@ -1,6 +1,6 @@
-[user]
-	name = ba0918
-	email = pub.dev.delusions@gmail.com
+# マシンごとの git identity は ~/.config/git/config.local で設定（gitignore 済み）
+[include]
+	path = ~/.config/git/config.local
 [init]
 	defaultBranch = main
 	templateDir = ~/.config/git/template

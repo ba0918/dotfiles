@@ -226,6 +226,11 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
   `interactive.diffFilter`（mise の `apt:git-delta` で導入）
 - **[gh](https://cli.github.com/)** — GitHub の credential helper
   （`!gh auth git-credential`）。`[tools]` の `gh` で導入
+- **マシンごとの git identity** — `[user]` は repo に持たない（環境分離）。
+  `~/.config/git/config.local`（gitignore 済み）を include して各マシンで設定する:
+  `git config --file ~/.config/git/config.local user.name "<名前>"`
+  `git config --file ~/.config/git/config.local user.email "<メール>"`
+  新マシン（会社 PC 等）ではこの 2 行を環境に合わせて実行すること
 
 `fish/.config/fish` は以下に依存（すべて `[bootstrap.packages]` の `apt:*` 宣言）:
 

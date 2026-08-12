@@ -31,6 +31,9 @@ auth.json
 # ===== Claude Code conf.d generated files =====
 ai/claude/conf.d/20-deny.json
 
+# ===== Git machine-local identity (never commit per-machine user) =====
+git/.config/git/config.local
+
 # ===== Claude Code: allow-list (everything else is runtime / secret) =====
 # Default-deny under ai/claude/. Tracked assets must be allow-listed below.
 # When adding a new asset, add a matching "!" line here.
