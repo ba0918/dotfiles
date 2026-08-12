@@ -113,6 +113,18 @@ def test_finding_never_contains_secret_value():
     assert "<redacted>" in finding.snippet
 
 
+def test_finding_redacts_every_generic_secret_on_the_same_line():
+    first = "FirstSecretValue123456"
+    second = "SecondSecretValue654321"
+    finding = scan(
+        f'password = "{first}"; api_key = "{second}"',
+        "config.py",
+    )[0]
+    assert first not in finding.snippet
+    assert second not in finding.snippet
+    assert finding.snippet.count("<redacted>") == 2
+
+
 def test_scan_stops_collecting_after_display_limit():
     text = "\n".join("token = ghp_" + "a" * 36 for _ in range(20))
     assert len(scan(text, "config.py")) == 10

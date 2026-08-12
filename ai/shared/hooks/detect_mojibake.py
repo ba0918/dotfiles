@@ -74,13 +74,7 @@ def _is_binary(path: Path) -> bool:
             sample = stream.read(8192)
     except OSError:
         return True
-    if b"\x00" in sample:
-        return True
-    try:
-        sample.decode("utf-8")
-    except UnicodeDecodeError:
-        return True
-    return False
+    return b"\x00" in sample
 
 
 def main() -> int:
