@@ -80,13 +80,22 @@ def _redact(line: str, limit: int = 120) -> str:
     redacted = line
     for _, pattern in PATTERNS:
         redacted = pattern.sub("<redacted>", redacted)
-    match = _GENERIC_ASSIGN_RE.search(redacted)
-    if match:
+
+    def replace_generic_value(match: re.Match[str]) -> str:
+        replacement = match.group(0)
         for group in ("value_sq", "value_dq", "value_nq"):
             if match.group(group) is not None:
                 start, end = match.span(group)
-                redacted = redacted[:start] + "<redacted>" + redacted[end:]
-                break
+                relative_start = start - match.start()
+                relative_end = end - match.start()
+                return (
+                    replacement[:relative_start]
+                    + "<redacted>"
+                    + replacement[relative_end:]
+                )
+        return replacement
+
+    redacted = _GENERIC_ASSIGN_RE.sub(replace_generic_value, redacted)
     return redacted if len(redacted) <= limit else redacted[:limit] + "..."
 
 

@@ -77,6 +77,18 @@ def test_binary_detection_uses_file_content(tmp_path):
     assert not _is_binary(text)
 
 
+def test_invalid_utf8_text_is_scanned_for_mojibake(tmp_path):
+    text = tmp_path / "invalid.txt"
+    text.write_bytes(b"hello\xffworld")
+    assert not _is_binary(text)
+
+
+def test_utf8_character_split_at_sample_boundary_is_not_binary(tmp_path):
+    text = tmp_path / "boundary.txt"
+    text.write_bytes(b"a" * 8191 + "あ".encode("utf-8") + b"end")
+    assert not _is_binary(text)
+
+
 # --- main(): event → exit code ----------------------------------------------
 
 
