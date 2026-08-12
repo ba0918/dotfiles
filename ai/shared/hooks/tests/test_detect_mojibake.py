@@ -10,7 +10,7 @@ import sys
 from io import StringIO
 
 import detect_mojibake
-from detect_mojibake import scan
+from detect_mojibake import _is_binary, scan
 
 
 def test_clean_text_returns_no_findings():
@@ -62,6 +62,19 @@ def test_reports_correct_line_number():
 def test_multiple_findings_in_text():
     findings = scan("a\ufffd\nb\x00\nc?????????")
     assert len(findings) >= 3
+
+
+def test_scan_stops_collecting_after_display_limit():
+    assert len(scan("\n".join("bad�" for _ in range(20)))) == 10
+
+
+def test_binary_detection_uses_file_content(tmp_path):
+    binary = tmp_path / "image.png"
+    binary.write_bytes(b"\x89PNG\r\n\x1a\n\x00payload")
+    text = tmp_path / "note.txt"
+    text.write_text("binary is just a word", encoding="utf-8")
+    assert _is_binary(binary)
+    assert not _is_binary(text)
 
 
 # --- main(): event → exit code ----------------------------------------------
@@ -136,6 +149,31 @@ def test_apply_patch_clean_file_ok(tmp_path, monkeypatch):
         {"tool_name": "apply_patch", "tool_input": {"command": diff}}, monkeypatch
     )
     assert rc == 0
+
+
+def test_multiple_file_diagnostics_include_each_path(tmp_path, monkeypatch, capsys):
+    first = tmp_path / "first.txt"
+    second = tmp_path / "second.txt"
+    first.write_text("\n".join("bad�" for _ in range(10)), encoding="utf-8")
+    second.write_text("bad�", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    rc = run_main(
+        {
+            "tool_name": "apply_patch",
+            "cwd": str(tmp_path),
+            "tool_input": {
+                "command": (
+                    f"*** Update File: {first.name}\n"
+                    f"*** Update File: {second.name}\n"
+                )
+            },
+        },
+        monkeypatch,
+    )
+    assert rc == 2
+    stderr = capsys.readouterr().err
+    assert f"{first}:1" in stderr
+    assert f"{second}:1" in stderr
 
 
 def test_apply_patch_without_files_ok(tmp_path, monkeypatch):

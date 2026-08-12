@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from hook_input import edited_files, extract_patch_files, read_files
+import pytest
+
+from hook_input import FileTooLargeError, edited_files, extract_patch_files, read_files
 
 
 def test_add_file_marker_yields_path():
@@ -124,7 +126,23 @@ def test_edited_files_keeps_contained_path(tmp_path, monkeypatch):
             )
         },
     }
-    assert edited_files(event) == ["sub/config.py"]
+    assert edited_files(event) == [str(tmp_path / "sub/config.py")]
+
+
+def test_edited_files_returns_event_cwd_based_absolute_path(tmp_path, monkeypatch):
+    session = tmp_path / "session"
+    session.mkdir()
+    target = session / "config.py"
+    target.write_text("x = 1", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    event = {
+        "cwd": str(session),
+        "tool_name": "apply_patch",
+        "tool_input": {"command": "*** Update File: config.py\n"},
+    }
+    paths = edited_files(event)
+    assert paths == [str(target)]
+    assert list(read_files(paths)) == [(target, "x = 1")]
 
 
 def test_edited_files_honors_event_cwd(tmp_path, monkeypatch):
@@ -200,3 +218,10 @@ def test_read_files_is_lazy_generator(tmp_path, monkeypatch):
     assert seen == []  # nothing read yet
     next(gen)
     assert seen == ["a.txt"]  # only the first file was read
+
+
+def test_read_files_rejects_oversized_files(tmp_path):
+    oversized = tmp_path / "large.txt"
+    oversized.write_bytes(b"x" * 1025)
+    with pytest.raises(FileTooLargeError):
+        list(read_files([str(oversized)], max_bytes=1024))

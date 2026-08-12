@@ -11,6 +11,12 @@ import os
 from pathlib import Path
 from typing import Callable, Iterator
 
+DEFAULT_MAX_FILE_BYTES = 1024 * 1024
+
+
+class FileTooLargeError(RuntimeError):
+    """Raised when a hook target exceeds the configured scan limit."""
+
 _ADD_PREFIX = "*** Add File: "
 _UPDATE_PREFIX = "*** Update File: "
 _DELETE_PREFIX = "*** Delete File: "
@@ -64,7 +70,7 @@ def _contained(patch_paths: list[str], base: str) -> list[str]:
             continue
         resolved = os.path.realpath(os.path.join(root, p))
         if resolved == root or resolved.startswith(root + os.sep):
-            kept.append(p)
+            kept.append(resolved)
     return kept
 
 
@@ -87,7 +93,11 @@ def edited_files(event: dict) -> list[str]:
     return []
 
 
-def read_files(paths: list[str], skip: Callable[[Path], bool] | None = None) -> Iterator[tuple[Path, str]]:
+def read_files(
+    paths: list[str],
+    skip: Callable[[Path], bool] | None = None,
+    max_bytes: int = DEFAULT_MAX_FILE_BYTES,
+) -> Iterator[tuple[Path, str]]:
     """Read text files named by `paths`, skipping missing / unreadable ones.
 
     Shared by the file-scanning hooks (detect_secret, detect_mojibake). A
@@ -103,6 +113,8 @@ def read_files(paths: list[str], skip: Callable[[Path], bool] | None = None) -> 
             continue
         if skip is not None and skip(path):
             continue
+        if path.stat().st_size > max_bytes:
+            raise FileTooLargeError(f"scan target exceeds {max_bytes} bytes: {path}")
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:

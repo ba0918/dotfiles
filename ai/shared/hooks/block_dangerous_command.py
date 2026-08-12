@@ -27,7 +27,7 @@ class Block(NamedTuple):
 # (comment-free) command string.
 DANGEROUS_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("find ... -delete", re.compile(r"\bfind\b[^|;&`$]*-delete\b")),
-    ("find ... -exec rm", re.compile(r"\bfind\b[^|;&`$]*-exec\s+(?:rm|rmdir)\b")),
+    ("find ... -exec rm", re.compile(r"\bfind\b[^|;&`$]*-exec\s+(?:(?:sudo|env)\b(?:\s+-\S+)*\s+)*(?:rm|rmdir)\b")),
     ("xargs rm", re.compile(r"\bxargs\b[^|;&`$]*\s(?:rm|rmdir)\b")),
     ("dd to block device", re.compile(r"\bdd\b[^|;&`$]*\bof=/dev/(?:sd|nvme|hd|vd|mmcblk|xvd)")),
     ("mkfs", re.compile(r"\bmkfs(?:\.[a-z0-9]+)?\b")),
@@ -50,10 +50,8 @@ def _strip_noise(cmd: str) -> str:
     string literals. Stripping these regions first keeps detection focused
     on the actual command surface.
 
-    Trade-off: this also masks command substitutions (`$(...)`, backticks)
-    that are nested inside double quotes, so pathological cases such as
-    `echo "$(rm -rf /)"` slip through. Acceptable — for this user-scope
-    hook we optimize for low FP rate over exotic attack coverage.
+    Single-quoted content is inert. Double-quoted literal content is removed,
+    while command substitutions are retained because the shell executes them.
     """
     out: list[str] = []
     i = 0
@@ -61,7 +59,7 @@ def _strip_noise(cmd: str) -> str:
     while i < n:
         c = cmd[i]
 
-        if c == "#":
+        if c == "#" and (i == 0 or cmd[i - 1].isspace() or cmd[i - 1] in ";|&()"):
             while i < n and cmd[i] != "\n":
                 i += 1
             continue
@@ -89,9 +87,9 @@ def _strip_noise(cmd: str) -> str:
                     if cmd[i] == "\\" and i + 1 < n:
                         i += 2
                         continue
-                    # Nested backtick command substitution — skip whole block
-                    # so the inner `"..."` doesn't look like the outer closer
+                    # Double quotes preserve command substitution semantics.
                     if cmd[i] == "`":
+                        start = i
                         i += 1
                         while i < n and cmd[i] != "`":
                             if cmd[i] == "\\" and i + 1 < n:
@@ -99,9 +97,10 @@ def _strip_noise(cmd: str) -> str:
                                 continue
                             i += 1
                         i += 1  # past closing backtick (or end)
+                        out.append(_strip_noise(cmd[start:i]))
                         continue
-                    # Nested $( ... ) command substitution with balanced parens
                     if cmd[i] == "$" and i + 1 < n and cmd[i + 1] == "(":
+                        start = i
                         depth = 1
                         i += 2  # past "$("
                         while i < n and depth > 0:
@@ -110,6 +109,7 @@ def _strip_noise(cmd: str) -> str:
                             elif cmd[i] == ")":
                                 depth -= 1
                             i += 1
+                        out.append(_strip_noise(cmd[start:i]))
                         continue
                 i += 1
             i += 1  # skip closing quote (or past end)
