@@ -161,6 +161,8 @@ rust = "latest"
 "cargo:cargo-nextest" = "latest"
 "cargo:cargo-outdated" = "latest"
 shellcheck = "latest"
+# usage: mise の補完が要求する（mise completion fish が usage CLI をチェックする）
+usage = "latest"
 yazi = "latest"
 zellij = "latest"
 # zoxide: apt 版 0.9.3 は fish 4.x と互換だが更新が遅い。aqua 管理で最新追従する。
