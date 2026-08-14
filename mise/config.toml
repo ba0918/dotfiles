@@ -145,7 +145,7 @@ hyperfine = "latest"
 just = "latest"
 lazygit = "latest"
 neovim = "latest"
-node = "25.6.1"
+node = "25.9.0"
 opencode = "latest"
 pnpm = "latest"
 ripgrep = "latest"
@@ -169,6 +169,8 @@ zellij = "latest"
 # 0.9.8 に fish 4.x 退行（embedded cd.fish 未対応）があったが 0.10.0 で修正済み
 zoxide = "latest"
 lefthook = "latest"
+npm = "11.19.0"
+"npm:fkill-cli" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
