@@ -15,6 +15,8 @@ set -gx MISE_GLOBAL_CONFIG_FILE "$dotfiles_root/mise/config.toml"
 set -gx MISE_GLOBAL_CONFIG_ROOT "$dotfiles_root"
 if status is-interactive
     mise activate fish | source
+    # direnv: ディレクトリごとの環境自動切替（.envrc / devbox 連携）
+    direnv hook fish | source
 else
     mise activate fish --shims | source
 end

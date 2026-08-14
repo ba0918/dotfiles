@@ -142,6 +142,7 @@ claude = { version = "latest", minimum_release_age = "1d" }
 codex = { version = "latest", minimum_release_age = "1d" }
 deno = "latest"
 "aqua:jetify-com/devbox" = "latest"
+direnv = "latest"
 dust = "latest"
 gh = "latest"
 ghq = "latest"

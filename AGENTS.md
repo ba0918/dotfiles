@@ -66,7 +66,8 @@ dotfiles/
 ├── herdr/                     # 確定
 │   └── .config/herdr/         # config.toml（プラグインは herdr plugin install で導入）
 ├── devbox/                    # 確定（PHP ツールチェーンの devbox global 宣言）
-│   └── global/                # devbox.json / devbox.lock → ~/.local/share/devbox/global/default/ へ symlink
+│   ├── global/                # devbox.json / devbox.lock → ~/.local/share/devbox/global/default/ へ symlink
+│   └── flake/                 # timecop 付き php のビルド定義（レガシープロジェクト向け）
 ├── npm/                       # 確定（JS サプライチェーン対策）
 │   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
 ├── pnpm/                      # 確定（JS サプライチェーン対策）
@@ -155,6 +156,15 @@ devbox global add <pkg>                     # 追加（devbox.json を更新。r
 devbox global shellenv --init-hook -r | source  # lock / config 変更後に環境を再生成して source する
 devbox run -- php -v                       # プロジェクト環境でコマンド実行
 devbox services start|stop php-fpm         # php-fpm サービス（ポート 8082）
+
+# レガシープロジェクトで timecop を使う（dotfiles の flake を参照）
+devbox init                                 # プロジェクトに devbox.json を作成
+# devbox.json の packages に "path:/home/mizumi/develop/dotfiles/devbox/flake" を追加
+devbox generate direnv                       # .envrc を生成（cd した瞬間に timecop 付き php が有効）
+
+# direnv（プロジェクト単位の環境自動切替）
+direnv allow                                # .envrc を許可（devbox generate direnv が自動実行する）
+direnv reload                               # 環境を再読込
 ```
 
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
@@ -309,6 +319,15 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
   PHP のビルド依存含め `/nix/store` に閉じ込めるため apt の dev パッケージは不要。
   fish の config.fish が `devbox global shellenv --init-hook` を source して
   PATH と PHP プラグインの env（PHPRC / PHPFPM_PORT 等）を読み込む
+- **direnv** — `[tools]` の `direnv` で導入（mise 管轄）。プロジェクト単位の環境
+  自動切替に使う。`devbox generate direnv` で `.envrc` を生成すると、そのディレクトリに
+  cd した瞬間に devbox 環境（timecop 付き php 等）が有効になる。fish の config.fish が
+  `direnv hook fish` を source する（interactive のみ）
+- **timecop flake** — `devbox/flake/` が実体。php-timecop（kiddivouchers 版 v1.8.0）を
+  `php.buildPecl` でビルドし、php85 + xdebug + pcov と合成した php を出力する。
+  nixpkgs に timecop が無いため自前の flake が必要。レガシープロジェクトでは
+  `devbox.json` の packages に `path:/home/mizumi/develop/dotfiles/devbox/flake` を
+  追加して使う（グローバルには timecop を入れない。`flake.lock` で nixpkgs を固定）
 
 `~/.claude/*`（ai/claude）と `~/.codex/*`（ai/codex）は以下に依存:
 
