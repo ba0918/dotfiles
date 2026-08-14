@@ -65,6 +65,8 @@ dotfiles/
 │   └── .config/glow/          # glow.yml（スタイル等）
 ├── herdr/                     # 確定
 │   └── .config/herdr/         # config.toml（プラグインは herdr plugin install で導入）
+├── devbox/                    # 確定（PHP ツールチェーンの devbox global 宣言）
+│   └── global/                # devbox.json / devbox.lock → ~/.local/share/devbox/global/default/ へ symlink
 ├── npm/                       # 確定（JS サプライチェーン対策）
 │   └── .npmrc                 # → ~/.npmrc（min-release-age=7）
 ├── pnpm/                      # 確定（JS サプライチェーン対策）
@@ -146,6 +148,13 @@ python3 -m pytest ai/shared/hooks/tests    # security hooks
 # herdr（ターミナルマルチプレクサ。config.toml のみ dotfiles 管理）
 herdr plugin install smarzban/herdr-file-viewer   # プラグイン導入（plugins.json は生成物として repo 除外）
 herdr plugin list                # 導入済みプラグインの確認
+
+# devbox（PHP ツールチェーンの閉じ込め管理。nix store ベース）
+devbox global list                          # グローバル導入パッケージの一覧
+devbox global add <pkg>                     # 追加（devbox.json を更新。repo の symlink 実体が変わる）
+devbox global shellenv --init-hook -r | source  # lock / config 変更後に環境を再生成して source する
+devbox run -- php -v                       # プロジェクト環境でコマンド実行
+devbox services start|stop php-fpm         # php-fpm サービス（ポート 8082）
 ```
 
 グローバル config の実体は `mise/config.toml`（`MISE_GLOBAL_CONFIG_FILE` で参照）。
@@ -288,6 +297,19 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
   MCP 等）を `apm.yml` + `apm.lock` で宣言管理するツールで、設定ファイル自体は
   dotfiles 管理しない（各プロジェクトの `apm.yml` に宣言）
 
+`devbox` は以下に依存:
+
+- **devbox** — `[tools]` の `"aqua:jetify-com/devbox"` で導入（mise 管轄）。
+  PHP ツールチェーン（php / xdebug / pcov / composer）は mise ではなく **devbox global**
+  で管理する（aqua に php 拡張の管理が無く、mise では ext の再ビルドが手動になるため）。
+  グローバル宣言（`devbox.json` / `devbox.lock`）は `devbox/global/` が実体で、
+  `~/.local/share/devbox/global/default/` に symlink 展開される。`devbox.d/` と
+  `.devbox/` は生成物として repo 除外
+- **nix** — devbox が初回実行時に single-user モードで自動導入する（daemon 不要）。
+  PHP のビルド依存含め `/nix/store` に閉じ込めるため apt の dev パッケージは不要。
+  fish の config.fish が `devbox global shellenv --init-hook` を source して
+  PATH と PHP プラグインの env（PHPRC / PHPFPM_PORT 等）を読み込む
+
 `~/.claude/*`（ai/claude）と `~/.codex/*`（ai/codex）は以下に依存:
 
 - **claude-code** — `[tools]` の `claude`（`aqua:anthropics/claude-code`）で導入（mise 管轄）。
@@ -365,6 +387,7 @@ bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パ�
 | `~/.codex/hooks` の apply が "refusing to overwrite existing files" になる | 旧方式のディレクトリ symlink が残っている。`rm ~/.codex/hooks`（symlink 自体を消す。repo の実体は消えない）してから `mise bootstrap dotfiles apply` でファイル単位に張り直す |
 | hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`detect_*.py` は同じディレクトリから import する。`mise bootstrap dotfiles status` で `~/.claude/hooks/hook_input.py` と `~/.codex/hooks/hook_input.py` を確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" で落ちる | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する（この検査が無いと deny が黙って欠ける） |
+| `devbox global shellenv` が "environment may be out of date" 警告を出し php が見つからない | lock / config 変更後（symlink 化直後を含む）は `devbox global shellenv --init-hook -r \| source` で環境を再生成してからシェルを起動し直す |
 | statusline が空 / 通知が飛ばない | 参照先（`~/.claude/statusline.py`、`$HOME/develop/claude-notify`）が未導入。`run-optional.sh` が意図的に無音でスキップしている。導入すればそのまま有効になる |
 
 ## 関連ドキュメント

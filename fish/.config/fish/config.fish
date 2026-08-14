@@ -19,6 +19,9 @@ else
     mise activate fish --shims | source
 end
 
+# devbox global（php / xdebug / pcov のツールチェーン。nix store ベースでホストを汚さない）
+devbox global shellenv --init-hook | source
+
 # environment
 set -gx EDITOR nvim
 set -gx BROWSER powershell.exe

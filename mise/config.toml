@@ -93,6 +93,11 @@ compile = false
 # Herdr: 設定のみ（plugins.json / session.json / logs は生成物として除外）
 "~/.config/herdr/config.toml" = "../herdr/.config/herdr/config.toml"
 
+# Devbox: グローバル環境の宣言（php / xdebug / pcov）。
+# devbox.d と .devbox は生成物として除外（repo の実体を symlink で参照）
+"~/.local/share/devbox/global/default/devbox.json" = "../devbox/global/devbox.json"
+"~/.local/share/devbox/global/default/devbox.lock" = "../devbox/global/devbox.lock"
+
 # opencode: グローバル設定のみ（opencode.json）。plugin は plugin 宣言で管理。
 # instructions が repo ルート相対パス（{{ vars.dotfiles_root }}）を指すため symlink ではなく
 # template で配布する（rendered 実ファイルになる）。MISE_GLOBAL_CONFIG_ROOT が
@@ -136,6 +141,7 @@ bun = "latest"
 claude = { version = "latest", minimum_release_age = "1d" }
 codex = { version = "latest", minimum_release_age = "1d" }
 deno = "latest"
+"aqua:jetify-com/devbox" = "latest"
 dust = "latest"
 gh = "latest"
 ghq = "latest"
@@ -174,7 +180,6 @@ zoxide = "latest"
 lefthook = "latest"
 npm = "11.19.0"
 "npm:fkill-cli" = "latest"
-php = "8.5.9"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
