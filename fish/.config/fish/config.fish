@@ -64,6 +64,9 @@ if status is-interactive
     # mise
     abbr mui 'mise up --interactive'
 
+    # AI usage ledger（bunx で実行。たまにしか使わないため install はしない）
+    abbr ccul 'bunx ccusage-ledger'
+
     # fzf default (zoxide の _ZO_FZF_OPTS とは独立)
     set -gx FZF_DEFAULT_OPTS "
         --height 40%
