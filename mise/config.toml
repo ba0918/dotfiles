@@ -122,6 +122,9 @@ compile = false
 
 [tools]
 "aqua:ba0918/clipboard2path-wsl" = "latest"
+# APM: Microsoft のエージェント設定用パッケージマネージャ（apm.yml / apm.lock）。
+# aqua レジストリ未登録のため pipx バックエンド（pip install apm-cli 相当）で導入
+"pipx:apm-cli" = "latest"
 ast-grep = "latest"
 atuin = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
@@ -171,6 +174,7 @@ zoxide = "latest"
 lefthook = "latest"
 npm = "11.19.0"
 "npm:fkill-cli" = "latest"
+php = "8.5.9"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）

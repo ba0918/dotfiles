@@ -280,6 +280,14 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
 - **claude-skills** — `plugin` 宣言で導入（`ba0918/claude-skills`。更新は `opencode plugin ba0918/claude-skills --force --global`）。
   スキル本体は opencode が管理するキャッシュに配置されるため repo 外
 
+`apm` は以下に依存:
+
+- **apm** — `[tools]` の `"pipx:apm-cli"` で導入（mise 管轄）。Microsoft の
+  Agent Package Manager。aqua レジストリに未登録のため **pipx バックエンド**
+  （`pip install apm-cli` 相当）で導入する。エージェント設定（skill / plugin /
+  MCP 等）を `apm.yml` + `apm.lock` で宣言管理するツールで、設定ファイル自体は
+  dotfiles 管理しない（各プロジェクトの `apm.yml` に宣言）
+
 `~/.claude/*`（ai/claude）と `~/.codex/*`（ai/codex）は以下に依存:
 
 - **claude-code** — `[tools]` の `claude`（`aqua:anthropics/claude-code`）で導入（mise 管轄）。
