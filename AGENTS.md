@@ -406,7 +406,7 @@ bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パ�
 | `~/.codex/hooks` の apply が "refusing to overwrite existing files" になる | 旧方式のディレクトリ symlink が残っている。`rm ~/.codex/hooks`（symlink 自体を消す。repo の実体は消えない）してから `mise bootstrap dotfiles apply` でファイル単位に張り直す |
 | hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`detect_*.py` は同じディレクトリから import する。`mise bootstrap dotfiles status` で `~/.claude/hooks/hook_input.py` と `~/.codex/hooks/hook_input.py` を確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" で落ちる | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する（この検査が無いと deny が黙って欠ける） |
-| `devbox global shellenv` が "environment may be out of date" 警告を出し php が見つからない | lock / config 変更後（symlink 化直後を含む）は `devbox global shellenv --init-hook -r \| source` で環境を再生成してからシェルを起動し直す |
+| `devbox global shellenv` が "environment may be out of date" 警告を出し php が見つからない | 新規マシンでは `bootstrap.sh` が自動で再生成する。lock / config を手動変更した場合などは `devbox global shellenv --init-hook -r \| source` で環境を再生成してからシェルを起動し直す |
 | statusline が空 / 通知が飛ばない | 参照先（`~/.claude/statusline.py`、`$HOME/develop/claude-notify`）が未導入。`run-optional.sh` が意図的に無音でスキップしている。導入すればそのまま有効になる |
 
 ## 関連ドキュメント

@@ -85,6 +85,13 @@ if [ "${DRY_RUN}" = false ]; then
 		clipboard2path-wsl init --no-hook 2>/dev/null || true
 fi
 
+# Devbox global: .devbox/（生成物）が無い新規マシンでは config.fish の
+# `devbox global shellenv --init-hook | source` が .hooks.sh 不在で失敗する。
+# ここで事前に環境を再生成しておく（冪等 — 最新なら何もしない）。
+if [ "${DRY_RUN}" = false ]; then
+	mise x aqua:jetify-com/devbox -- devbox global shellenv --init-hook -r >/dev/null 2>&1 || true
+fi
+
 # Aikido Safe Chain: npm/yarn/pnpm/bun/pip 等のパッケージマネージャをラップし、
 # マルウェア検知と最小リリース年齢（デフォルト 48h）を適用する。
 # config.fish 側は "$HOME/.safe-chain/..." が存在する場合のみ source する。
