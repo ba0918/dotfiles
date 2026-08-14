@@ -11,6 +11,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         php = pkgs.php85;
+        php85Packages = pkgs.php85Packages;
         timecop = php.buildPecl {
           pname = "timecop";
           version = "1.8.0";
@@ -23,6 +24,9 @@
         };
       in
       {
-        packages.default = php.withExtensions ({ enabled, all }: enabled ++ (with all; [ xdebug pcov ]) ++ [ timecop ]);
+        packages = {
+          default = php.withExtensions ({ enabled, all }: enabled ++ (with all; [ xdebug pcov ]) ++ [ timecop ]);
+          composer = php85Packages.composer;
+        };
       });
 }

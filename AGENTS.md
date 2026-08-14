@@ -159,7 +159,9 @@ devbox services start|stop php-fpm         # php-fpm サービス（ポート 80
 
 # レガシープロジェクトで timecop を使う（dotfiles の flake を参照）
 devbox init                                 # プロジェクトに devbox.json を作成
-# devbox.json の packages に "path:/home/mizumi/develop/dotfiles/devbox/flake" を追加
+# devbox.json の packages に下記 2 つを追加:
+#   "path:/home/mizumi/develop/dotfiles/devbox/flake"
+#   "path:/home/mizumi/develop/dotfiles/devbox/flake#composer"
 devbox generate direnv                       # .envrc を生成（cd した瞬間に timecop 付き php が有効）
 
 # direnv（プロジェクト単位の環境自動切替）
@@ -324,10 +326,11 @@ GNU 拡張は Debian/Ubuntu 既定の mawk では無言で一致しなくなる�
   cd した瞬間に devbox 環境（timecop 付き php 等）が有効になる。fish の config.fish が
   `direnv hook fish` を source する（interactive のみ）
 - **timecop flake** — `devbox/flake/` が実体。php-timecop（kiddivouchers 版 v1.8.0）を
-  `php.buildPecl` でビルドし、php85 + xdebug + pcov と合成した php を出力する。
-  nixpkgs に timecop が無いため自前の flake が必要。レガシープロジェクトでは
-  `devbox.json` の packages に `path:/home/mizumi/develop/dotfiles/devbox/flake` を
-  追加して使う（グローバルには timecop を入れない。`flake.lock` で nixpkgs を固定）
+  `php.buildPecl` でビルドし、php85 + xdebug + pcov + composer（`php85Packages.composer`）
+  と合成した環境を出力する。nixpkgs に timecop が無いため自前の flake が必要。
+  レガシープロジェクトでは `devbox.json` の packages に
+  `path:/home/mizumi/develop/dotfiles/devbox/flake`（+ `#composer`）を追加して使う
+  （グローバルには timecop を入れない。`flake.lock` で nixpkgs を固定）
 
 `~/.claude/*`（ai/claude）と `~/.codex/*`（ai/codex）は以下に依存:
 
