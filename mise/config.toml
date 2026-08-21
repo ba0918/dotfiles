@@ -154,6 +154,8 @@ herdr = "latest"
 hyperfine = "latest"
 just = "latest"
 lazygit = "latest"
+# mo: Markdown template engine（k1LoW/mo）。ショート名衝突回避のためフル名で宣言
+"aqua:k1LoW/mo" = "latest"
 neovim = "latest"
 node = "25.9.0"
 opencode = "latest"
