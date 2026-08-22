@@ -46,3 +46,13 @@
 
 より具体的な `AGENTS.md` やプロジェクト固有の契約が存在する場合は、
 この共通契約をそのプロジェクトへ具体化するものとして扱う。
+
+## Permission handling
+
+The active permission profile is authoritative.
+
+- Never request escalated permissions.
+- Never set `sandbox_permissions = "require_escalated"`.
+- Never request command-prefix approval.
+- Run commands normally within the active permission profile.
+- If an operation is denied by the sandbox, report the denied resource and continue with a materially safe alternative.
