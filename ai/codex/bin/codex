@@ -251,47 +251,65 @@ split_colon() {
 	printf '%s\n' $1
 }
 
-bind_rw "${WORKTREE}"
-[ -n "${GIT_COMMON}" ] && bind_rw "${GIT_COMMON}"
-bind_rw /tmp
+RW_PATHS=("${WORKTREE}")
+[ -n "${GIT_COMMON}" ] && RW_PATHS+=("${GIT_COMMON}")
+RW_PATHS+=(/tmp)
 for dir in "${ADD_DIRS[@]}"; do
 	[ -d "${dir}" ] || die "--add-dir does not exist: ${dir}"
-	bind_rw "$(realpath "${dir}")"
+	RW_PATHS+=("$(realpath "${dir}")")
 done
-for p in "${HOME}/.cache" "${HOME}/.cargo/registry" "${HOME}/.cargo/git" "${HOME}/.npm" \
-	"${HOME}/.bun/install/cache"; do
-	bind_rw "${p}"
-done
+RW_PATHS+=("${HOME}/.cache" "${HOME}/.cargo/registry" "${HOME}/.cargo/git" "${HOME}/.npm" \
+	"${HOME}/.bun/install/cache")
 if [ -n "${CODEX_JAIL_RW:-}" ]; then
 	while IFS= read -r p; do
-		[ -n "${p}" ] && bind_rw "${p}"
+		[ -n "${p}" ] && RW_PATHS+=("${p}")
 	done < <(split_colon "${CODEX_JAIL_RW}")
 fi
-
 CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
-bind_rw "${CODEX_HOME_DIR}"
-for p in config.toml AGENTS.md hooks.json hooks rules skills prompts; do
-	bind_ro "${CODEX_HOME_DIR}/${p}"
-done
+RW_PATHS+=("${CODEX_HOME_DIR}")
 
-for p in "${HOME}/.ssh" "${HOME}/.aws" "${HOME}/.gnupg" "${HOME}/.config/gh" "${HOME}/.docker" \
-	"${HOME}/.kube"; do
-	hide "${p}"
-done
-
+HIDE_PATHS=("${HOME}/.ssh" "${HOME}/.aws" "${HOME}/.gnupg" "${HOME}/.config/gh" "${HOME}/.docker" \
+	"${HOME}/.kube")
 # WSL: Windows drives are the 9p/drvfs mounts under /mnt. /mnt as a whole
 # cannot be hidden because /etc/resolv.conf points into /mnt/wsl.
 if command -v findmnt >/dev/null 2>&1; then
 	while IFS= read -r p; do
-		[ -n "${p}" ] && hide "${p}"
+		[ -n "${p}" ] && HIDE_PATHS+=("${p}")
 	done < <(findmnt -rn -o TARGET,FSTYPE 2>/dev/null \
 		| awk '$1 ~ "^/mnt/" && ($2 == "9p" || $2 == "drvfs") {print $1}')
 fi
 if [ -n "${CODEX_JAIL_HIDE:-}" ]; then
 	while IFS= read -r p; do
-		[ -n "${p}" ] && hide "${p}"
+		[ -n "${p}" ] && HIDE_PATHS+=("${p}")
 	done < <(split_colon "${CODEX_JAIL_HIDE}")
 fi
+
+# Later mounts shadow earlier ones. A hide that is an ancestor of a read-write
+# path (a repo kept on /mnt/c, say) must be mounted first so the read-write
+# bind re-exposes the repo inside it; every other hide goes after the
+# read-write binds so it can also blank out a path inside the workspace.
+covers_rw_path() {
+	local rw
+	for rw in "${RW_PATHS[@]}"; do
+		case "${rw}/" in
+			"$1"/*) return 0 ;;
+		esac
+	done
+	return 1
+}
+
+for p in "${HIDE_PATHS[@]}"; do
+	covers_rw_path "${p}" && hide "${p}"
+done
+for p in "${RW_PATHS[@]}"; do
+	bind_rw "${p}"
+done
+for p in "${HIDE_PATHS[@]}"; do
+	covers_rw_path "${p}" || hide "${p}"
+done
+for p in config.toml AGENTS.md hooks.json hooks rules skills prompts; do
+	bind_ro "${CODEX_HOME_DIR}/${p}"
+done
 
 # Dotenv files anywhere in the worktree read as empty and reject writes.
 # Templates (.env.example and friends) carry no secrets and stay visible.

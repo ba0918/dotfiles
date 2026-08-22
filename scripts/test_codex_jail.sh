@@ -271,6 +271,16 @@ OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL
 	PROBE='echo "plain:$(ls -A "$HOME/plain" | wc -l)"' "${SHIM}" 2>&1)"
 check "CODEX_JAIL_HIDE hides an extra path" 'grep -q "^plain:0$" <<<"${OUT}"'
 
+# A repo kept on a hidden drive (e.g. /mnt/c on a work PC) must still be the
+# workspace: the hide of the ancestor must not swallow the worktree bind.
+mkdir -p "${TMP}/drive/other"
+echo "SIBLING" > "${TMP}/drive/other/file"
+git -c init.defaultBranch=main init -q "${TMP}/drive/repo"
+OUT="$(cd "${TMP}/drive/repo" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_HIDE="${TMP}/drive" \
+	PROBE='touch under-hidden.txt && git status --short >/dev/null && echo "UNDER_HIDDEN_OK sibling:$(ls -A ../other 2>/dev/null | wc -l)"' "${SHIM}" 2>&1)" || true
+check "a worktree under a hidden ancestor stays writable" 'grep -q "UNDER_HIDDEN_OK" <<<"${OUT}"'
+check "the rest of the hidden ancestor stays hidden" 'grep -q "sibling:0" <<<"${OUT}"'
+
 OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" \
 	PROBE='touch "$HOME/extra-rw/y" && echo ADDDIR_OK' "${SHIM}" --add-dir "${FAKE_HOME}/extra-rw" 2>&1)"
 check "--add-dir <dir> is writable inside the jail" 'grep -q "ADDDIR_OK" <<<"${OUT}"'
