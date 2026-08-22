@@ -183,6 +183,7 @@ zoxide = "latest"
 lefthook = "latest"
 npm = "11.19.0"
 "npm:fkill-cli" = "latest"
+"npm:secretlint" = "13.0.4"
 
 # bootstrap ステップ 15（mise run bootstrap）で claude-skills 共有文書を
 # ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
