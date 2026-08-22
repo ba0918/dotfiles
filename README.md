@@ -208,7 +208,9 @@ safe-chain --version             # safe-chain のバージョン確認
   Docker Desktop の WSL 統合が daemon を提供する環境で `docker-ce` を入れると
   `/var/run/docker.sock` を取り合うため。`/mnt/wsl/docker-desktop` か Desktop 配布の
   `docker` CLI を検出したら何もせず終了する。`daemon.json` の `bip` はデフォルトの
-  172.17.0.0/16 を避けるための固定値（衝突相手は要確認）。既存の `daemon.json` が
+  172.17.0.0/16 が社内 LAN（社内サービスの IP 帯）と重なって到達不能になったため、
+  使っていない 192.168.100.0/24 に固定している。値を変えるときは社内 LAN と VPN の
+  経路表と重ならないことを先に確認する。既存の `daemon.json` が
   内容違いで存在する場合は上書きしない。検証は `bash scripts/test_docker_install.sh`。
 - **Aikido Safe Chain**（[AikidoSec/safe-chain]）— npm / pnpm / bun / pip 等の
   パッケージマネージャをラップし、マルウェア検知（Aikido Intel）+ 最小リリース年齢
