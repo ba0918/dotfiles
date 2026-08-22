@@ -58,6 +58,7 @@ dotfiles/
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json は symlink）
+│   │   └── bin/codex        #   jail shim（bwrap で境界を作り、中で codex の sandbox/承認を無効化）
 │   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
 │   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
 │       └── hooks/           #   security hooks の実体（Claude / Codex 共通）+ tests
@@ -155,6 +156,21 @@ safe-chain --version             # safe-chain のバージョン確認
   `~/.claude/hooks/` と `~/.codex/hooks/` の両方へ同じファイルが配布される。AI CLI はリリース高頻度のため
   `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
   導入は撤去済み。
+- **codex jail** — `codex` コマンドは `ai/codex/bin/codex`（config.fish が mise より後に PATH 先頭へ積む）
+  を経由する。bubblewrap（apt の `bubblewrap`）で「現在の worktree と共有 `.git`・`/tmp`・各種 cache・
+  `~/.codex` の状態だけ書ける、`~/.ssh` `~/.aws` `~/.gnupg` `~/.config/gh`・Windows ドライブ
+  （`/mnt/c` 等）・worktree 内の `.env*`（`.example` 等の雛形と `node_modules` 配下を除く）は見えない、
+  それ以外は読み取り専用」の mount namespace を起動ごとに組み、その中で
+  `codex --dangerously-bypass-approvals-and-sandbox` を動かす。codex 自身の Permission Profile
+  （Beta）は `.git`/`.agents` の read-only mount・相対 write ルールの再帰増殖・deny glob の
+  fail-closed が重なって実用に耐えないため、境界を codex の外へ出している。`~/.codex/config.toml`
+  / `AGENTS.md` / `hooks*` / `rules` / `skills` / `prompts` は中から書き換え不可。
+  jail に入るのは対話セッション・`exec`・`resume`・`fork`。`app-server` / `mcp-server`（呼び出し側が
+  thread ごとに sandbox を決める。Claude Code の codex plugin 経由の実行はこちらなので **jail の外**、
+  codex 自身の sandbox で動く）と `login` / `mcp` / `--version` など agent がコマンドを実行しない
+  呼び出しは素通し。認証情報を隠すため **`git push` と `gh` は jail の中では失敗する**（外で行う。
+  意図的に un-hide の手段は無い）。`CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）で
+  書込先・隠蔽先を追加、`CODEX_JAIL_OFF=1` で jail 自体を外す。検証は `bash scripts/test_codex_jail.sh`。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから

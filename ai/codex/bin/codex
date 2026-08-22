@@ -1,0 +1,311 @@
+#!/usr/bin/env bash
+#
+# codex jail — run the Codex CLI inside a bubblewrap mount namespace owned by
+# this script, with Codex's own sandbox and approval prompts switched off.
+#
+# Why not Codex's built-in permission profiles: as of codex-cli 0.147/0.148
+# they mount .git/.agents read-only under workspace-write, grow relative write
+# rules recursively across turns until process spawning fails (openai/codex
+# #33479, #37632), and fail closed into a read-only tree when a deny glob
+# cannot be resolved (#38026). A boundary that is rebuilt from per-turn state
+# cannot be trusted, so the boundary lives one level out: bwrap assembles it
+# once per launch from the current worktree and holds no state afterwards.
+# Codex documents --dangerously-bypass-approvals-and-sandbox as "intended
+# solely for running in environments that are externally sandboxed".
+#
+# Inside the jail:
+#   read-only   the whole filesystem
+#   read-write  current worktree, its shared .git, /tmp, package caches,
+#               --add-dir targets, CODEX_JAIL_RW
+#   read-write  ~/.codex runtime state; config.toml / AGENTS.md / hooks /
+#               rules / skills / prompts stay read-only so Codex cannot rewrite
+#               the rules it runs under
+#   hidden      ~/.ssh ~/.aws ~/.gnupg ~/.config/gh ~/.docker ~/.kube, the
+#               Windows drives under /mnt (9p/drvfs mounts)
+#               (+ CODEX_JAIL_HIDE) and every .env / .env.* in the worktree
+#               except templates (.example/.sample/.dist/.template) and
+#               anything under .git/ or node_modules/
+#   network     unrestricted (bwrap has no egress allowlist)
+#
+# Consequence: git push and gh need credentials the jail hides, so they are
+# done from outside. There is no un-hide switch by design.
+#
+# Jailed: the interactive session, exec, resume, fork — the invocations whose
+# sandbox this shim can replace with the bypass flag. Passed through to the
+# real binary: app-server and mcp-server (their sandbox is chosen per thread
+# by the caller, e.g. the Claude Code codex plugin, so runs started that way
+# are NOT jailed and use Codex's own sandbox), and subcommands that run no
+# agent commands (login, mcp, doctor, --version, ...).
+#
+# Environment:
+#   CODEX_JAIL_BIN    real codex binary (default: `mise which codex`)
+#   CODEX_JAIL_RW     extra read-write paths, colon separated
+#   CODEX_JAIL_HIDE   extra hidden paths, colon separated
+#   CODEX_JAIL_OFF=1  skip the jail and the bypass flag entirely
+
+set -euo pipefail
+
+SELF="$(realpath "${BASH_SOURCE[0]}")"
+BYPASS_FLAG="--dangerously-bypass-approvals-and-sandbox"
+
+die() {
+	printf 'codex (jail): %s\n' "$*" >&2
+	exit 1
+}
+
+# --- locate the real binary ----------------------------------------------------
+
+resolve_codex() {
+	local candidate
+	if [ -n "${CODEX_JAIL_BIN:-}" ]; then
+		[ -x "${CODEX_JAIL_BIN}" ] || die "CODEX_JAIL_BIN is not executable: ${CODEX_JAIL_BIN}"
+		printf '%s\n' "${CODEX_JAIL_BIN}"
+		return
+	fi
+	if command -v mise >/dev/null 2>&1; then
+		candidate="$(mise which codex 2>/dev/null || true)"
+		if [ -n "${candidate}" ] && [ -x "${candidate}" ] && [ "$(realpath "${candidate}")" != "${SELF}" ]; then
+			printf '%s\n' "${candidate}"
+			return
+		fi
+	fi
+	local IFS=:
+	local dir
+	for dir in ${PATH}; do
+		candidate="${dir}/codex"
+		if [ -x "${candidate}" ] && [ "$(realpath "${candidate}")" != "${SELF}" ]; then
+			printf '%s\n' "${candidate}"
+			return
+		fi
+	done
+	die "real codex binary not found (set CODEX_JAIL_BIN)"
+}
+
+# --- classify the invocation -----------------------------------------------------
+
+# Top-level options that consume the following argument, so that their value is
+# never mistaken for a subcommand.
+takes_value() {
+	case "$1" in
+		-c|--config|-i|--image|-m|--model|-p|--profile|-s|--sandbox|-a|--ask-for-approval| \
+		-C|--cd|--add-dir|--enable|--disable|--remote|--remote-auth-token-env|--local-provider)
+			return 0 ;;
+	esac
+	return 1
+}
+
+is_jailed_subcommand() {
+	case "$1" in
+		exec|e|resume|fork) return 0 ;;
+	esac
+	return 1
+}
+
+is_passthrough_subcommand() {
+	case "$1" in
+		review|login|logout|mcp|plugin|mcp-server|app-server|remote-control|completion|update| \
+		doctor|sandbox|debug|apply|a|archive|delete|migrate-rollouts|unarchive|cloud|exec-server| \
+		features|help)
+			return 0 ;;
+	esac
+	return 1
+}
+
+MODE=jail
+WORKSPACE="${PWD}"
+ADD_DIRS=()
+ARGS=()
+flag_inserted=false
+
+i=0
+argv=("$@")
+n=${#argv[@]}
+positional_seen=false
+while [ "${i}" -lt "${n}" ]; do
+	arg="${argv[$i]}"
+	if [ "${positional_seen}" = true ]; then
+		ARGS+=("${arg}")
+		i=$((i + 1))
+		continue
+	fi
+	case "${arg}" in
+		-h|--help|-V|--version)
+			MODE=plain
+			ARGS+=("${arg}")
+			;;
+		--)
+			positional_seen=true
+			ARGS+=("${arg}")
+			;;
+		--cd=*|-C=*)
+			WORKSPACE="${arg#*=}"
+			ARGS+=("${arg}")
+			;;
+		--add-dir=*)
+			ADD_DIRS+=("${arg#*=}")
+			ARGS+=("${arg}")
+			;;
+		-*)
+			ARGS+=("${arg}")
+			if takes_value "${arg}" && [ $((i + 1)) -lt "${n}" ]; then
+				value="${argv[$((i + 1))]}"
+				case "${arg}" in
+					-C|--cd) WORKSPACE="${value}" ;;
+					--add-dir) ADD_DIRS+=("${value}") ;;
+				esac
+				ARGS+=("${value}")
+				i=$((i + 1))
+			fi
+			;;
+		*)
+			positional_seen=true
+			ARGS+=("${arg}")
+			if is_jailed_subcommand "${arg}"; then
+				ARGS+=("${BYPASS_FLAG}")
+				flag_inserted=true
+			elif is_passthrough_subcommand "${arg}"; then
+				MODE=plain
+			fi
+			;;
+	esac
+	i=$((i + 1))
+done
+
+if [ "${CODEX_JAIL_OFF:-0}" = 1 ]; then
+	MODE=plain
+	if [ "${flag_inserted}" = true ]; then
+		filtered=()
+		for arg in "${ARGS[@]}"; do
+			[ "${arg}" = "${BYPASS_FLAG}" ] || filtered+=("${arg}")
+		done
+		ARGS=("${filtered[@]}")
+	fi
+fi
+
+CODEX_BIN="$(resolve_codex)"
+
+if [ "${MODE}" = plain ]; then
+	exec "${CODEX_BIN}" "${ARGS[@]}"
+fi
+
+if [ "${flag_inserted}" = false ]; then
+	ARGS=("${BYPASS_FLAG}" "${ARGS[@]}")
+fi
+
+# Already inside a jail (Codex launching codex): the boundary is inherited, the
+# flag is still required so the nested process does not start its own sandbox.
+if [ "${CODEX_JAIL:-0}" = 1 ]; then
+	exec "${CODEX_BIN}" "${ARGS[@]}"
+fi
+
+command -v bwrap >/dev/null 2>&1 || die "bwrap (bubblewrap) is required; refusing to run Codex unsandboxed"
+
+# --- assemble the mount table ----------------------------------------------------
+
+[ -d "${WORKSPACE}" ] || die "workspace directory does not exist: ${WORKSPACE}"
+WORKSPACE="$(realpath "${WORKSPACE}")"
+WORKTREE="$(git -C "${WORKSPACE}" rev-parse --show-toplevel 2>/dev/null || printf '%s' "${WORKSPACE}")"
+GIT_COMMON=""
+if common="$(git -C "${WORKSPACE}" rev-parse --git-common-dir 2>/dev/null)"; then
+	GIT_COMMON="$(cd "${WORKSPACE}" && realpath "${common}")"
+fi
+
+BWRAP=(--ro-bind / / --dev /dev --proc /proc)
+
+bind_rw() {
+	[ -e "$1" ] && BWRAP+=(--bind "$1" "$1")
+	return 0
+}
+
+# Mounted on the resolved target, not the given path: bwrap resolves a symlink
+# destination itself and fails on the dotfiles-managed links under ~/.codex.
+# The link entry stays replaceable from inside (unlink + recreate); only the
+# content behind it is protected.
+bind_ro() {
+	local real
+	real="$(realpath -e "$1" 2>/dev/null)" || return 0
+	BWRAP+=(--ro-bind "${real}" "${real}")
+}
+
+# Files are masked with an empty regular file rather than /dev/null: device
+# nodes reached through a bind mount made in an unprivileged user namespace are
+# unopenable (nodev), so /dev/null would surface as "Permission denied".
+# The mask source lives under ~/.local/state, which the jail never binds
+# read-write, so nothing inside can write through it.
+MASK_SRC="${HOME}/.local/state/codex-jail/empty"
+mkdir -p "$(dirname "${MASK_SRC}")"
+: > "${MASK_SRC}"
+
+hide() {
+	if [ -d "$1" ]; then
+		BWRAP+=(--tmpfs "$1")
+	elif [ -e "$1" ]; then
+		BWRAP+=(--ro-bind "${MASK_SRC}" "$1")
+	fi
+	return 0
+}
+
+split_colon() {
+	local IFS=:
+	# shellcheck disable=SC2086
+	printf '%s\n' $1
+}
+
+bind_rw "${WORKTREE}"
+[ -n "${GIT_COMMON}" ] && bind_rw "${GIT_COMMON}"
+bind_rw /tmp
+for dir in "${ADD_DIRS[@]}"; do
+	[ -d "${dir}" ] || die "--add-dir does not exist: ${dir}"
+	bind_rw "$(realpath "${dir}")"
+done
+for p in "${HOME}/.cache" "${HOME}/.cargo/registry" "${HOME}/.cargo/git" "${HOME}/.npm" \
+	"${HOME}/.bun/install/cache"; do
+	bind_rw "${p}"
+done
+if [ -n "${CODEX_JAIL_RW:-}" ]; then
+	while IFS= read -r p; do
+		[ -n "${p}" ] && bind_rw "${p}"
+	done < <(split_colon "${CODEX_JAIL_RW}")
+fi
+
+CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
+bind_rw "${CODEX_HOME_DIR}"
+for p in config.toml AGENTS.md hooks.json hooks rules skills prompts; do
+	bind_ro "${CODEX_HOME_DIR}/${p}"
+done
+
+for p in "${HOME}/.ssh" "${HOME}/.aws" "${HOME}/.gnupg" "${HOME}/.config/gh" "${HOME}/.docker" \
+	"${HOME}/.kube"; do
+	hide "${p}"
+done
+
+# WSL: Windows drives are the 9p/drvfs mounts under /mnt. /mnt as a whole
+# cannot be hidden because /etc/resolv.conf points into /mnt/wsl.
+if command -v findmnt >/dev/null 2>&1; then
+	while IFS= read -r p; do
+		[ -n "${p}" ] && hide "${p}"
+	done < <(findmnt -rn -o TARGET,FSTYPE 2>/dev/null \
+		| awk '$1 ~ "^/mnt/" && ($2 == "9p" || $2 == "drvfs") {print $1}')
+fi
+if [ -n "${CODEX_JAIL_HIDE:-}" ]; then
+	while IFS= read -r p; do
+		[ -n "${p}" ] && hide "${p}"
+	done < <(split_colon "${CODEX_JAIL_HIDE}")
+fi
+
+# Dotenv files anywhere in the worktree read as empty and reject writes.
+# Templates (.env.example and friends) carry no secrets and stay visible.
+# node_modules is skipped for speed only; vendor/ is scanned because composer
+# packages can ship a real .env.
+while IFS= read -r -d '' f; do
+	case "${f}" in
+		*.example|*.sample|*.dist|*.template) continue ;;
+	esac
+	hide "${f}"
+done < <(find "${WORKTREE}" \( -name .git -o -name node_modules \) -prune -o \
+	-type f \( -name '.env' -o -name '.env.*' \) -print0 2>/dev/null)
+
+BWRAP+=(--unshare-all --share-net --die-with-parent --chdir "${PWD}")
+
+export CODEX_JAIL=1
+exec bwrap "${BWRAP[@]}" -- "${CODEX_BIN}" "${ARGS[@]}"

@@ -21,6 +21,10 @@ else
     mise activate fish --shims | source
 end
 
+# Codex jail shim（ai/codex/bin/codex）。mise が tool の bin を PATH 先頭へ積むため、
+# mise activate より後に積まないと mise 管理の codex 本体に負ける。
+fish_add_path --prepend --move "$dotfiles_root/ai/codex/bin"
+
 # devbox global（php / xdebug / pcov のツールチェーン。nix store ベースでホストを汚さない）
 devbox global shellenv --init-hook | source
 

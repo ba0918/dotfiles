@@ -25,6 +25,8 @@ compile = false
 "apt:zoxide" = "latest"
 "apt:fzf" = "latest"
 "apt:jq" = "latest"
+# codex jail shim（ai/codex/bin/codex）の mount namespace 構築に使う
+"apt:bubblewrap" = "latest"
 
 [dotfiles]
 "~/.gitconfig" = "../git/.gitconfig"
