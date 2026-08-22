@@ -40,6 +40,13 @@ install_apt_repos() {
 	local repo updated=false
 	for repo in "${REPO_ROOT}"/apt/*.sources; do
 		[ -e "${repo}" ] || continue
+		# A repo already registered under another file name (a docker.list or
+		# mise.list written by hand from the vendor's docs) must not be added a
+		# second time: apt then warns about duplicate targets on every update.
+		uri_host="$(sed -n 's|^URIs:[[:space:]]*[a-z]*://\([^/[:space:]]*\).*|\1|p' "${repo}" | head -1)"
+		if [ -n "${uri_host}" ] && grep -rlq -- "${uri_host}" /etc/apt/sources.list.d/ 2>/dev/null; then
+			continue
+		fi
 		if [ ! -e "/etc/apt/sources.list.d/$(basename "${repo}")" ]; then
 			echo "apt: installing $(basename "${repo}")"
 			if [ "${DRY_RUN}" = false ]; then
