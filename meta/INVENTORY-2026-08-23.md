@@ -12,6 +12,7 @@
 | ブラウザ自動化（agent-browser / Playwright）の依存 `libnss3` `libnspr4` `libasound2t64` + CJK/絵文字フォント 9 個 | `[bootstrap.packages]`（`playwright install-deps chromium` の一覧を宣言で固定） |
 | 汎用アーカイブ `zip` `unzip` `zstd` | `[bootstrap.packages]` |
 | `ollama` | `[tools]`（aqua）。公式 installer 版は削除対象 |
+| `tea`（Gitea / Forgejo CLI） | `[tools]`（`go:gitea.dev/tea`、明示ピン）。`~/.local/bin/tea` は削除対象 |
 | apt リポジトリ docker / gierens / mise、Docker ネイティブ導入 | 同日の別コミット |
 
 ## 削除と決めたもの（実行は手動。sudo が要る）
@@ -41,6 +42,7 @@ sudo userdel ollama 2>/dev/null
 
 # 重複・残骸
 sudo rm -f /usr/local/bin/apm      # [tools] の pipx:apm-cli と二重
+rm -f ~/.local/bin/tea             # [tools] の go:gitea.dev/tea と二重
 rm -f ~/.local/bin/bat             # apt の batcat と二重
 
 sudo apt autoremove --purge
@@ -65,7 +67,6 @@ mise prune                          # 旧版の deno / node / cargo-* 等
 |---|---|
 | `uv` / `uvx` + uv tools（`pytest`, `skills-ref`） | `[tools]` に `uv = "latest"`（aqua あり）で入れるか。uv tools の再現は `uv tool install` を bootstrap.sh に書く必要がある |
 | `dotenvx` | `[tools]` に `dotenvx = "latest"`（aqua あり）で入れるか |
-| `tea`（Gitea CLI） | まだ使っているか |
 | `similarity-rs` / `similarity-ts` | refactor-similarity スキルの依存。`cargo:` backend で `[tools]` に入れるか |
 | `rustup`（stable ×2 + nightly） | `[tools]` の `rust` と二重。nightly が要るなら rustup を正にして `rust` を外す |
 
