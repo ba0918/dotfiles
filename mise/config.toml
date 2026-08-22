@@ -211,6 +211,10 @@ uv = "latest"
 "cargo:cargo-mutants" = "latest"
 "cargo:cargo-nextest" = "latest"
 "cargo:cargo-outdated" = "latest"
+# similarity-rs / -ts: コード重複検出（refactor-similarity-rs / -ts スキルが呼ぶ）。
+# 手動の cargo install 版（~/.cargo/bin）から移行
+"cargo:similarity-rs" = "latest"
+"cargo:similarity-ts" = "latest"
 shellcheck = "latest"
 # usage: mise の補完が要求する（mise completion fish が usage CLI をチェックする）
 usage = "latest"

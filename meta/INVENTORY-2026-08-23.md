@@ -16,6 +16,8 @@
 | `uv` / `uvx` | `[tools]`（aqua）。`~/.local/bin/uv` `uvx` は削除対象 |
 | uv tools `pytest` `skills-ref`（`agentskills`） | `[tools]` の `pipx:` backend。`uv tool` 側は削除対象 |
 | `dotenvx` | `[tools]`（aqua）。`~/.local/bin/dotenvx` は削除対象 |
+| `similarity-rs` / `similarity-ts` | `[tools]` の `cargo:` backend。`~/.cargo/bin` の手動版は削除対象 |
+| `rustup` | **二重ではなかった**。mise の `rust` は内部で rustup を使う（`mise which cargo` → `~/.cargo/bin/rustup`）。残す。古い toolchain 1.95 は mise の旧 latest、nightly は手動追加 |
 | apt リポジトリ docker / gierens / mise、Docker ネイティブ導入 | 同日の別コミット |
 
 ## 削除と決めたもの（実行は手動。sudo が要る）
@@ -49,6 +51,9 @@ rm -f ~/.local/bin/tea             # [tools] の go:gitea.dev/tea と二重
 rm -f ~/.local/bin/uv ~/.local/bin/uvx ~/.local/bin/dotenvx   # [tools] の uv / dotenvx と二重
 uv tool uninstall pytest skills-ref                            # [tools] の pipx:pytest / pipx:skills-ref と二重
 rm -f ~/.local/bin/pytest ~/.local/bin/py.test ~/.local/bin/agentskills
+cargo uninstall similarity-rs similarity-ts                   # [tools] の cargo:similarity-* と二重
+rustup toolchain uninstall 1.95.0-x86_64-unknown-linux-gnu    # mise の旧 latest（1.97.1 が現行）
+rustup toolchain uninstall nightly-x86_64-unknown-linux-gnu   # mise の rust を正とするなら不要
 rm -f ~/.local/bin/bat             # apt の batcat と二重
 
 sudo apt autoremove --purge
@@ -67,12 +72,9 @@ mise prune                          # 旧版の deno / node / cargo-* 等
 - mise に入っているがグローバル未宣言: `aws-sam-cli` `flutter` `lefthook` `python 3.14` 旧版 `node` / `deno` / `cargo-*` →
   各プロジェクトの `mise.toml` 由来。clone すれば戻る
 
-## 未決（オタクくんの判断待ち）
+## 未決
 
-| 対象 | 論点 |
-|---|---|
-| `similarity-rs` / `similarity-ts` | refactor-similarity スキルの依存。`cargo:` backend で `[tools]` に入れるか |
-| `rustup`（stable ×2 + nightly） | `[tools]` の `rust` と二重。nightly が要るなら rustup を正にして `rust` を外す |
+なし（2026-08-23 時点で全件判断済み）。
 
 ## 走査に使った観点
 
