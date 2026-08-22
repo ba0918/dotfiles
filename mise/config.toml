@@ -27,6 +27,27 @@ compile = false
 "apt:jq" = "latest"
 # codex jail shim（ai/codex/bin/codex）の mount namespace 構築に使う
 "apt:bubblewrap" = "latest"
+# 汎用アーカイブ
+"apt:zip" = "latest"
+"apt:unzip" = "latest"
+"apt:zstd" = "latest"
+# clipboard2path-wsl の実行時依存（Wayland クリップボード読み出しと WSL ユーティリティ）
+"apt:wl-clipboard" = "latest"
+"apt:wslu" = "latest"
+# ブラウザ自動化（agent-browser / Playwright の Chromium）。`playwright install-deps chromium`
+# が入れる一覧（2026-08 時点）を宣言で持つ。CJK / 絵文字フォントが無いとスクリーンショットが豆腐になる
+"apt:libnss3" = "latest"
+"apt:libnspr4" = "latest"
+"apt:libasound2t64" = "latest"
+"apt:fonts-liberation" = "latest"
+"apt:fonts-freefont-ttf" = "latest"
+"apt:fonts-ipafont-gothic" = "latest"
+"apt:fonts-noto-color-emoji" = "latest"
+"apt:fonts-wqy-zenhei" = "latest"
+"apt:fonts-tlwg-loma-otf" = "latest"
+"apt:fonts-unifont" = "latest"
+"apt:xfonts-cyrillic" = "latest"
+"apt:xfonts-scalable" = "latest"
 
 [dotfiles]
 "~/.gitconfig" = "../git/.gitconfig"
@@ -160,6 +181,9 @@ lazygit = "latest"
 "aqua:k1LoW/mo" = "latest"
 neovim = "latest"
 node = "25.9.0"
+# ollama: ローカル LLM。公式 installer（/usr/local/bin + systemd service）ではなく
+# バイナリだけを mise で持つ。サーバは使うときに `ollama serve` で手動起動
+ollama = "latest"
 opencode = { version = "latest", minimum_release_age = "1d" }
 pnpm = "latest"
 ripgrep = "latest"

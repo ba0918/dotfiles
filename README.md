@@ -153,6 +153,12 @@ safe-chain --version             # safe-chain のバージョン確認
   `[tools]` の `glab` で導入
 - **fish シェル本体と shell ツール** — fish / bat / fd-find / eza / zoxide / fzf
   は apt で配布（`[bootstrap.packages]` の `apt:*` 宣言）。
+- **ブラウザ自動化の実行時依存** — agent-browser（bun global）と Playwright が使う Chromium の
+  共有ライブラリと CJK / 絵文字フォントも `[bootstrap.packages]` で宣言する。
+  `playwright install-deps chromium` が入れる一覧と同じもので、無いと日本語のスクリーンショットが
+  豆腐になる。Playwright 側の一覧が変わったら宣言を追従させる。
+- **ollama** — `[tools]` の `ollama`（aqua）。公式 installer（systemd service 付き）は使わず、
+  必要なときだけ `ollama serve` で起動する。
 - **yazi** — TUI ファイルマネージャ（`[tools]` の `yazi`）。`ya` 関数で起動すると
   終了時のカレントディレクトリに移動。`S` で ripgrep によるファイル内容検索、
   `E` で Windows Explorer を開く（WSL 向け opener は `explorer.exe` へ委譲）。
