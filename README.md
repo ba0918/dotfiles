@@ -15,7 +15,14 @@ git clone <this-repo> ~/develop/dotfiles
 
 # 3. 一括適用（wrapper が config の場所解決・trust まで行う）
 ~/develop/dotfiles/bootstrap.sh
+
+# 4. (opt-in) Docker Desktop を使わない機械だけ: WSL 内に dockerd を直接入れる
+~/develop/dotfiles/docker/install.sh --dry-run   # 計画を確認
+~/develop/dotfiles/docker/install.sh             # 適用（sudo。systemd 未有効なら wsl --shutdown が必要）
 ```
+
+mise は `curl https://mise.run | sh` でも `apt install mise`（`apt/mise.sources` を
+bootstrap.sh が登録する）でもよい。apt 経由なら `apt upgrade` で追従する。
 
 初回実行後、対話シェルでは fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を
 設定するので、以後はそのまま `mise bootstrap` を直接叩ける。
@@ -75,8 +82,14 @@ dotfiles/
 │   └── .bunfig.toml        # minimumReleaseAge 604800 秒（7 日）
 ├── herdr/                  # → ~/.config/herdr/config.toml
 │   └── .config/herdr/
-├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入)
-│   └── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
+├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入。鍵は deb822 でインライン)
+│   ├── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
+│   ├── gierens.sources     # eza の配布元（Ubuntu 標準リポジトリに eza は無い）
+│   └── mise.sources        # mise の apt リポジトリ（apt upgrade で mise も追従させる）
+├── docker/                 # WSL 内ネイティブ dockerd（opt-in。Docker Desktop 環境では使わない）
+│   ├── install.sh          # 導入スクリプト（Desktop 検出で拒否、--dry-run あり）
+│   ├── docker.sources      # Docker 公式 apt リポジトリ
+│   └── daemon.json         # → /etc/docker/daemon.json（bridge を 192.168.100.0/24 に固定）
 ├── mise/
 │   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
 ├── meta/
@@ -189,6 +202,14 @@ safe-chain --version             # safe-chain のバージョン確認
   systemd user service と wl-paste wrapper は `clipboard2path-wsl init --no-hook`
   が生成する（fish hook のみ `conf.d/clipboard2path.fish` を dotfiles 管理）。
   動作確認は `clipboard2path-wsl status`。
+- **Docker（WSL 内ネイティブ）** — `docker/install.sh` が Docker 公式 apt リポジトリ・
+  `docker-ce` 一式・`/etc/docker/daemon.json`・`docker` グループ・`/etc/wsl.conf` の
+  `systemd=true` を冪等に整える。`[bootstrap.packages]` には入れない: 会社 PC のように
+  Docker Desktop の WSL 統合が daemon を提供する環境で `docker-ce` を入れると
+  `/var/run/docker.sock` を取り合うため。`/mnt/wsl/docker-desktop` か Desktop 配布の
+  `docker` CLI を検出したら何もせず終了する。`daemon.json` の `bip` はデフォルトの
+  172.17.0.0/16 を避けるための固定値（衝突相手は要確認）。既存の `daemon.json` が
+  内容違いで存在する場合は上書きしない。検証は `bash scripts/test_docker_install.sh`。
 - **Aikido Safe Chain**（[AikidoSec/safe-chain]）— npm / pnpm / bun / pip 等の
   パッケージマネージャをラップし、マルウェア検知（Aikido Intel）+ 最小リリース年齢
   （デフォルト 48h）を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。
