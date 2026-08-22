@@ -160,7 +160,7 @@ lazygit = "latest"
 "aqua:k1LoW/mo" = "latest"
 neovim = "latest"
 node = "25.9.0"
-opencode = "latest"
+opencode = { version = "latest", minimum_release_age = "1d" }
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"
