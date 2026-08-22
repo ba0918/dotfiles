@@ -59,6 +59,10 @@ echo 'approval_policy = "never"' > "${FAKE_HOME}/.codex/config.toml"
 echo "# agents" > "${FAKE_HOME}/.codex/AGENTS.md"
 echo "rule" > "${FAKE_HOME}/.codex/rules/default.rules"
 echo '{"a":1}' > "${FAKE_HOME}/.codex/auth.json"
+mkdir -p "${FAKE_HOME}/.local/share/opencode/log" "${FAKE_HOME}/.claude/projects" "${FAKE_HOME}/.claude/hooks"
+echo '{"deepseek":"k"}' > "${FAKE_HOME}/.local/share/opencode/auth.json"
+echo '{"permissions":{}}' > "${FAKE_HOME}/.claude/settings.json"
+echo '{}' > "${FAKE_HOME}/.claude.json"
 # hooks.json is a dotfiles-managed symlink in the real home; skills is dangling.
 mkdir -p "${FAKE_HOME}/dotfiles"
 echo '{"hooks":[]}' > "${FAKE_HOME}/dotfiles/hooks.json"
@@ -257,6 +261,52 @@ check "a symlinked ~/.codex/hooks.json cannot be written through the link" 'grep
 
 probe "${WT}" 'echo DANGLING_OK'
 check "a dangling symlink under ~/.codex does not break the jail" 'grep -q "DANGLING_OK" <<<"${OUT}"'
+
+# --- other agent CLIs hosted inside the jail (shipped jail.conf) ----------------
+
+probe "${WT}" 'touch "$HOME/.local/share/opencode/log/opencode.log" && echo OC_LOG_OK'
+check "opencode can write its log under ~/.local/share/opencode" 'grep -q "OC_LOG_OK" <<<"${OUT}"'
+
+probe "${WT}" 'echo "{}" > "$HOME/.local/share/opencode/auth.json" && echo OC_AUTH_OK'
+check "opencode auth.json stays writable (token refresh)" 'grep -q "OC_AUTH_OK" <<<"${OUT}"'
+
+probe "${WT}" 'touch "$HOME/.claude/projects/p.jsonl" && echo "{}" > "$HOME/.claude.json" && echo CL_STATE_OK'
+check "claude code state (~/.claude, ~/.claude.json) is writable" 'grep -q "CL_STATE_OK" <<<"${OUT}"'
+
+probe "${WT}" 'echo "x" >> "$HOME/.claude/settings.json" 2>/dev/null && echo CL_SETTINGS_WRITABLE || echo CL_SETTINGS_RO'
+check "claude code settings.json is read-only" 'grep -q "CL_SETTINGS_RO" <<<"${OUT}"'
+
+probe "${WT}" 'touch "$HOME/.claude/hooks/new.sh" 2>/dev/null && echo CL_HOOKS_WRITABLE || echo CL_HOOKS_RO'
+check "claude code hooks/ is read-only" 'grep -q "CL_HOOKS_RO" <<<"${OUT}"'
+
+# --- jail.conf: the mount table is data, overridable with CODEX_JAIL_CONF -------
+
+CONF="${TMP}/custom.conf"
+mkdir -p "${FAKE_HOME}/conf-rw/inner" "${FAKE_HOME}/conf-hide"
+echo "v" > "${FAKE_HOME}/conf-rw/inner/locked"
+echo "s" > "${FAKE_HOME}/conf-hide/secret"
+cat > "${CONF}" <<EOF_CONF
+# comment line
+
+rw ~/conf-rw
+ro ~/conf-rw/inner/locked
+hide ~/conf-hide
+rw ~/does-not-exist
+EOF_CONF
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${CONF}" \
+	PROBE='touch "$HOME/conf-rw/a" && echo RW_OK; echo x >> "$HOME/conf-rw/inner/locked" 2>/dev/null && echo RO_WRITABLE || echo RO_OK; echo "hidden:$(ls -A "$HOME/conf-hide" | wc -l)"; ls -A "$HOME/.ssh" | wc -l | sed "s/^/ssh:/"' "${SHIM}" 2>&1)" || true
+check "jail.conf rw directive binds read-write (~ expanded)" 'grep -q "RW_OK" <<<"${OUT}"'
+check "jail.conf ro directive overlays read-only inside an rw bind" 'grep -q "RO_OK" <<<"${OUT}"'
+check "jail.conf hide directive blanks a directory" 'grep -q "^hidden:0$" <<<"${OUT}"'
+check "jail.conf rw of a missing path is skipped, not fatal" 'grep -q "RW_OK" <<<"${OUT}"'
+check "a custom jail.conf replaces the shipped one (~/.ssh no longer hidden)" 'grep -q "^ssh:1$" <<<"${OUT}"'
+
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${TMP}/missing.conf" "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "a missing jail.conf refuses to start rather than running without hides" '[ "${RC}" -ne 0 ] && grep -q "jail.conf" <<<"${OUT}"'
+
+printf 'bogus ~/x\n' > "${CONF}"
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${CONF}" "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "an unknown directive in jail.conf is an error" '[ "${RC}" -ne 0 ] && grep -q "bogus" <<<"${OUT}"'
 
 # --- extension points ---------------------------------------------------------
 

@@ -15,17 +15,21 @@
 #
 # Inside the jail:
 #   read-only   the whole filesystem
-#   read-write  current worktree, its shared .git, /tmp, package caches,
-#               --add-dir targets, CODEX_JAIL_RW
-#   read-write  ~/.codex runtime state; config.toml / AGENTS.md / hooks /
-#               rules / skills / prompts stay read-only so Codex cannot rewrite
-#               the rules it runs under
-#   hidden      ~/.ssh ~/.aws ~/.gnupg ~/.config/gh ~/.docker ~/.kube, the
-#               Windows drives under /mnt (9p/drvfs mounts)
-#               (+ CODEX_JAIL_HIDE) and every .env / .env.* in the worktree
+#   read-write  current worktree, its shared .git, /tmp, --add-dir targets,
+#               CODEX_JAIL_RW, and the `rw` entries of jail.conf (package
+#               caches; runtime state of codex, opencode and claude)
+#   read-only   the `ro` entries of jail.conf, overlaid inside rw binds: the
+#               config / instructions / hooks those CLIs run under, so an agent
+#               cannot rewrite its own rules
+#   hidden      the `hide` entries of jail.conf (~/.ssh, ~/.aws, ~/.gnupg,
+#               ~/.config/gh, ...), CODEX_JAIL_HIDE, the Windows drives under
+#               /mnt (9p/drvfs mounts), and every .env / .env.* in the worktree
 #               except templates (.example/.sample/.dist/.template) and
 #               anything under .git/ or node_modules/
 #   network     unrestricted (bwrap has no egress allowlist)
+#
+# The mount table lives in ai/codex/jail.conf (next to this script's parent
+# directory) so hosting another CLI inside the jail is a data change.
 #
 # Consequence: git push and gh need credentials the jail hides, so they are
 # done from outside. There is no un-hide switch by design.
@@ -39,6 +43,7 @@
 #
 # Environment:
 #   CODEX_JAIL_BIN    real codex binary (default: `mise which codex`)
+#   CODEX_JAIL_CONF   mount table (default: ../jail.conf relative to this script)
 #   CODEX_JAIL_RW     extra read-write paths, colon separated
 #   CODEX_JAIL_HIDE   extra hidden paths, colon separated
 #   CODEX_JAIL_OFF=1  skip the jail and the bypass flag entirely
@@ -251,6 +256,12 @@ split_colon() {
 	printf '%s\n' $1
 }
 
+# The mount table is data (ai/codex/jail.conf next to this script, or
+# CODEX_JAIL_CONF). Without it the jail would start with no hides at all, so a
+# missing file is fatal rather than a silent fallback.
+CONF="${CODEX_JAIL_CONF:-$(dirname "$(dirname "${SELF}")")/jail.conf}"
+[ -r "${CONF}" ] || die "jail.conf not found: ${CONF}"
+
 RW_PATHS=("${WORKTREE}")
 [ -n "${GIT_COMMON}" ] && RW_PATHS+=("${GIT_COMMON}")
 RW_PATHS+=(/tmp)
@@ -258,18 +269,38 @@ for dir in "${ADD_DIRS[@]}"; do
 	[ -d "${dir}" ] || die "--add-dir does not exist: ${dir}"
 	RW_PATHS+=("$(realpath "${dir}")")
 done
-RW_PATHS+=("${HOME}/.cache" "${HOME}/.cargo/registry" "${HOME}/.cargo/git" "${HOME}/.npm" \
-	"${HOME}/.bun/install/cache")
+RO_PATHS=()
+HIDE_PATHS=()
+
+expand_tilde() {
+	case "$1" in
+		"~") printf '%s\n' "${HOME}" ;;
+		"~/"*) printf '%s/%s\n' "${HOME}" "${1#"~/"}" ;;
+		*) printf '%s\n' "$1" ;;
+	esac
+}
+
+lineno=0
+while IFS= read -r line || [ -n "${line}" ]; do
+	lineno=$((lineno + 1))
+	line="${line%%#*}"
+	[ -z "${line//[[:space:]]/}" ] && continue
+	read -r directive target <<<"${line}"
+	[ -n "${target}" ] || die "${CONF}:${lineno}: missing path after '${directive}'"
+	target="$(expand_tilde "${target}")"
+	case "${directive}" in
+		rw) RW_PATHS+=("${target}") ;;
+		ro) RO_PATHS+=("${target}") ;;
+		hide) HIDE_PATHS+=("${target}") ;;
+		*) die "${CONF}:${lineno}: unknown directive '${directive}' (expected rw, ro or hide)" ;;
+	esac
+done < "${CONF}"
+
 if [ -n "${CODEX_JAIL_RW:-}" ]; then
 	while IFS= read -r p; do
 		[ -n "${p}" ] && RW_PATHS+=("${p}")
 	done < <(split_colon "${CODEX_JAIL_RW}")
 fi
-CODEX_HOME_DIR="${CODEX_HOME:-${HOME}/.codex}"
-RW_PATHS+=("${CODEX_HOME_DIR}")
-
-HIDE_PATHS=("${HOME}/.ssh" "${HOME}/.aws" "${HOME}/.gnupg" "${HOME}/.config/gh" "${HOME}/.docker" \
-	"${HOME}/.kube")
 # WSL: Windows drives are the 9p/drvfs mounts under /mnt. /mnt as a whole
 # cannot be hidden because /etc/resolv.conf points into /mnt/wsl.
 if command -v findmnt >/dev/null 2>&1; then
@@ -307,8 +338,8 @@ done
 for p in "${HIDE_PATHS[@]}"; do
 	covers_rw_path "${p}" || hide "${p}"
 done
-for p in config.toml AGENTS.md hooks.json hooks rules skills prompts; do
-	bind_ro "${CODEX_HOME_DIR}/${p}"
+for p in "${RO_PATHS[@]}"; do
+	bind_ro "${p}"
 done
 
 # Dotenv files anywhere in the worktree read as empty and reject writes.

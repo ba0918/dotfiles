@@ -58,7 +58,8 @@ dotfiles/
 │   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
 │   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
 │   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json は symlink）
-│   │   └── bin/codex        #   jail shim（bwrap で境界を作り、中で codex の sandbox/承認を無効化）
+│   │   ├── bin/codex        #   jail shim（bwrap で境界を作り、中で codex の sandbox/承認を無効化）
+│   │   └── jail.conf        #   jail の mount table（rw / ro / hide の宣言。CLI を追加するときはここ）
 │   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
 │   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
 │       └── hooks/           #   security hooks の実体（Claude / Codex 共通）+ tests
@@ -169,8 +170,12 @@ safe-chain --version             # safe-chain のバージョン確認
   thread ごとに sandbox を決める。Claude Code の codex plugin 経由の実行はこちらなので **jail の外**、
   codex 自身の sandbox で動く）と `login` / `mcp` / `--version` など agent がコマンドを実行しない
   呼び出しは素通し。認証情報を隠すため **`git push` と `gh` は jail の中では失敗する**（外で行う。
-  意図的に un-hide の手段は無い）。`CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）で
-  書込先・隠蔽先を追加、`CODEX_JAIL_OFF=1` で jail 自体を外す。検証は `bash scripts/test_codex_jail.sh`。
+  意図的に un-hide の手段は無い）。mount table は `ai/codex/jail.conf`（`rw` / `ro` / `hide` の 3 directive、
+  `~` 展開あり）。cycle や skill-regression が箱の中から起動する opencode / claude の状態ディレクトリも
+  ここで rw にしてあり、それらの設定・指示ファイルは ro。別の CLI を箱の中で動かして
+  「Read-only file system」で落ちたら、その CLI の状態ディレクトリを `rw` で足す。
+  `CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）は一時的な追加用、`CODEX_JAIL_CONF` で
+  table ごと差し替え、`CODEX_JAIL_OFF=1` で jail 自体を外す。検証は `bash scripts/test_codex_jail.sh`。
 
 未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
 `git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
