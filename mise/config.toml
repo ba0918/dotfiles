@@ -154,6 +154,10 @@ compile = false
 # APM: Microsoft のエージェント設定用パッケージマネージャ（apm.yml / apm.lock）。
 # aqua レジストリ未登録のため pipx バックエンド（pip install apm-cli 相当）で導入
 "pipx:apm-cli" = "latest"
+# Python の CLI ツールは pipx バックエンドで隔離 venv に入れる（手動の `uv tool install` から移行）
+"pipx:pytest" = "latest"
+# agentskills: Agent Skills 仕様のリファレンス実装 / バリデータ（PyPI: skills-ref）
+"pipx:skills-ref" = "latest"
 ast-grep = "latest"
 atuin = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
@@ -168,6 +172,8 @@ deno = "latest"
 "aqua:jetify-com/devbox" = "latest"
 direnv = "latest"
 dust = "latest"
+# dotenvx: .env の暗号化（aqua:dotenvx/dotenvx）。curl installer で ~/.local/bin に置いていたものを移行
+dotenvx = "latest"
 gh = "latest"
 ghq = "latest"
 glab = "latest"
@@ -193,6 +199,8 @@ opencode = { version = "latest", minimum_release_age = "1d" }
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"
+# uv: Python のパッケージ / プロジェクト管理。公式 installer で ~/.local/bin に置いていたものを移行
+uv = "latest"
 # cargo サプライチェーン対策（crates.io 依存の脆弱性 / ライセンス検査）。cargo install 相当を
 # mise の cargo backend で管理（手動の ~/.cargo/bin 版から移行済み）
 "cargo:cargo-audit" = "latest"

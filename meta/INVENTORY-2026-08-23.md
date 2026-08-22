@@ -13,6 +13,9 @@
 | 汎用アーカイブ `zip` `unzip` `zstd` | `[bootstrap.packages]` |
 | `ollama` | `[tools]`（aqua）。公式 installer 版は削除対象 |
 | `tea`（Gitea / Forgejo CLI） | `[tools]`（`go:gitea.dev/tea`、明示ピン）。`~/.local/bin/tea` は削除対象 |
+| `uv` / `uvx` | `[tools]`（aqua）。`~/.local/bin/uv` `uvx` は削除対象 |
+| uv tools `pytest` `skills-ref`（`agentskills`） | `[tools]` の `pipx:` backend。`uv tool` 側は削除対象 |
+| `dotenvx` | `[tools]`（aqua）。`~/.local/bin/dotenvx` は削除対象 |
 | apt リポジトリ docker / gierens / mise、Docker ネイティブ導入 | 同日の別コミット |
 
 ## 削除と決めたもの（実行は手動。sudo が要る）
@@ -43,6 +46,9 @@ sudo userdel ollama 2>/dev/null
 # 重複・残骸
 sudo rm -f /usr/local/bin/apm      # [tools] の pipx:apm-cli と二重
 rm -f ~/.local/bin/tea             # [tools] の go:gitea.dev/tea と二重
+rm -f ~/.local/bin/uv ~/.local/bin/uvx ~/.local/bin/dotenvx   # [tools] の uv / dotenvx と二重
+uv tool uninstall pytest skills-ref                            # [tools] の pipx:pytest / pipx:skills-ref と二重
+rm -f ~/.local/bin/pytest ~/.local/bin/py.test ~/.local/bin/agentskills
 rm -f ~/.local/bin/bat             # apt の batcat と二重
 
 sudo apt autoremove --purge
@@ -65,8 +71,6 @@ mise prune                          # 旧版の deno / node / cargo-* 等
 
 | 対象 | 論点 |
 |---|---|
-| `uv` / `uvx` + uv tools（`pytest`, `skills-ref`） | `[tools]` に `uv = "latest"`（aqua あり）で入れるか。uv tools の再現は `uv tool install` を bootstrap.sh に書く必要がある |
-| `dotenvx` | `[tools]` に `dotenvx = "latest"`（aqua あり）で入れるか |
 | `similarity-rs` / `similarity-ts` | refactor-similarity スキルの依存。`cargo:` backend で `[tools]` に入れるか |
 | `rustup`（stable ×2 + nightly） | `[tools]` の `rust` と二重。nightly が要るなら rustup を正にして `rust` を外す |
 
