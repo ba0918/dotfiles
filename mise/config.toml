@@ -97,6 +97,7 @@ compile = false
 "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
 "~/.config/fish/functions/__auto_ls.fish" = "../fish/.config/fish/functions/__auto_ls.fish"
 "~/.config/fish/functions/fe.fish" = "../fish/.config/fish/functions/fe.fish"
+"~/.config/fish/functions/gc.fish" = "../fish/.config/fish/functions/gc.fish"
 "~/.config/fish/functions/gr.fish" = "../fish/.config/fish/functions/gr.fish"
 "~/.config/fish/functions/gwt.fish" = "../fish/.config/fish/functions/gwt.fish"
 "~/.config/fish/functions/myfuncs.fish" = "../fish/.config/fish/functions/myfuncs.fish"
