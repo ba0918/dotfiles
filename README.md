@@ -25,8 +25,11 @@ mise は `curl https://mise.run | sh` でも `apt install mise`（`apt/mise.sour
 bootstrap.sh が登録する）でもよい。apt 経由なら `apt upgrade` で追従する。
 
 初回実行後、対話シェルでは fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を
-設定するので、以後はそのまま `mise bootstrap` を直接叩ける。
+設定するので、以後は `mise bootstrap` を直接叩ける。
 repo を別の場所に置いた場合は bootstrap.sh を使えば場所非依存で適用できる。
+
+`./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
+未設定なら導入し、`apt-get update` する（sudo を要求）。
 
 ## fish プラグイン
 
@@ -34,204 +37,61 @@ tide / fzf.fish / z は fisher 管理。`fish_plugins` で宣言されている�
 新規マシンでは `fisher install` で再現する（関数・completions 等の生成物は
 repo に含めない）。
 
-`mise bootstrap` は [bootstrap.packages] / [dotfiles] / [tools] を順に適用し、
-システムパッケージ・dotfiles・開発ツールを一つで再現する。再実行は冪等。
-
 ## レイアウト
 
-トップレベルは「パッケージ」で、source ツリーが `[dotfiles]` の宣言を通じて
+トップレベルは「パッケージ」で、`mise/config.toml` の `[dotfiles]` 宣言を通じて
 `$HOME` の下に symlink 展開される。
 
-```
-dotfiles/
-├── git/                    # → ~/.gitconfig + ~/.config/git/{ignore,attributes,template}
-│   ├── .gitconfig
-│   └── .config/git/
-│       ├── ignore          # global gitignore (XDG, 自動検出)
-│       ├── attributes      # global gitattributes (XDG, 自動検出)
-│       └── template/       # git init テンプレート (global pre-commit 等)
-├── fish/                   # 手動ファイルのみ（プラグインは fish_plugins + fisher）
-│   └── .config/fish/
-│       ├── config.fish
-│       ├── fish_plugins
-│       ├── functions/up.fish
-│       └── conf.d/clipboard2path.fish     # Alt+V ペースト hook（dotfiles 管理）
-├── nvim/                   # LazyVim（mise の neovim 0.12+ を想定）
-│   └── .config/nvim/       # init.lua / lua/config / lua/plugins 等
-├── ai/                      # LLM 設定を集約（secret 混入厳禁）
-│   ├── claude/              # → ~/.claude/*（CLAUDE.md は template 配布、bash-env.sh は symlink）
-│   │   │                    #   output-styles/gal.md は shared/persona/gal.md の symlink
-│   │   │                    #   rules/{interaction,human-readable}.md は shared/ の symlink（常時適用）
-│   │   ├── conf.d/          #   settings.json の分割管理（build-settings で合成）
-│   │   └── build-settings   #   conf.d/ → ~/.claude/settings.json 合成スクリプト
-│   ├── codex/               # → ~/.codex/*（AGENTS.md は template 配布、hooks.json は symlink）
-│   │   ├── bin/codex        #   jail shim（bwrap で境界を作り、中で codex の sandbox/承認を無効化）
-│   │   └── jail.conf        #   jail の mount table（rw / ro / hide の宣言。CLI を追加するときはここ）
-│   ├── opencode/            # → ~/.opencode/opencode.json（template 配布 → rendered 実ファイル）
-│   └── shared/              # 共通契約 + deny-patterns.yaml（deny パターン正本）
-│       └── hooks/           #   security hooks の実体（Claude / Codex 共通）+ tests
-├── yazi/                   # → ~/.config/yazi/{yazi.toml,keymap.toml}
-│   └── .config/yazi/
-├── glow/                   # → ~/.config/glow/glow.yml
-│   └── .config/glow/
-├── npm/                    # → ~/.npmrc（min-release-age=7）
-│   └── .npmrc              # JS サプライチェーン対策（リリース年齢 7 日）
-├── pnpm/                   # → ~/.config/pnpm/config.yaml
-│   └── .config/pnpm/       # minimumReleaseAge 10080 分（7 日）
-├── bun/                    # → ~/.bunfig.toml
-│   └── .bunfig.toml        # minimumReleaseAge 604800 秒（7 日）
-├── herdr/                  # → ~/.config/herdr/config.toml
-│   └── .config/herdr/
-├── apt/                    # 同梱 apt リポジトリ (bootstrap.sh が導入。鍵は deb822 でインライン)
-│   ├── fish-shell-ubuntu-release-4-noble.sources    # fish 4.x PPA
-│   ├── gierens.sources     # eza の配布元（Ubuntu 標準リポジトリに eza は無い）
-│   └── mise.sources        # mise の apt リポジトリ（apt upgrade で mise も追従させる）
-├── docker/                 # WSL 内ネイティブ dockerd（opt-in。Docker Desktop 環境では使わない）
-│   ├── install.sh          # 導入スクリプト（Desktop 検出で拒否、--dry-run あり）
-│   ├── docker.sources      # Docker 公式 apt リポジトリ
-│   └── daemon.json         # → /etc/docker/daemon.json（bridge を 192.168.100.0/24 に固定）
-├── mise/
-│   └── config.toml         # グローバル config の実体（MISE_GLOBAL_CONFIG_FILE で参照）
-├── meta/
-│   ├── LLM-SETTINGS.md     # LLM 設定の conf.d / deny-patterns パイプライン仕様書
-│   └── MIGRATION.md        # 既存設定の取り込み手順
-├── scripts/
-│   ├── generate-deny.sh    # deny-patterns.yaml → 各ツール形式に変換
-│   ├── sync-shared.sh      # claude-skills 共有文書を ai/shared/vendor/ に同期
-│   └── test_*.sh           # 上記スクリプトのテスト（CI は無いので手動実行）
-├── bootstrap.sh            # 新規マシン用 wrapper（config 解決 + trust + apt 設定 + mise bootstrap）
-└── .gitignore              # secret / runtime artifact をブロック
-```
+| パッケージ | 展開先 | 概要 |
+|---|---|---|
+| `git/` | `~/.gitconfig` + `~/.config/git/*` | git 設定、global ignore / attributes |
+| `fish/` | `~/.config/fish/*` | config.fish、fish_plugins、関数 |
+| `nvim/` | `~/.config/nvim/*` | LazyVim ベース |
+| `ai/` | `~/.claude/*` `~/.codex/*` `~/.opencode/*` | LLM 設定の集約（secret 混入厳禁） |
+| `yazi/` | `~/.config/yazi/*` | TUI ファイルマネージャ |
+| `glow/` | `~/.config/glow/*` | Markdown レンダラ |
+| `herdr/` | `~/.config/herdr/*` | ターミナルマルチプレクサ |
+| `npm/` `pnpm/` `bun/` | `~/.npmrc` 等 | サプライチェーン対策（リリース年齢制限） |
+| `apt/` | `/etc/apt/sources.list.d/` | 同梱 apt リポジトリ（bootstrap.sh が配布） |
+| `devbox/` | `~/.local/share/devbox/...` | PHP ツールチェーン（nix ベース） |
+| `docker/` | `/etc/docker/daemon.json` | WSL 内ネイティブ dockerd（opt-in） |
+| `mise/` | `MISE_GLOBAL_CONFIG_FILE` | グローバル config 実体 |
 
-サプライチェーン対策は 3 層構成:
+詳細な構成は [docs/layout.md](docs/layout.md) を参照。
 
-- **mise `minimum_release_age = "7d"`** — ツールバイナリ（gh / glow / neovim 等）の導入を
-  リリースから 7 日以上経過したものに制限
+## サプライチェーン対策
+
+パッケージ導入のリスクを 3 層で軽減する:
+
+- **mise `minimum_release_age = "7d"`** — ツールバイナリの導入をリリースから
+  7 日以上経過したものに制限
   （ただし **claude / codex** は AI CLI の最新追従が優先のため per-tool で 1d に短縮。
   aqua の cosign / GitHub Artifact Attestations 検証は有効）
 - **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
   （`min-release-age` / `minimumReleaseAge`。単位はエコシステムごとに異なる）
-- **Aikido Safe Chain** — npm / pnpm / bun / pip 等のパッケージマネージャをラップし、
-  マルウェア検知 + 最小リリース年齢（デフォルト 48h）を適用。`bootstrap.sh` が sha256 検証付きで
-  導入し、非対話シェル（LLM エージェント等）へは mise の PATH 経由で shim が渡る
+- **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
+  最小リリース年齢（デフォルト 48h）を適用。`bootstrap.sh` が sha256 検証付きで導入
 
 ## よく使うコマンド
 
 ```bash
-./bootstrap.sh                   # 新規マシンで一括適用（config 解決 + trust + apt 設定込み）
-mise bootstrap                   # 2回目以降（config.fish が env を設定済み）
-mise bootstrap --dry-run         # 何が起きるか確認
-mise bootstrap --skip packages   # 一部スキップ
-mise bootstrap dotfiles status   # dotfiles の適用状態
-mise bootstrap dotfiles status --missing
-mise bootstrap packages status --missing
-gh auth setup-git                # GitHub の credential helper に gh を登録
-glab auth login                  # GitLab のブラウザ認証 + SSH 鍵発行・登録
-npm safe-chain-verify            # safe-chain が有効か確認（pnpm / bun / pip 等でも可）
-safe-chain --version             # safe-chain のバージョン確認
+./bootstrap.sh                   # 新規マシンで一括適用
+mise bootstrap                   # 2回目以降
+mise bootstrap --dry-run         # 確認
+mise bootstrap dotfiles status   # 適用状態
+gh auth setup-git                # GitHub の credential helper 登録
 ```
 
-`./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
-未設定なら導入し、`apt-get update` する（sudo を要求。新規マシンでプロンプトが出る）。
-`--dry-run` は導入が必要な apt リポジトリの検出と表示のみ行い、実際のコピーと
-`apt-get update` は実行しない。
-
-グローバル config は `mise/config.toml` が実体。
-`MISE_GLOBAL_CONFIG_FILE` が未設定の環境（fish 外の sh 等）では tools が読めないので、
-非対話シェルでも使いたい場合は同環境変数を export して使う。
-
-## 外部ツール依存
-
-- システムパッケージ / dev ツールは **mise** (`[bootstrap.packages]` / `[tools]`)
-  で宣言する
-- **[delta](https://github.com/dandavison/delta)** — `core.pager` /
-  `interactive.diffFilter` に使う色付き diff（`apt:git-delta`）
-- **[gh](https://cli.github.com/)** — GitHub の credential helper
-  （`!gh auth git-credential`）。HTTPS リモートに遭遇しても自動認証される
-- **[glab](https://gitlab.com/gitlab-org/cli)** — GitLab の認証は
-  `glab auth login` で SSH 鍵を発行・GitLab へ登録する（GitLab の push は SSH）。
-  `[tools]` の `glab` で導入
-- **fish シェル本体と shell ツール** — fish / bat / fd-find / eza / zoxide / fzf
-  は apt で配布（`[bootstrap.packages]` の `apt:*` 宣言）。
-- **ブラウザ自動化の実行時依存** — agent-browser（bun global）と Playwright が使う Chromium の
-  共有ライブラリと CJK / 絵文字フォントも `[bootstrap.packages]` で宣言する。
-  `playwright install-deps chromium` が入れる一覧と同じもので、無いと日本語のスクリーンショットが
-  豆腐になる。Playwright 側の一覧が変わったら宣言を追従させる。
-- **ollama** — `[tools]` の `ollama`（aqua）。公式 installer（systemd service 付き）は使わず、
-  必要なときだけ `ollama serve` で起動する。
-- **yazi** — TUI ファイルマネージャ（`[tools]` の `yazi`）。`ya` 関数で起動すると
-  終了時のカレントディレクトリに移動。`S` で ripgrep によるファイル内容検索、
-  `E` で Windows Explorer を開く（WSL 向け opener は `explorer.exe` へ委譲）。
-- **glow** — ターミナル用 markdown レンダラ（`[tools]` の `glow`）。スタイル等の
-  設定は `~/.config/glow/glow.yml` を symlink 管理。
-- **neovim** — `[tools]` の `neovim`（LazyVim は Neovim 0.12+ を要求）。
-  旧 appimage（`/opt/nvim`）は廃止済み。
-- **ripgrep** — `[tools]` の `ripgrep`。`S` 検索（yazi）や `grep` の代替に使用。
-  旧 apt 版（14.1.0）から mise 管理（15.2.0）へ移行済み。
-- **claude / codex** — AI コーディング CLI（`[tools]` の `claude`（`aqua:anthropics/claude-code`）/
-  `codex`（`aqua:openai/codex`）で導入、mise 管轄）。設定は `~/.claude/` / `~/.codex/` を
-  dotfiles 管理（`ai/claude` / `ai/codex`）。codex の security hooks（危険コマンドブロック /
-  シークレット・mojibake 検出）は `ai/codex/hooks.json` と `ai/shared/hooks/*.py` を symlink 配布し、導入後 `codex /hooks`
-  で trust する。hook スクリプトの実体は Claude Code と共有で `ai/shared/hooks/` にあり、
-  `~/.claude/hooks/` と `~/.codex/hooks/` の両方へ同じファイルが配布される。AI CLI はリリース高頻度のため
-  `minimum_release_age` を per-tool で 1d に短縮して最新追従する。旧ネイティブ install / bun global
-  導入は撤去済み。
-- **codex jail** — `codex` コマンドは `ai/codex/bin/codex`（config.fish が mise より後に PATH 先頭へ積む）
-  を経由する。bubblewrap（apt の `bubblewrap`）で「現在の worktree と共有 `.git`・`/tmp`・各種 cache・
-  `~/.codex` の状態だけ書ける、`~/.ssh` `~/.aws` `~/.gnupg` `~/.config/gh`・Windows ドライブ
-  （`/mnt/c` 等）・worktree 内の `.env*`（`.example` 等の雛形と `node_modules` 配下を除く）は見えない、
-  それ以外は読み取り専用」の mount namespace を起動ごとに組み、その中で
-  `codex --dangerously-bypass-approvals-and-sandbox` を動かす。codex 自身の Permission Profile
-  （Beta）は `.git`/`.agents` の read-only mount・相対 write ルールの再帰増殖・deny glob の
-  fail-closed が重なって実用に耐えないため、境界を codex の外へ出している。`~/.codex/config.toml`
-  / `AGENTS.md` / `hooks*` / `rules` / `skills` / `prompts` は中から書き換え不可。
-  jail に入るのは対話セッション・`exec`・`resume`・`fork`。`app-server` / `mcp-server`（呼び出し側が
-  thread ごとに sandbox を決める。Claude Code の codex plugin 経由の実行はこちらなので **jail の外**、
-  codex 自身の sandbox で動く）と `login` / `mcp` / `--version` など agent がコマンドを実行しない
-  呼び出しは素通し。認証情報を隠すため **`git push` と `gh` は jail の中では失敗する**（外で行う。
-  意図的に un-hide の手段は無い）。mount table は `ai/codex/jail.conf`（`rw` / `ro` / `hide` の 3 directive、
-  `~` 展開あり）。cycle や skill-regression が箱の中から起動する opencode / claude の状態ディレクトリも
-  ここで rw にしてあり、それらの設定・指示ファイルは ro。別の CLI を箱の中で動かして
-  「Read-only file system」で落ちたら、その CLI の状態ディレクトリを `rw` で足す。
-  `CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）は一時的な追加用、`CODEX_JAIL_CONF` で
-  table ごと差し替え、`CODEX_JAIL_OFF=1` で jail 自体を外す。検証は `bash scripts/test_codex_jail.sh`。
-
-未インストールでも `.gitconfig` 自体は読み込めるが、`core.pager` が効かず
-`git` が「delta: command not found」で怒る。`mise bootstrap` で `git-delta` を入れてから
-使うか、一時的にページャを戻す (`git -c core.pager=less diff`) で回避可能。
-
-### その他の依存
-
-- **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。クリップボードの
-  画像をファイル保存してパスを返す daemon。binary は `[settings] aqua.registries`
-  で参照するツール repo 公開の aqua registry 経由で `[tools]` から導入し、
-  systemd user service と wl-paste wrapper は `clipboard2path-wsl init --no-hook`
-  が生成する（fish hook のみ `conf.d/clipboard2path.fish` を dotfiles 管理）。
-  動作確認は `clipboard2path-wsl status`。
-- **Docker（WSL 内ネイティブ）** — `docker/install.sh` が Docker 公式 apt リポジトリ・
-  `docker-ce` 一式・`/etc/docker/daemon.json`・`docker` グループ・`/etc/wsl.conf` の
-  `systemd=true` を冪等に整える。`[bootstrap.packages]` には入れない: 会社 PC のように
-  Docker Desktop の WSL 統合が daemon を提供する環境で `docker-ce` を入れると
-  `/var/run/docker.sock` を取り合うため。`/mnt/wsl/docker-desktop` か Desktop 配布の
-  `docker` CLI を検出したら何もせず終了する。`daemon.json` の `bip` はデフォルトの
-  172.17.0.0/16 が社内 LAN（社内サービスの IP 帯）と重なって到達不能になったため、
-  使っていない 192.168.100.0/24 に固定している。値を変えるときは社内 LAN と VPN の
-  経路表と重ならないことを先に確認する。既存の `daemon.json` が
-  内容違いで存在する場合は上書きしない。検証は `bash scripts/test_docker_install.sh`。
-- **Aikido Safe Chain**（[AikidoSec/safe-chain]）— npm / pnpm / bun / pip 等の
-  パッケージマネージャをラップし、マルウェア検知（Aikido Intel）+ 最小リリース年齢
-  （デフォルト 48h）を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。
-  `bootstrap.sh` が sha256 検証付きでインストールし、fish の関数ラッパーと
-  mise PATH 経由の shim（非対話シェル / LLM エージェント用）でラップする。
+全コマンドは [docs/commands.md](docs/commands.md) を参照。
 
 ## パッケージの追加手順
 
-1. 新しいディレクトリを作る: `mkdir -p newpkg/.config/newpkg`
-2. そこに設定ファイルを置く（`$HOME` からの相対パスをそのまま再現）
-3. `mise/config.toml` の `[dotfiles]` に source を追記（repo 内からの相対パス）
-4. `.gitignore` に runtime / secret パスを追記
+1. `mkdir -p <pkg>/<$HOME からの相対パス>` でツリーを作る
+2. 設定ファイルを配置する
+3. `.gitignore` に runtime / secret パターンを追記する
+4. `mise/config.toml` の `[dotfiles]` に source を追記して適用する
 
-既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を見る。
+既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を参照。
 
 ## 安全設計
 
@@ -239,9 +99,13 @@ safe-chain --version             # safe-chain のバージョン確認
 - 既存の実ファイルがある対象は mise が refuse する（`--force` は明示的に渡す）
 - `.gitignore` で credentials / session / sqlite / history を絶対ブロック
 - `mise bootstrap dotfiles unapply --dry-run` で剥がす前に確認できる
-- サプライチェーン対策: mise の `minimum_release_age` / npm・pnpm・bun の
-  リリース年齢設定 / Aikido Safe Chain の 3 層でカバー
-  （claude / codex は最新追従のため per-tool で 1d に短縮。上記「サプライチェーン対策」参照）
+- サプライチェーン対策は上記 3 層構成
 
-[AikidoSec/safe-chain]: https://github.com/AikidoSec/safe-chain
-[ba0918/clipboard2path-wsl]: https://github.com/ba0918/clipboard2path-wsl
+## 詳細リファレンス
+
+- [docs/layout.md](docs/layout.md) — 構成・パッケージ詳細
+- [docs/commands.md](docs/commands.md) — コマンドリファレンス
+- [docs/dependencies.md](docs/dependencies.md) — 外部ツール依存
+- [docs/troubleshooting.md](docs/troubleshooting.md) — トラブルシューティング
+- [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md) — LLM 設定パイプライン仕様書
+- [meta/MIGRATION.md](meta/MIGRATION.md) — 既存設定の取り込み手順
