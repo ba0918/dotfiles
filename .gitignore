@@ -68,6 +68,10 @@ ai/codex/.tmp/
 ai/codex/installation_id
 ai/codex/.personality_migration
 
+# ===== Devbox runtime artifacts (nix store cache / generated config) =====
+devbox/global/.devbox/
+devbox/global/devbox.d/
+
 # ===== OS / misc =====
 Thumbs.db
 
