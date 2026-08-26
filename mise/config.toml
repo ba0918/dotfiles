@@ -1,6 +1,15 @@
 [env]
-# bun global installs (e.g. agent-browser) are not in mise-managed paths
-_.path = ["~/.bun/bin", "~/.cargo/bin", "~/.safe-chain/shims"]
+# bun global installs (e.g. agent-browser) are not in mise-managed paths.
+# ai/codex/bin (codex jail shim) は mise 管理の codex 本体より前に来る必要があるが、
+# config.fish で fish_add_path しても mise activate の hook-env が PATH を組み直す
+# たびに tool の bin 群の後ろへ押し出される。_.path は mise が組む PATH ブロックの
+# 先頭（tool の bin より前）に置かれるので、組み直されても shim が先に残る
+_.path = [
+  "{{config_root}}/ai/codex/bin",
+  "~/.bun/bin",
+  "~/.cargo/bin",
+  "~/.safe-chain/shims",
+]
 
 [settings]
 dotfiles.default_mode = "symlink"

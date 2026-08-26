@@ -107,8 +107,13 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 
 ### codex jail
 
-`codex` コマンドは `ai/codex/bin/codex`（config.fish が mise より後に
-PATH 先頭へ積む）を経由して起動する。このシムは bubblewrap で mount
+`codex` コマンドは `ai/codex/bin/codex` を経由して起動する。この shim
+ディレクトリは `mise/config.toml` の `env._.path` で mise 管理の codex 本体より
+前に置く（mise の hook-env が PATH を組み直しても順序が保たれる。config.fish の
+`fish_add_path` は hook-env が走らない非対話シェル向けの保険で、それだけだと
+組み直しの時点で本体に負ける）。`which codex` が
+`~/.local/share/mise/installs/codex/...` を返したら jail を経由していない。
+このシムは bubblewrap で mount
 namespace を組み、以下の境界を作る:
 
 | アクセス | 対象 |

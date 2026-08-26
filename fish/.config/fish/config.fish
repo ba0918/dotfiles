@@ -21,8 +21,10 @@ else
     mise activate fish --shims | source
 end
 
-# Codex jail shim（ai/codex/bin/codex）。mise が tool の bin を PATH 先頭へ積むため、
-# mise activate より後に積まないと mise 管理の codex 本体に負ける。
+# Codex jail shim（ai/codex/bin/codex）。対話シェルでは mise/config.toml の
+# env._.path が hook-env のたびに shim を tool の bin より前へ置き直すので、
+# ここでの prepend は hook-env が走らない非対話シェル（--shims 側）のための保険。
+# ここだけに頼ると、hook-env が PATH を組み直した時点で mise 管理の codex 本体に負ける。
 fish_add_path --prepend --move "$dotfiles_root/ai/codex/bin"
 
 # devbox global（php / xdebug / pcov のツールチェーン。nix store ベースでホストを汚さない）
