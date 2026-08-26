@@ -242,13 +242,13 @@ probe "${WT}" 'echo "{}" > "$HOME/.codex/auth.json" && echo AUTH_OK'
 check "~/.codex/auth.json is writable (token refresh)" 'grep -q "AUTH_OK" <<<"${OUT}"'
 
 probe "${WT}" 'echo "x" >> "$HOME/.codex/config.toml" 2>/dev/null && echo CONFIG_WRITABLE || echo CONFIG_RO'
-check "~/.codex/config.toml is read-only" 'grep -q "CONFIG_RO" <<<"${OUT}"'
+check "~/.codex/config.toml is writable (codex edits its own settings)" 'grep -q "CONFIG_WRITABLE" <<<"${OUT}"'
 
 probe "${WT}" 'echo "x" >> "$HOME/.codex/AGENTS.md" 2>/dev/null && echo AGENTS_WRITABLE || echo AGENTS_RO'
 check "~/.codex/AGENTS.md is read-only" 'grep -q "AGENTS_RO" <<<"${OUT}"'
 
 probe "${WT}" 'touch "$HOME/.codex/rules/new.rules" 2>/dev/null && echo RULES_WRITABLE || echo RULES_RO'
-check "~/.codex/rules/ is read-only" 'grep -q "RULES_RO" <<<"${OUT}"'
+check "~/.codex/rules/ is writable (codex persists approval rules)" 'grep -q "RULES_WRITABLE" <<<"${OUT}"'
 
 probe "${WT}" 'grep -q never "$HOME/.codex/config.toml" && echo CONFIG_READ_OK'
 check "~/.codex/config.toml is still readable" 'grep -q "CONFIG_READ_OK" <<<"${OUT}"'
