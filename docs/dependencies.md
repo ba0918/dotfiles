@@ -128,8 +128,11 @@ deny glob の fail-closed が重なって実用に耐えないため、境界を
 
 認証情報を隠すため `git push` と `gh` は jail の中では失敗する（外で行う。
 意図的に un-hide する手段は用意していない）。
-mount table は `ai/codex/jail.conf`（`rw` / `ro` / `hide` の 3 directive、
-`~` 展開あり）。cycle や skill-regression が箱の中から起動する opencode / claude
+mount table は `ai/codex/jail.conf`（`rw` / `rw-file` / `ro` / `hide` の
+4 directive、`~` 展開あり）。`rw` はディレクトリ専用で、ファイル単体を指すと
+起動を拒否する。ファイル単体の bind はマウントポイントになり、tmp + rename で
+保存するツール（codex の `config.toml` など）が EBUSY で落ちるため。親を rw に
+できないファイルだけ `rw-file` で明示的に bind する（その場でしか書けない）。cycle や skill-regression が箱の中から起動する opencode / claude
 の状態ディレクトリも `rw` にしてある（それらの設定・指示ファイルは `ro`）。
 別の CLI が `Read-only file system` で落ちたら、その CLI の状態ディレクトリを
 `rw` で足す。

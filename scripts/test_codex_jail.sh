@@ -311,6 +311,19 @@ printf 'bogus ~/x\n' > "${CONF}"
 OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${CONF}" "${SHIM}" 2>&1)" && RC=0 || RC=$?
 check "an unknown directive in jail.conf is an error" '[ "${RC}" -ne 0 ] && grep -q "bogus" <<<"${OUT}"'
 
+# A single file bound rw becomes a mount point, and rename-based atomic saves
+# (codex config.toml) fail on it with EBUSY. Files need the explicit directive.
+echo "v" > "${FAKE_HOME}/conf-file"
+printf 'rw ~/conf-file\n' > "${CONF}"
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${CONF}" "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "rw on a regular file refuses to start and points at rw-file" '[ "${RC}" -ne 0 ] && grep -q "custom.conf:1" <<<"${OUT}" && grep -q "rw-file" <<<"${OUT}"'
+
+printf 'rw-file ~/conf-file\nrw-file ~/no-such-file\n' > "${CONF}"
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_CONF="${CONF}" \
+	PROBE='echo x >> "$HOME/conf-file" 2>/dev/null && echo FILE_RW_OK || echo FILE_RO' "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "rw-file binds a single file writable in place" '[ "${RC}" -eq 0 ] && grep -q "FILE_RW_OK" <<<"${OUT}"'
+check "rw-file of a missing path is skipped, not fatal" '[ "${RC}" -eq 0 ]'
+
 # --- extension points ---------------------------------------------------------
 
 probe "${WT}" 'touch "$HOME/.cache/c" && echo CACHE_OK'

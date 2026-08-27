@@ -16,8 +16,8 @@
 # Inside the jail:
 #   read-only   the whole filesystem
 #   read-write  current worktree, its shared .git, /tmp, --add-dir targets,
-#               CODEX_JAIL_RW, and the `rw` entries of jail.conf (package
-#               caches; runtime state of codex, opencode and claude)
+#               CODEX_JAIL_RW, and the `rw` / `rw-file` entries of jail.conf
+#               (package caches; runtime state of codex, opencode and claude)
 #   read-only   the `ro` entries of jail.conf, overlaid inside rw binds: the
 #               config / instructions / hooks those CLIs run under, so an agent
 #               cannot rewrite its own rules
@@ -269,8 +269,19 @@ for dir in "${ADD_DIRS[@]}"; do
 	[ -d "${dir}" ] || die "--add-dir does not exist: ${dir}"
 	RW_PATHS+=("$(realpath "${dir}")")
 done
+RW_FILE_PATHS=()
 RO_PATHS=()
 HIDE_PATHS=()
+
+# A single file bound rw becomes a mount point, and a rename onto a mount point
+# fails with EBUSY, which breaks every tool that saves via tmp + rename (codex
+# does for config.toml). A file inside an rw directory has no such limit, so
+# `rw` refuses files; `rw-file` is the explicit opt-in for the rare file whose
+# parent must stay read-only.
+reject_rw_file() {
+	[ -f "$1" ] || return 0
+	die "$2: rw on a regular file: $1 (a file bind cannot be replaced by rename; if in-place writes are enough, use rw-file)"
+}
 
 expand_tilde() {
 	case "$1" in
@@ -289,16 +300,19 @@ while IFS= read -r line || [ -n "${line}" ]; do
 	[ -n "${target}" ] || die "${CONF}:${lineno}: missing path after '${directive}'"
 	target="$(expand_tilde "${target}")"
 	case "${directive}" in
-		rw) RW_PATHS+=("${target}") ;;
+		rw) reject_rw_file "${target}" "${CONF}:${lineno}"; RW_PATHS+=("${target}") ;;
+		rw-file) RW_FILE_PATHS+=("${target}") ;;
 		ro) RO_PATHS+=("${target}") ;;
 		hide) HIDE_PATHS+=("${target}") ;;
-		*) die "${CONF}:${lineno}: unknown directive '${directive}' (expected rw, ro or hide)" ;;
+		*) die "${CONF}:${lineno}: unknown directive '${directive}' (expected rw, rw-file, ro or hide)" ;;
 	esac
 done < "${CONF}"
 
 if [ -n "${CODEX_JAIL_RW:-}" ]; then
 	while IFS= read -r p; do
-		[ -n "${p}" ] && RW_PATHS+=("${p}")
+		[ -n "${p}" ] || continue
+		reject_rw_file "${p}" "CODEX_JAIL_RW"
+		RW_PATHS+=("${p}")
 	done < <(split_colon "${CODEX_JAIL_RW}")
 fi
 # WSL: Windows drives are the 9p/drvfs mounts under /mnt. /mnt as a whole
@@ -321,7 +335,7 @@ fi
 # read-write binds so it can also blank out a path inside the workspace.
 covers_rw_path() {
 	local rw
-	for rw in "${RW_PATHS[@]}"; do
+	for rw in "${RW_PATHS[@]}" "${RW_FILE_PATHS[@]}"; do
 		case "${rw}/" in
 			"$1"/*) return 0 ;;
 		esac
@@ -332,7 +346,7 @@ covers_rw_path() {
 for p in "${HIDE_PATHS[@]}"; do
 	covers_rw_path "${p}" && hide "${p}"
 done
-for p in "${RW_PATHS[@]}"; do
+for p in "${RW_PATHS[@]}" "${RW_FILE_PATHS[@]}"; do
 	bind_rw "${p}"
 done
 for p in "${HIDE_PATHS[@]}"; do
