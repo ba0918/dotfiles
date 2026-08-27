@@ -244,6 +244,9 @@ check "~/.codex/auth.json is writable (token refresh)" 'grep -q "AUTH_OK" <<<"${
 probe "${WT}" 'echo "x" >> "$HOME/.codex/config.toml" 2>/dev/null && echo CONFIG_WRITABLE || echo CONFIG_RO'
 check "~/.codex/config.toml is writable (codex edits its own settings)" 'grep -q "CONFIG_WRITABLE" <<<"${OUT}"'
 
+probe "${WT}" 'cp "$HOME/.codex/config.toml" "$HOME/.codex/config.toml.tmp" && mv "$HOME/.codex/config.toml.tmp" "$HOME/.codex/config.toml" 2>/dev/null && echo CONFIG_REPLACE_OK || echo CONFIG_REPLACE_RO'
+check "~/.codex/config.toml can be replaced by rename (codex persists via tmp + rename)" 'grep -q "CONFIG_REPLACE_OK" <<<"${OUT}"'
+
 probe "${WT}" 'echo "x" >> "$HOME/.codex/AGENTS.md" 2>/dev/null && echo AGENTS_WRITABLE || echo AGENTS_RO'
 check "~/.codex/AGENTS.md is read-only" 'grep -q "AGENTS_RO" <<<"${OUT}"'
 
