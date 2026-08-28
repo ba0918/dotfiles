@@ -119,7 +119,7 @@ namespace を組み、以下の境界を作る:
 | アクセス | 対象 |
 |----------|------|
 | **読み書き可** | 現在の worktree、共有 `.git`、`/tmp`、各種 cache、`~/.codex` の状態 |
-| **隠蔽** | `~/.ssh` `~/.aws` `~/.gnupg` `~/.config/gh`、Windows ドライブ（`/mnt/c` 等）、worktree 内の `.env*`（雛形と `node_modules` 配下を除く） |
+| **隠蔽** | `~/.ssh` `~/.aws` `~/.gnupg` `~/.config/gh`、Windows ドライブ（`/mnt/c` 等）、WSL interop のソケット（`/run/WSL`）、worktree 内の `.env*`（雛形と `node_modules` 配下を除く） |
 | **読み取り専用** | それ以外すべて（`~/.codex/config.toml` / `AGENTS.md` / hooks 等の指示ファイルを含む） |
 
 この中で `codex --dangerously-bypass-approvals-and-sandbox` を動かす。
@@ -136,6 +136,12 @@ mount table は `ai/codex/jail.conf`（`rw` / `rw-file` / `ro` / `hide` の
 の状態ディレクトリも `rw` にしてある（それらの設定・指示ファイルは `ro`）。
 別の CLI が `Read-only file system` で落ちたら、その CLI の状態ディレクトリを
 `rw` で足す。
+
+WSL では `.exe` を実行すると binfmt_misc が `/init` を呼び、`/run/WSL` の
+ソケット経由で **Windows 側にプロセスを起動する**。生まれたプロセスは bwrap の
+外で動き、`\\wsl$` 経由で distro 全体を読めるので、ドライブを隠すだけでは
+（`.exe` を持ち込めば）抜けられる。そのため `/run/WSL` も隠して interop 自体を
+切っている。
 
 jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 `app-server` / `mcp-server` は jail の外で動き、codex 自身の sandbox が

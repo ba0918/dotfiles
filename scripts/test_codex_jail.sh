@@ -217,6 +217,21 @@ if [ -r /etc/resolv.conf ]; then
 	check "/etc/resolv.conf (DNS) is still readable" 'grep -q "RESOLV_OK" <<<"${OUT}"'
 fi
 
+# WSL interop: binfmt_misc hands every MZ file to /init, which asks the host
+# to run it as a Windows process outside every Linux-side boundary. Hiding the
+# drives removes the obvious binaries, not the channel; an executable copied
+# in (or downloaded) must still fail to launch.
+WIN_CMD=""
+for drive in "${WIN_DRIVES[@]}"; do
+	[ -f "${drive}/Windows/System32/cmd.exe" ] && WIN_CMD="${drive}/Windows/System32/cmd.exe" && break
+	[ -f "${drive}/WINDOWS/System32/cmd.exe" ] && WIN_CMD="${drive}/WINDOWS/System32/cmd.exe" && break
+done
+if [ -n "${WIN_CMD}" ]; then
+	cp "${WIN_CMD}" "${TMP}/cmd.exe"
+	probe "${WT}" "\"${TMP}/cmd.exe\" /c \"echo INTEROP_ESCAPED\" 2>/dev/null; echo \"exe:\$?\""
+	check "a Windows executable does not launch inside the jail (WSL interop is cut)" '! grep -q "INTEROP_ESCAPED" <<<"${OUT}" && ! grep -q "^exe:0$" <<<"${OUT}"'
+fi
+
 probe "${WT}" 'echo "env:$(wc -c < .env):$(wc -c < .env.local):$(wc -c < sub/.env)"'
 check ".env files in the worktree read as empty" 'grep -q "^env:0:0:0$" <<<"${OUT}"'
 check ".env files on the host are untouched" '[ "$(cat "${WT}/.env")" = "SECRET=wt" ] && [ "$(cat "${WT}/sub/.env")" = "SECRET=sub" ]'
