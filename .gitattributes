@@ -1,0 +1,3 @@
+# ai/codex/jail-bin/powershell.exe is a shell script named after the Windows
+# command it stands in for; the global "*.exe binary" rule must not hide its diff.
+ai/codex/jail-bin/*.exe text diff merge
