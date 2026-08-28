@@ -22,10 +22,14 @@
 #               config / instructions / hooks those CLIs run under, so an agent
 #               cannot rewrite its own rules
 #   hidden      the `hide` entries of jail.conf (~/.ssh, ~/.aws, ~/.gnupg,
-#               ~/.config/gh, ...), CODEX_JAIL_HIDE, the Windows drives under
+#               ~/.config/gh, /run/WSL so no .exe can launch a Windows
+#               process, ...), CODEX_JAIL_HIDE, the Windows drives under
 #               /mnt (9p/drvfs mounts), and every .env / .env.* in the worktree
 #               except templates (.example/.sample/.dist/.template) and
 #               anything under .git/ or node_modules/
+#   PATH        ai/codex/jail-bin comes first: stand-ins for host commands the
+#               jail cuts off (powershell.exe serving codex's image paste from
+#               clipboard2path-wsl)
 #   network     unrestricted (bwrap has no egress allowlist)
 #
 # The mount table lives in ai/codex/jail.conf (next to this script's parent
@@ -367,6 +371,12 @@ while IFS= read -r -d '' f; do
 	hide "${f}"
 done < <(find "${WORKTREE}" \( -name .git -o -name node_modules \) -prune -o \
 	-type f \( -name '.env' -o -name '.env.*' \) -print0 2>/dev/null)
+
+# Stand-ins for host commands the jail cuts off (ai/codex/jail-bin, e.g. the
+# powershell.exe that codex's image paste calls on WSL). Prepended here rather
+# than on the global PATH so the real commands keep working outside the jail.
+JAIL_BIN="$(dirname "$(dirname "${SELF}")")/jail-bin"
+BWRAP+=(--setenv PATH "${JAIL_BIN}:${PATH}")
 
 BWRAP+=(--unshare-all --share-net --die-with-parent --chdir "${PWD}")
 

@@ -232,6 +232,35 @@ if [ -n "${WIN_CMD}" ]; then
 	check "a Windows executable does not launch inside the jail (WSL interop is cut)" '! grep -q "INTEROP_ESCAPED" <<<"${OUT}" && ! grep -q "^exe:0$" <<<"${OUT}"'
 fi
 
+# codex reads a pasted image through Windows PowerShell on WSL (its Linux
+# clipboard read never sees image/png under WSLg). The jail cannot expose the
+# real PowerShell, so a stand-in serves the PNG that clipboard2path-wsl keeps
+# in $XDG_RUNTIME_DIR, at a C:\ path codex maps back to the hidden drive's
+# in-jail tmpfs.
+if [ -d /mnt/c ] && printf '%s\n' "${WIN_DRIVES[@]}" | grep -qx /mnt/c; then
+	RUNTIME="${TMP}/runtime"
+	mkdir -p "${RUNTIME}/clipboard2path"
+	printf '\211PNG\r\n\032\nfake-image' > "${RUNTIME}/clipboard2path/clipboard-1.png"
+	ln -s "${RUNTIME}/clipboard2path/clipboard-1.png" "${RUNTIME}/clipboard2path/latest.png"
+	# The exact script codex 0.149 runs (tui/src/clipboard_paste.rs), passed
+	# through the environment so the probe does not have to re-quote it.
+	export PS_SCRIPT='[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $img = Get-Clipboard -Format Image; if ($img -ne $null) { $p=[System.IO.Path]::GetTempFileName(); $p = [System.IO.Path]::ChangeExtension($p,'"'"'png'"'"'); $img.Save($p,[System.Drawing.Imaging.ImageFormat]::Png); Write-Output $p } else { exit 1 }'
+	OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" XDG_RUNTIME_DIR="${RUNTIME}" \
+		PROBE='command -v powershell.exe; out="$(powershell.exe -NoProfile -Command "${PS_SCRIPT}" 2>/dev/null)" && echo "ps:${out}" || echo "ps-rc:$?"; mapped="/mnt/c/${out#C:\\}"; mapped="${mapped//\\//}"; [ -n "${out}" ] && cat "${mapped}"' "${SHIM}" 2>&1)" || true
+	check "powershell.exe inside the jail resolves to the jail stand-in, not Windows" 'grep -q "^${ROOT}/ai/codex/jail-bin/powershell.exe$" <<<"${OUT}"'
+	check "the stand-in prints a C:\\ path for the latest clipboard2path image" 'grep -q "^ps:C:\\\\.*\.png$" <<<"${OUT}"'
+	check "codex can read the image back through /mnt/c inside the jail" 'grep -q "fake-image" <<<"${OUT}"'
+
+	rm "${RUNTIME}/clipboard2path/latest.png"
+	OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" XDG_RUNTIME_DIR="${RUNTIME}" \
+		PROBE='powershell.exe -NoProfile -Command "${PS_SCRIPT}" >/dev/null 2>&1; echo "noimg:$?"' "${SHIM}" 2>&1)" || true
+	check "the stand-in exits non-zero when no image is on the clipboard" 'grep -q "^noimg:[1-9]" <<<"${OUT}"'
+
+	OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" XDG_RUNTIME_DIR="${RUNTIME}" \
+		PROBE='powershell.exe -NoProfile -Command "Get-ChildItem C:\\" >/dev/null 2>&1; echo "other:$?"' "${SHIM}" 2>&1)" || true
+	check "the stand-in refuses any other PowerShell command" 'grep -q "^other:[1-9]" <<<"${OUT}"'
+fi
+
 probe "${WT}" 'echo "env:$(wc -c < .env):$(wc -c < .env.local):$(wc -c < sub/.env)"'
 check ".env files in the worktree read as empty" 'grep -q "^env:0:0:0$" <<<"${OUT}"'
 check ".env files on the host are untouched" '[ "$(cat "${WT}/.env")" = "SECRET=wt" ] && [ "$(cat "${WT}/sub/.env")" = "SECRET=sub" ]'

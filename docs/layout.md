@@ -57,7 +57,8 @@ dotfiles/
 │   │   ├── AGENTS.md          # template 配布
 │   │   ├── hooks.json         # symlink 配布
 │   │   ├── jail.conf          # bubblewrap の mount table
-│   │   └── bin/codex          # jail shim
+│   │   ├── bin/codex          # jail shim
+│   │   └── jail-bin/          # jail 内でだけ PATH 先頭に来る代替コマンド
 │   ├── opencode/              # → ~/.opencode/opencode.json（template 配布）
 │   │   └── opencode.json
 │   └── shared/                # Claude / Codex 共通

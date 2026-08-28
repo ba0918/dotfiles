@@ -143,6 +143,18 @@ WSL では `.exe` を実行すると binfmt_misc が `/init` を呼び、`/run/W
 （`.exe` を持ち込めば）抜けられる。そのため `/run/WSL` も隠して interop 自体を
 切っている。
 
+codex の画像ペースト（Ctrl+V）は WSL ではこの interop に依存している。codex の
+プロセス内クリップボード読み出しは WSLg では成功せず（compositor が出すのは
+`image/bmp` で codex は `image/png` を要求する）、`powershell.exe` に
+`Get-Clipboard -Format Image` を実行させて `C:\...` を `/mnt/c/...` に読み替える
+フォールバックへ必ず落ちる。jail の中ではその要求だけを
+`ai/codex/jail-bin/powershell.exe` が肩代わりする。clipboard2path-wsl の
+デーモンが `$XDG_RUNTIME_DIR/clipboard2path/latest.png` に保存した画像を、
+jail が空の tmpfs に差し替えている `/mnt/c` 配下へコピーし、codex が期待する
+`C:\` 形式のパスを返す。`ai/codex/jail-bin` は shim が jail の中でだけ PATH の
+先頭に足すので、外では本物の PowerShell がそのまま動く。
+`Get-Clipboard -Format Image` 以外の PowerShell 呼び出しは拒否する。
+
 jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 `app-server` / `mcp-server` は jail の外で動き、codex 自身の sandbox が
 境界になる（Claude Code の codex plugin 経由の実行はこちら）。

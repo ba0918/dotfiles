@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+# powershell.exe stand-in for the codex jail (ai/codex/bin/codex puts this
+# directory first on PATH inside the jail, and nowhere else).
+#
+# On WSL, codex pastes an image (Ctrl+V) by running
+#   powershell.exe -NoProfile -Command "... Get-Clipboard -Format Image ..."
+# and mapping the C:\ path it prints to /mnt/c. Its in-process clipboard read
+# never succeeds under WSLg (the compositor offers image/bmp, codex asks for
+# image/png), so every paste goes through that fallback. The real PowerShell
+# cannot be exposed inside the jail: a Windows process reads the whole distro
+# through \\wsl$ and bypasses every hide, and the jail cuts the interop
+# channel altogether (hide /run/WSL in jail.conf).
+#
+# This script answers that one request from the PNG that clipboard2path-wsl
+# already keeps under $XDG_RUNTIME_DIR, copying it below /mnt/c, which the
+# jail replaces with an empty writable tmpfs, so the C:\ path codex computes
+# resolves inside the jail. Any other PowerShell invocation is refused.
+set -euo pipefail
+
+die() {
+	printf 'powershell.exe (codex jail stand-in): %s\n' "$*" >&2
+	exit 1
+}
+
+[ "${CODEX_JAIL:-0}" = 1 ] || die "only meant to run inside the codex jail"
+
+case "$*" in
+	*"Get-Clipboard -Format Image"*) ;;
+	*) die "Windows PowerShell is not available inside the codex jail" ;;
+esac
+
+# clipboard2path-wsl keeps latest.png only while the clipboard holds an image;
+# exit 1 is what codex's own script does when there is none.
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+src="${runtime}/clipboard2path/latest.png"
+[ -f "${src}" ] || exit 1
+
+dest_dir=/mnt/c/codex-jail/clipboard
+mkdir -p "${dest_dir}" 2>/dev/null || die "cannot write under /mnt/c (expected the jail's tmpfs over the hidden drive)"
+name="clipboard-$(date +%s%N).png"
+cp -L "${src}" "${dest_dir}/${name}"
+printf 'C:\\codex-jail\\clipboard\\%s\n' "${name}"
