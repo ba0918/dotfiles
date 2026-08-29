@@ -1,0 +1,16 @@
+# Repository-wide shellcheck exclusions (scripts/lint.sh runs shellcheck over
+# every tracked bash script).
+#
+# SC2016 (info): "expressions don't expand in single quotes". The bash test
+# harnesses hand their assertions to check() as single-quoted strings that are
+# eval'd later, and generate-deny.sh emits literal '$HOME' placeholders that
+# build-settings expands at build time. Both are deliberate.
+disable=SC2016
+# SC2034 (warning): "variable appears unused". Follows from the same harness
+# pattern: a variable set by a run() helper is only read inside the eval'd
+# check string, which shellcheck cannot see into.
+disable=SC2034
+# SC2088 (warning): "tilde does not expand in quotes". The codex jail shim and
+# run-optional.sh match a literal leading "~/" in order to expand it themselves,
+# because a quoted "~/x" in a hook command string reaches them unexpanded.
+disable=SC2088
