@@ -1,0 +1,20 @@
+# gitleaks configuration (CI secret scan over the full history)
+#
+# Keeps the default rule set and only adds allowlists.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "fixtures of the secret-detection hook tests"
+# The tests for detect_secret.py must contain fake credentials (a JWT, a
+# private key block, an API key) to prove the hook catches them. The current
+# location and the pre-2026-08 layouts that remain in history are all listed so
+# a full-history scan stays clean.
+paths = [
+  '''^ai/shared/hooks/tests/.*''',
+  '''^ai/claude/hooks/tests/.*''',
+  '''^ai/codex/hooks/tests/.*''',
+  '''^claude/\.claude/hooks/tests/.*''',
+  '''^codex/\.codex/hooks/tests/.*''',
+]
