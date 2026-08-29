@@ -16,6 +16,14 @@
   `[tools]` の `gh` で導入
 - **glab** — GitLab の認証は `glab auth login` で SSH 鍵を発行・GitLab へ登録する。
   `[tools]` の `glab` で導入
+- **secretlint** — `git init` テンプレートの pre-commit hook が staged ファイルを検査する。
+  PATH 上の `secretlint` は使わず、`git/.config/secretlint/`（→ `~/.config/secretlint`）に
+  `package.json` + lockfile で固定した secretlint と preset を `mise run bootstrap` が
+  `npm ci` で入れ、hook は config の隣の `node_modules/.bin/secretlint` を直接呼ぶ。
+  PATH 依存にしないのは、環境ごとに別の secretlint（preset を同梱しない mise の
+  `npm:secretlint` 版など）が拾われて hook が壊れたことがあるため。
+  実行に `node` が要り、PATH に無ければ mise の shims から探す。
+  未導入なら hook は fail-secure で commit を拒否する（`mise run bootstrap` で入る）
 - **マシンごとの git identity** — `[user]` は repo に持たない（環境分離）。
   `~/.config/git/config.local`（gitignore 済み）を include して各マシンで設定する:
   ```bash

@@ -67,6 +67,7 @@ bash scripts/test_codex_jail.sh            # codex jail の mount 検証
 bash scripts/test_docker_install.sh        # Docker 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
 bash scripts/test_lint.sh                  # lint 入口（lint.sh）自身
+bash scripts/test_pre_commit.sh            # git template の pre-commit hook（secretlint。要 mise run bootstrap）
 ```
 
 ## clipboard2path-wsl

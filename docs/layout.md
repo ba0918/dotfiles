@@ -37,8 +37,10 @@ dotfiles/
 │       │   ├── ignore         # global gitignore（XDG 自動検出）
 │       │   ├── attributes     # global gitattributes（XDG 自動検出）
 │       │   └── template/      # git init テンプレート
-│       └── secretlint/
-│           └── .secretlintrc.json
+│       └── secretlint/        # pre-commit hook 用の secretlint 一式（→ ~/.config/secretlint）
+│           ├── .secretlintrc.json
+│           ├── package.json   # secretlint + preset を lockfile で固定
+│           └── node_modules/  # `mise run bootstrap` の npm ci で生成（gitignore）
 ├── fish/                      # → ~/.config/fish/*（プラグインは fish_plugins + fisher）
 │   └── .config/fish/
 │       ├── config.fish

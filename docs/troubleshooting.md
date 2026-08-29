@@ -4,6 +4,7 @@
 |------|-----------|
 | `mise bootstrap dotfiles apply` で "refusing to overwrite existing files" | `$HOME` 側に実ファイルがある。内容を確認して `--force` で置換するか退避する |
 | `git` 実行時に `delta: command not found` | delta 未導入。`mise bootstrap` で入れるか一時的に `git -c core.pager=less ...` で回避 |
+| `git commit` が `[pre-commit] secretlint is not installed` で拒否される | `git/.config/secretlint/node_modules` が無い。`mise run bootstrap`（または `npm ci --prefix ~/.config/secretlint`）で入れる |
 | `~/.gitconfig` に突然大量の差分 | `gcm configure` などツールが symlink 先に書き込んだ可能性。差分を確認して整理する |
 | dotfiles apply で repo 内ファイルが symlink 化する | `[dotfiles]` がディレクトリ symlink を指す場合に起きる。file-level 宣言でなくディレクトリ単位で宣言する |
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore（`~/.config/git/ignore`）で除外済み |
