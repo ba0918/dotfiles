@@ -68,13 +68,18 @@ compile = false
 # Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
 # CLAUDE.md のみ template 配布（shared 文書への @ 参照をハーネスが展開するため）。
 # output-styles/gal.md は shared/persona/gal.md への symlink、共通契約
-# （interaction.md / human-readable.md）は ~/.claude/rules/ の symlink で常時適用
+# （interaction.md / human-readable.md）は ~/.claude/rules/ の symlink で常時適用。
+# Claude 専用のルール（model-routing.md）と、それが参照する agent 定義
+# （judge / scout）は ai/claude/ 配下から symlink する
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
 "~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
 "~/.claude/bash-env.sh" = "../ai/claude/bash-env.sh"
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
+"~/.claude/rules/model-routing.md" = "../ai/claude/rules/model-routing.md"
+"~/.claude/agents/judge.md" = "../ai/claude/agents/judge.md"
+"~/.claude/agents/scout.md" = "../ai/claude/agents/scout.md"
 # hook スクリプトは ai/shared/hooks/ の単一実体を Claude / Codex 両方に配布する。
 # detect_* は hook_input を import するため、同じディレクトリに揃える必要がある
 "~/.claude/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"

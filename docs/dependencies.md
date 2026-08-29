@@ -94,8 +94,9 @@ ext の再ビルドが手動になるのが理由。
   で導入（スキル本体は opencode のキャッシュに配置されるため repo 外）
 
 `ai/shared/` の共通契約（`interaction.md` / `human-readable.md`）は
-`~/.claude/rules/` にシンボリックリンクして常時適用する
-（`model-routing.md` と同じ場所）。output-style の `persona/gal.md` は
+`~/.claude/rules/` にシンボリックリンクして常時適用する。Claude 専用の
+`model-routing.md` と、それが参照する agent 定義（`judge.md` / `scout.md`）は
+`ai/claude/rules/` `ai/claude/agents/` から同様に symlink する。output-style の `persona/gal.md` は
 `~/.claude/output-styles/` から symlink する。これにより `@` 参照を使わずに
 すべてのモデルで共通設定が効く
 

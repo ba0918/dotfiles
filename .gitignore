@@ -43,6 +43,8 @@ ai/claude/*
 !ai/claude/bash-env.sh
 !ai/claude/conf.d/
 !ai/claude/build-settings
+!ai/claude/rules/
+!ai/claude/agents/
 # (explicit allow-list is appended as assets are adopted)
 
 # ===== Python dev artifacts =====

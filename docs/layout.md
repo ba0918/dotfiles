@@ -52,7 +52,9 @@ dotfiles/
 │   │   ├── CLAUDE.md          # template 配布
 │   │   ├── bash-env.sh        # symlink 配布
 │   │   ├── build-settings     # conf.d/ → settings.json 合成スクリプト
-│   │   └── conf.d/            # settings.json の分割管理（10-base〜60-plugins）
+│   │   ├── conf.d/            # settings.json の分割管理（10-base〜60-plugins）
+│   │   ├── rules/             # → ~/.claude/rules/*（Claude 専用ルール。model-routing）
+│   │   └── agents/            # → ~/.claude/agents/*（judge / scout の agent 定義）
 │   ├── codex/                 # → ~/.codex/*
 │   │   ├── AGENTS.md          # template 配布
 │   │   ├── hooks.json         # symlink 配布
