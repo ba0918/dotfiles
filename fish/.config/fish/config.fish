@@ -28,7 +28,10 @@ end
 fish_add_path --prepend --move "$dotfiles_root/ai/codex/bin"
 
 # devbox global（php / xdebug / pcov のツールチェーン。nix store ベースでホストを汚さない）
-devbox global shellenv --init-hook | source
+# devbox は $SHELL で出力の構文を決めるので、bash などから起動された fish
+# （エージェントの Bash ツール、cron、herdr）では bash 構文が流れてきて
+# source が構文エラーになる。shell 指定フラグは無いため $SHELL を fish に固定する
+SHELL=(status fish-path) devbox global shellenv --init-hook | source
 
 # environment
 set -gx EDITOR nvim
