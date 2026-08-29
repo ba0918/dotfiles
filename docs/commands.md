@@ -47,7 +47,16 @@ scripts/sync-shared.sh                # claude-skills 共有文書を ai/shared/
 
 ## テスト
 
-CI は無いので、対象を触ったら手動で回す。
+GitHub Actions（`.github/workflows/ci.yml`）が main への push で全テスト・shellcheck・
+secret スキャン（gitleaks + secretlint）を回す。PR 運用ではないので CI は入った後の
+検知器であり、push 前に手元で回すのが基本。
+
+```bash
+mise run test                              # 全テスト（scripts/run-tests.sh。CI と同じ入口）
+mise run lint                              # 追跡中の bash スクリプト全部に shellcheck（scripts/lint.sh）
+```
+
+個別に回すとき:
 
 ```bash
 pytest ai/shared/hooks/tests               # security hooks（[tools] の pipx:pytest。python3 -m pytest は不可）
@@ -56,6 +65,8 @@ bash scripts/test_run_optional.sh          # 外部依存ラッパのスキッ�
 bash scripts/test_sync_shared.sh           # claude-skills 同期
 bash scripts/test_codex_jail.sh            # codex jail の mount 検証
 bash scripts/test_docker_install.sh        # Docker 導入スクリプト
+bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
+bash scripts/test_lint.sh                  # lint 入口（lint.sh）自身
 ```
 
 ## clipboard2path-wsl

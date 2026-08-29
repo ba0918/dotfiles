@@ -79,6 +79,7 @@ repo に含めない）。
 mise bootstrap                   # 2回目以降
 mise bootstrap --dry-run         # 確認
 mise bootstrap dotfiles status   # 適用状態
+mise run test                    # 全テスト（CI と同じ入口）
 gh auth setup-git                # GitHub の credential helper 登録
 ```
 

@@ -104,7 +104,12 @@ dotfiles/
 ├── scripts/
 │   ├── generate-deny.sh       # deny-patterns.yaml → 各ツール形式に変換
 │   ├── sync-shared.sh         # claude-skills 共有文書を vendor/ に同期
+│   ├── run-tests.sh           # 全テストの入口（mise run test / CI）
+│   ├── lint.sh                # 追跡中の bash スクリプトに shellcheck（mise run lint / CI）
 │   └── test_*.sh              # bash テストハーネス
+├── .github/workflows/ci.yml   # GitHub Actions（テスト / shellcheck / secret スキャン）
+├── .shellcheckrc              # shellcheck の repo 全体の除外
+├── .gitleaks.toml             # gitleaks の allowlist（secret 検出テストの fixture）
 ├── bootstrap.sh               # 新マシン用 wrapper
 ├── CLAUDE.md                  # Claude Code エントリ（→ AGENTS.md）
 ├── AGENTS.md                  # エージェント向け変更契約

@@ -60,11 +60,16 @@ Codex / Cursor / Aider などで読み込まれる標準ファイル。Claude Co
 グローバル指針と同じ: 失敗するテストはスキップ (`skip` / `xit` / 削除) ではなく
 修正で対応する。
 
-この repo のテストは 2 系統ある。CI は無いので、対応する対象を触ったら手で回すこと
+この repo のテストは 2 系統あり、`mise run test`（`scripts/run-tests.sh`）で全部回る。
+GitHub Actions（`.github/workflows/ci.yml`）も同じ入口を main への push で回すが、
+PR 運用ではないので CI は入った後の検知器。対象を触ったら push 前に手元で回すこと
 （コマンドは [docs/commands.md](docs/commands.md) のテスト節を参照）。
 
 - **pytest** — `ai/shared/hooks/tests/`（security hooks）
 - **bash ハーネス** — `scripts/test_*.sh`（生成スクリプト / ラッパ）
+
+新しい bash スクリプトは CI の `mise run lint`（shellcheck）の対象に自動で入る
+（git 管理下で bash の shebang を持つファイルすべて）。
 
 ### 7. 生成物は「空でも成功」させない
 
