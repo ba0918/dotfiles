@@ -28,6 +28,8 @@ jobs:
           python-version: "3.12"
       - name: Install pytest
         run: python -m pip install pytest==9.0.2
+      - name: Install secretlint for the pre-commit hook harness
+        run: npm ci --prefix git/.config/secretlint --ignore-scripts --no-fund --no-audit
       - name: Install bubblewrap
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends bubblewrap
       # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor;
@@ -56,11 +58,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
           GITLEAKS_ENABLE_COMMENTS: "false"
-      # Same config as the pre-commit hook. The preset is named explicitly
-      # because the secretlint package does not pull it in on its own.
+      # The same install and config the pre-commit hook uses, from the lockfile.
+      - name: Install secretlint
+        run: npm ci --prefix git/.config/secretlint --ignore-scripts --no-fund --no-audit
       - name: secretlint (tracked files)
         run: |
-          git ls-files -z | xargs -0 npx --yes \
-            -p secretlint@13.0.4 \
-            -p @secretlint/secretlint-rule-preset-recommend@13.0.4 \
-            secretlint --secretlintrc git/.config/secretlint/.secretlintrc.json
+          git ls-files -z | xargs -0 git/.config/secretlint/node_modules/.bin/secretlint \
+            --secretlintrc git/.config/secretlint/.secretlintrc.json
