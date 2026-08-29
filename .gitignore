@@ -84,6 +84,9 @@ Thumbs.db
 # ===== AI shared docs: vendored fetch (reproduced by `mise bootstrap`) =====
 ai/shared/vendor/
 
+# ===== secretlint for the git pre-commit hook (reproduced by `mise run bootstrap` via npm ci) =====
+git/.config/secretlint/node_modules/
+
 # ===== Fish runtime (never commit universal vars / plugin-generated) =====
 fish/.config/fish/fish_variables*
 fish/.config/fish/fish_history*

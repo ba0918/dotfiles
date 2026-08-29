@@ -1,0 +1,9 @@
+{
+  "name": "dotfiles-secretlint",
+  "private": true,
+  "description": "secretlint and its rule preset for the global git pre-commit hook; installed by `mise run bootstrap` (npm ci)",
+  "dependencies": {
+    "secretlint": "13.0.4",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.4"
+  }
+}

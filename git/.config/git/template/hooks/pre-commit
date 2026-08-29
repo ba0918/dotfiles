@@ -10,24 +10,15 @@
 # pretends to scan while doing nothing is worse than no hook at all.
 #
 #   - scans only the files currently staged for this commit
-#   - rejects the commit if secretlint is not on PATH
-#   - rejects the commit if neither a project .secretlintrc* nor the global
-#     dotfiles config is available (otherwise rules would be empty)
+#   - runs the secretlint installed next to the global config
+#     (~/.config/secretlint/node_modules, from the dotfiles lockfile), never
+#     whatever `secretlint` happens to be on PATH
+#   - rejects the commit if that install is missing
 #   - honors a project-local .secretlintrc* if present; otherwise uses the
-#     global config shipped with dotfiles
+#     global config shipped with dotfiles. A project that ships its own
+#     secretlint (node_modules/.bin/secretlint) is scanned with that one
 
 set -euo pipefail
-
-# Make pnpm-installed binaries discoverable even when the hook is invoked
-# from a shell that has not loaded PNPM_HOME into PATH (e.g. fish without
-# the conf.d snippet). Keeps the hook self-contained across environments.
-PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
-if [[ -d "$PNPM_HOME" ]]; then
-    case ":$PATH:" in
-        *":$PNPM_HOME:"*) ;;
-        *) PATH="$PNPM_HOME:$PATH" ;;
-    esac
-fi
 
 # Gather staged added / modified file paths (skip deletions).
 mapfile -t STAGED < <(git diff --cached --name-only --diff-filter=AM)
@@ -35,17 +26,22 @@ if [[ ${#STAGED[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# Require a globally installed secretlint. npx fallback is intentionally
-# disabled: npx can fetch `secretlint` itself but cannot auto-resolve the
-# recommend preset package, causing false-positive commit blocks on machines
-# that haven't installed secretlint yet.
-if ! command -v secretlint >/dev/null 2>&1; then
-    echo "[pre-commit] secretlint not installed — rejecting commit for safety." >&2
-    echo "[pre-commit] install:             pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
-    echo "[pre-commit] override (risky):    git commit --no-verify" >&2
-    exit 1
+# The install lives next to the global config, so the binary and the preset
+# the config names resolve from the same node_modules. Resolving `secretlint`
+# through PATH instead is exactly how this hook broke once: a differently
+# installed copy without the preset was found first and rejected every commit.
+GLOBAL_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/secretlint"
+GLOBAL_CONFIG="$GLOBAL_DIR/.secretlintrc.json"
+GLOBAL_BIN="$GLOBAL_DIR/node_modules/.bin/secretlint"
+
+# The binary is a node script. A GUI client or editor integration may invoke
+# the hook without the shell that activates mise, so fall back to its shims.
+if ! command -v node >/dev/null 2>&1; then
+    MISE_SHIMS="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
+    if [[ -d "$MISE_SHIMS" ]]; then
+        PATH="$MISE_SHIMS:$PATH"
+    fi
 fi
-RUNNER=(secretlint)
 
 # Let project-level config win; otherwise use the global dotfiles config.
 PROJECT_CONFIG=""
@@ -56,17 +52,25 @@ for candidate in .secretlintrc.json .secretlintrc.yaml .secretlintrc.yml .secret
     fi
 done
 
-GLOBAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/secretlint/.secretlintrc.json"
-
-if [[ -n "$PROJECT_CONFIG" ]]; then
-    CMD=("${RUNNER[@]}" "${STAGED[@]}")
+if [[ -n "$PROJECT_CONFIG" && -x node_modules/.bin/secretlint ]]; then
+    CMD=(node_modules/.bin/secretlint "${STAGED[@]}")
 else
-    if [[ ! -f "$GLOBAL_CONFIG" ]]; then
-        echo "[pre-commit] no project .secretlintrc and global config missing: $GLOBAL_CONFIG" >&2
-        echo "[pre-commit] rejecting commit — apply dotfiles (mise bootstrap) to provision it." >&2
+    if [[ ! -x "$GLOBAL_BIN" ]]; then
+        echo "[pre-commit] secretlint is not installed at $GLOBAL_BIN — rejecting commit for safety." >&2
+        echo "[pre-commit] install:             mise run bootstrap   (npm ci in $GLOBAL_DIR)" >&2
+        echo "[pre-commit] override (risky):    git commit --no-verify" >&2
         exit 1
     fi
-    CMD=("${RUNNER[@]}" --secretlintrc "$GLOBAL_CONFIG" "${STAGED[@]}")
+    if [[ -n "$PROJECT_CONFIG" ]]; then
+        CMD=("$GLOBAL_BIN" "${STAGED[@]}")
+    else
+        if [[ ! -f "$GLOBAL_CONFIG" ]]; then
+            echo "[pre-commit] no project .secretlintrc and global config missing: $GLOBAL_CONFIG" >&2
+            echo "[pre-commit] rejecting commit — apply dotfiles (mise bootstrap) to provision it." >&2
+            exit 1
+        fi
+        CMD=("$GLOBAL_BIN" --secretlintrc "$GLOBAL_CONFIG" "${STAGED[@]}")
+    fi
 fi
 
 if ! "${CMD[@]}"; then
