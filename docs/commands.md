@@ -50,7 +50,7 @@ scripts/sync-shared.sh                # claude-skills 共有文書を ai/shared/
 CI は無いので、対象を触ったら手動で回す。
 
 ```bash
-python3 -m pytest ai/shared/hooks/tests    # security hooks
+pytest ai/shared/hooks/tests               # security hooks（[tools] の pipx:pytest。python3 -m pytest は不可）
 bash scripts/test_generate_deny.sh         # deny 生成スクリプト
 bash scripts/test_run_optional.sh          # 外部依存ラッパのスキップ挙動
 bash scripts/test_sync_shared.sh           # claude-skills 同期
