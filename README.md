@@ -86,11 +86,7 @@ gh auth setup-git                # GitHub の credential helper 登録
 
 ## パッケージの追加手順
 
-1. `mkdir -p <pkg>/<$HOME からの相対パス>` でツリーを作る
-2. 設定ファイルを配置する
-3. `.gitignore` に runtime / secret パターンを追記する
-4. `mise/config.toml` の `[dotfiles]` に source を追記して適用する
-
+[docs/layout.md](docs/layout.md) の「パッケージの追加手順」を参照。
 既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を参照。
 
 ## 安全設計
