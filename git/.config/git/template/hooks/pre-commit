@@ -18,15 +18,14 @@
 
 set -euo pipefail
 
-# secretlint is installed through mise (npm:secretlint in the dotfiles [tools]),
-# exposed via the shims directory. Make it discoverable even when the hook is
-# invoked from a process that never ran `mise activate` (a GUI git client, an
-# editor integration). Keeps the hook self-contained across environments.
-MISE_SHIMS="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
-if [[ -d "$MISE_SHIMS" ]]; then
+# Make pnpm-installed binaries discoverable even when the hook is invoked
+# from a shell that has not loaded PNPM_HOME into PATH (e.g. fish without
+# the conf.d snippet). Keeps the hook self-contained across environments.
+PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+if [[ -d "$PNPM_HOME" ]]; then
     case ":$PATH:" in
-        *":$MISE_SHIMS:"*) ;;
-        *) PATH="$MISE_SHIMS:$PATH" ;;
+        *":$PNPM_HOME:"*) ;;
+        *) PATH="$PNPM_HOME:$PATH" ;;
     esac
 fi
 
@@ -42,7 +41,7 @@ fi
 # that haven't installed secretlint yet.
 if ! command -v secretlint >/dev/null 2>&1; then
     echo "[pre-commit] secretlint not installed — rejecting commit for safety." >&2
-    echo "[pre-commit] install:             mise bootstrap (dotfiles [tools] declares npm:secretlint)" >&2
+    echo "[pre-commit] install:             pnpm add -g --ignore-scripts secretlint @secretlint/secretlint-rule-preset-recommend" >&2
     echo "[pre-commit] override (risky):    git commit --no-verify" >&2
     exit 1
 fi
