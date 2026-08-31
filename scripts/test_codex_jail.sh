@@ -398,6 +398,55 @@ check "--add-dir <dir> is writable inside the jail" 'grep -q "ADDDIR_OK" <<<"${O
 OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${TMP}/does-not-exist" "${SHIM}" exec p 2>&1)" && RC=0 || RC=$?
 check "a missing codex binary is reported, not silently run" '[ "${RC}" -ne 0 ] && grep -qi "codex" <<<"${OUT}"'
 
+# --- github: a scoped token enters through the environment ---------------------
+# The real gh login (~/.config/gh) stays hidden. Only the fine-grained PAT kept
+# in ~/.config/codex-jail/gh-token (or CODEX_JAIL_GH_TOKEN_FILE) is exported
+# as GH_TOKEN, with GitHub SSH remotes rewritten to HTTPS so git can use it.
+
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" GH_TOKEN=outer-dummy GITHUB_TOKEN=outer-dummy-2 \
+	PROBE='echo "gh:${GH_TOKEN:-unset}:${GITHUB_TOKEN:-unset}"' "${SHIM}" 2>&1)" || true
+check "without a token file, GH_TOKEN and GITHUB_TOKEN from the host do not enter the jail" 'grep -q "^gh:unset:unset$" <<<"${OUT}"'
+
+probe "${WT}" 'echo "insteadof:$(git config --get-all url.https://github.com/.insteadOf | wc -l)"'
+check "without a token file, GitHub remotes are not rewritten" 'grep -q "^insteadof:0$" <<<"${OUT}"'
+
+OUT="$(HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" GH_TOKEN=outer-dummy PROBE='echo "plain:${GH_TOKEN:-unset}"' "${SHIM}" --version 2>&1)" || true
+check "an unjailed invocation keeps the host GH_TOKEN" 'grep -q "^plain:outer-dummy$" <<<"${OUT}"'
+
+mkdir -p "${FAKE_HOME}/.config/codex-jail"
+printf 'dummy-token-123\n' > "${FAKE_HOME}/.config/codex-jail/gh-token"
+
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" GH_TOKEN=outer-dummy \
+	PROBE='echo "gh:${GH_TOKEN:-unset}"; echo "file:$(wc -c < "$HOME/.config/codex-jail/gh-token")"; git config --get-all url.https://github.com/.insteadOf | sed "s/^/insteadof:/"' "${SHIM}" 2>&1)" || true
+check "the token file is exported as GH_TOKEN (trailing newline stripped), replacing the host value" 'grep -q "^gh:dummy-token-123$" <<<"${OUT}"'
+check "the token file itself reads as empty inside the jail" 'grep -q "^file:0$" <<<"${OUT}"'
+check "git@github.com: remotes are rewritten to HTTPS" 'grep -q "^insteadof:git@github.com:$" <<<"${OUT}"'
+check "ssh://git@github.com/ remotes are rewritten to HTTPS" 'grep -q "^insteadof:ssh://git@github.com/$" <<<"${OUT}"'
+check "~/.config/gh stays hidden even with a token file" '{ probe "${WT}" "ls -A \"\$HOME/.config/gh\" | wc -l"; grep -q "^0$" <<<"${OUT}"; }'
+
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" \
+	GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=probe.outer GIT_CONFIG_VALUE_0=kept \
+	PROBE='echo "outer:$(git config --get probe.outer)"; echo "insteadof:$(git config --get-all url.https://github.com/.insteadOf | wc -l)"' "${SHIM}" 2>&1)" || true
+check "GIT_CONFIG_* pairs already set on the host are kept" 'grep -q "^outer:kept$" <<<"${OUT}"'
+check "the remote rewrite is appended after the host pairs" 'grep -q "^insteadof:2$" <<<"${OUT}"'
+
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" GIT_CONFIG_COUNT=abc "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "a non-numeric GIT_CONFIG_COUNT on the host is reported, not silently ignored" '[ "${RC}" -ne 0 ] && grep -q "GIT_CONFIG_COUNT" <<<"${OUT}"'
+
+probe "${WT}" "CODEX_JAIL_BIN=${FAKE_BIN} PROBE='echo nested:\${GH_TOKEN:-unset}' ${SHIM} exec inner"
+check "a nested codex inside the jail inherits GH_TOKEN instead of re-reading the (masked) token file" 'grep -q "^nested:dummy-token-123$" <<<"${OUT}"'
+
+printf 'dummy-token-456' > "${FAKE_HOME}/other-token"
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" CODEX_JAIL_GH_TOKEN_FILE="${FAKE_HOME}/other-token" \
+	PROBE='echo "gh:${GH_TOKEN:-unset}"; echo "file:$(wc -c < "$HOME/other-token")"' "${SHIM}" 2>&1)" || true
+check "CODEX_JAIL_GH_TOKEN_FILE selects another token file" 'grep -q "^gh:dummy-token-456$" <<<"${OUT}"'
+check "the overriding token file is hidden inside the jail too" 'grep -q "^file:0$" <<<"${OUT}"'
+
+: > "${FAKE_HOME}/.config/codex-jail/gh-token"
+OUT="$(cd "${WT}" && HOME="${FAKE_HOME}" CODEX_JAIL_BIN="${FAKE_BIN}" "${SHIM}" 2>&1)" && RC=0 || RC=$?
+check "an empty token file refuses to start rather than running with no credentials" '[ "${RC}" -ne 0 ] && grep -q "gh-token" <<<"${OUT}"'
+rm "${FAKE_HOME}/.config/codex-jail/gh-token"
+
 # --- summary -------------------------------------------------------------------
 
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"

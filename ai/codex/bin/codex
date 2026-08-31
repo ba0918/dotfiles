@@ -31,12 +31,14 @@
 #               jail cuts off (powershell.exe serving codex's image paste from
 #               clipboard2path-wsl)
 #   network     unrestricted (bwrap has no egress allowlist)
+#   GH_TOKEN    the fine-grained PAT in ~/.config/codex-jail/gh-token, if the
+#               file exists; GitHub SSH remotes are rewritten to HTTPS so git
+#               can use it. The real gh login (~/.config/gh) never enters, and
+#               there is no un-hide switch for it by design: the token's
+#               server-side scope is the boundary for GitHub access.
 #
 # The mount table lives in ai/codex/jail.conf (next to this script's parent
 # directory) so hosting another CLI inside the jail is a data change.
-#
-# Consequence: git push and gh need credentials the jail hides, so they are
-# done from outside. There is no un-hide switch by design.
 #
 # Jailed: the interactive session, exec, resume, fork — the invocations whose
 # sandbox this shim can replace with the bypass flag. Passed through to the
@@ -50,6 +52,7 @@
 #   CODEX_JAIL_CONF   mount table (default: ../jail.conf relative to this script)
 #   CODEX_JAIL_RW     extra read-write paths, colon separated
 #   CODEX_JAIL_HIDE   extra hidden paths, colon separated
+#   CODEX_JAIL_GH_TOKEN_FILE  GitHub token file (default: ~/.config/codex-jail/gh-token)
 #   CODEX_JAIL_OFF=1  skip the jail and the bypass flag entirely
 
 set -euo pipefail
@@ -331,6 +334,44 @@ if [ -n "${CODEX_JAIL_HIDE:-}" ]; then
 	while IFS= read -r p; do
 		[ -n "${p}" ] && HIDE_PATHS+=("${p}")
 	done < <(split_colon "${CODEX_JAIL_HIDE}")
+fi
+
+# --- github credentials ------------------------------------------------------------
+
+# The real gh login stays hidden (jail.conf hides ~/.config/gh): its OAuth
+# token covers every repository plus workflow and gist access. What enters is
+# the fine-grained PAT kept in this file, exported as GH_TOKEN, whose boundary
+# is the scope GitHub enforces server-side (no Workflows, no Administration).
+# Anything inside the jail can read the environment, so a token that is
+# visible here is fully usable here; nothing in the jail narrows it further.
+# No file means no GitHub credentials, the previous behaviour. Any GH_TOKEN /
+# GITHUB_TOKEN of the host session is dropped either way so a broader token
+# set outside cannot leak in by accident.
+GH_TOKEN_FILE="${CODEX_JAIL_GH_TOKEN_FILE:-${HOME}/.config/codex-jail/gh-token}"
+unset GH_TOKEN GITHUB_TOKEN
+
+# Appends one key=value pair to the GIT_CONFIG_* environment git reads as if
+# it were a config file, keeping any pairs the host session already set.
+git_config_add() {
+	local n="${GIT_CONFIG_COUNT:-0}"
+	case "${n}" in
+		''|*[!0-9]*) die "GIT_CONFIG_COUNT is not a number: ${n}" ;;
+	esac
+	export "GIT_CONFIG_KEY_${n}=$1" "GIT_CONFIG_VALUE_${n}=$2"
+	export GIT_CONFIG_COUNT=$((n + 1))
+}
+
+if [ -e "${GH_TOKEN_FILE}" ]; then
+	[ -r "${GH_TOKEN_FILE}" ] || die "gh token file is not readable: ${GH_TOKEN_FILE}"
+	token="$(<"${GH_TOKEN_FILE}")"
+	[ -n "${token}" ] || die "gh token file is empty: ${GH_TOKEN_FILE}"
+	export GH_TOKEN="${token}"
+	unset token
+	HIDE_PATHS+=("${GH_TOKEN_FILE}")
+	# ~/.ssh is hidden, so SSH remotes cannot work in here; over HTTPS the
+	# token is served by the gh credential helper the host gitconfig sets up.
+	git_config_add "url.https://github.com/.insteadOf" "git@github.com:"
+	git_config_add "url.https://github.com/.insteadOf" "ssh://git@github.com/"
 fi
 
 # Later mounts shadow earlier ones. A hide that is an ancestor of a read-write
