@@ -135,8 +135,37 @@ namespace を組み、以下の境界を作る:
 codex 自身の Permission Profile（Beta）は `.git` の read-only mount や
 deny glob の fail-closed が重なって実用に耐えないため、境界を codex の外に出した。
 
-認証情報を隠すため `git push` と `gh` は jail の中では失敗する（外で行う。
-意図的に un-hide する手段は用意していない）。
+GitHub へのアクセスは、`gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
+workflow + gist に届く OAuth token）ではなく、`~/.config/codex-jail/gh-token` に
+置いた **fine-grained PAT** を shim が `GH_TOKEN` として箱の中に渡す。
+`~/.config/gh` を意図的に un-hide する手段は用意していない。箱の中では環境変数も
+本物の `gh` バイナリも見えるので、中に入った token を中で絞ることはできない。
+境界は **token に GitHub 側が付ける権限**そのもので、Free プランの private
+リポジトリは ruleset を張れないため、main への直 push / force push も通る。
+`gh` / `git` から見える権限の実測は次の通り（2026-08-31 時点、
+個人所有の private リポジトリで確認）:
+
+| 操作 | 結果 | 止めているもの |
+|---|---|---|
+| ブランチ push、`gh pr create` / `view` / `merge`、`gh issue create` / `comment` / `close` | 通る | — |
+| main への force push | 通る | なし（ruleset は Free の private では使えない） |
+| `gh issue delete` | 通る | なし（所有者は admin 扱い） |
+| `.github/workflows/` を含む push | 拒否 | token に Workflows 権限が無い |
+| リポジトリ設定の変更（`gh api -X PATCH repos/...`） | 拒否 | token に Administration 権限が無い |
+| gist 作成 | 拒否 | token に gist 権限が無い |
+| `gh pr checks` | 失敗 | fine-grained PAT には Checks 権限自体が存在しない（`gh run list` / `gh run view --log` で代替） |
+
+token ファイルが無ければ GitHub の認証情報は一切入らない（以前と同じ挙動）。
+ファイルが空なら shim は起動を拒否する。ホストのシェルに `GH_TOKEN` /
+`GITHUB_TOKEN` が設定されていても箱には入らない（より広い token の漏れ込み防止）。
+token を入れるときは `~/.ssh` が隠れているため、`git@github.com:` /
+`ssh://git@github.com/` の remote を `url.<https>.insteadOf` の環境変数注入で
+HTTPS に読み替える（ホストの `.gitconfig` は触らない）。token は
+`gh auth git-credential`（`.gitconfig` の credential helper）経由で git にも渡る。
+
+推奨する token の権限（All repositories）: Contents / Issues / Pull requests を
+Read and write、Actions / Commit statuses を Read。Workflows と Administration は
+付けない。有効期限が切れたら同じファイルに置き直す。
 mount table は `ai/codex/jail.conf`（`rw` / `rw-file` / `ro` / `hide` の
 4 directive、`~` 展開あり）。`rw` はディレクトリ専用で、ファイル単体を指すと
 起動を拒否する。ファイル単体の bind はマウントポイントになり、tmp + rename で
@@ -173,6 +202,7 @@ jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 環境変数での調整:
 - `CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）— 一時的な追加用
 - `CODEX_JAIL_CONF` — table ごと差し替え
+- `CODEX_JAIL_GH_TOKEN_FILE` — GitHub token ファイルの置き場所を差し替え
 - `CODEX_JAIL_OFF=1` — jail 自体を外す
 
 検証は `bash scripts/test_codex_jail.sh`。
