@@ -124,16 +124,11 @@ read_shortform:
   - "*.key"
   - "*.pem"
 
-# Bash command denials — destructive operations
+# Bash command denials — destructive operations.
+# rm / rmdir are deliberately absent: a prefix rule cannot tell the agent's own
+# scratch directory from $HOME, and deny rules are evaluated before any hook
+# can weigh in. block_dangerous_command.py judges rm by where the target lands.
 bash_destructive:
-  - "rm -rf:*"
-  - "rm -r:*"
-  - "sudo rm:*"
-  - "rmdir:*"
-  - "rm --recursive:*"
-  - "rm --force:*"
-  - "rm -f:*"
-  - "rm -R:*"
   - "find * -delete:*"
   - "find * -exec rm:*"
   - "xargs rm:*"

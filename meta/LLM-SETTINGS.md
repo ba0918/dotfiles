@@ -56,7 +56,7 @@ build-settings
 | personal_directories | 個人ディレクトリ（Documents 等） | Claude のみ |
 | write_deny | 書き込み禁止パターン | Claude のみ |
 | read_shortform | 短縮形 Read deny | Claude のみ |
-| bash_destructive | 破壊コマンド deny | Claude のみ |
+| bash_destructive | 破壊コマンド deny（`rm` / `rmdir` は含めない。場所で判定する `block_dangerous_command.py` の担当） | Claude のみ |
 
 ### パターンを追加する手順
 
