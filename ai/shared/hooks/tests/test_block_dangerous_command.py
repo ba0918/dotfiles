@@ -102,9 +102,7 @@ def test_rm_rf_in_backticks():
     assert any("backticks" in b.rule for b in blocks)
 
 
-def test_plain_rm_rf_not_caught_here():
-    # settings.json deny list already catches `rm -rf *`; this hook does not
-    # duplicate the bare case to avoid double-warnings.
+def test_plain_rm_under_tmp_is_allowed_without_a_cwd():
     assert analyze("rm -rf /tmp/cache") == []
 
 
@@ -221,6 +219,182 @@ def test_multiple_rules_can_match():
     assert any("mkfs" in r for r in rules)
 
 
+# --- rm: the target decides, not the flags -----------------------------------
+#
+# The settings.json deny list used to refuse every `rm -r` / `rm -f` / `rmdir`
+# by prefix, which also refused deleting the agent's own scratch directories.
+# The hook resolves where the deletion lands instead: the session directory
+# and the tmp roots are deletable, everything else is not.
+
+from block_dangerous_command import analyze_rm
+
+CWD = "/home/u/proj"
+HOME = "/home/u"
+TMP = ("/tmp", "/var/tmp")
+
+
+def rm_rules(command, cwd=CWD, home=HOME, tmp_roots=TMP, tmpdir=None):
+    return [b.rule for b in analyze_rm(command, cwd=cwd, home=home, tmp_roots=tmp_roots, tmpdir=tmpdir)]
+
+
+def test_rm_under_tmp_scratchpad_is_allowed():
+    assert rm_rules("rm -rf /tmp/claude-1000/-home-u-proj/abc/scratchpad/work") == []
+
+
+def test_rm_of_a_relative_path_inside_cwd_is_allowed():
+    assert rm_rules("rm -rf build/") == []
+    assert rm_rules("rmdir empty") == []
+    assert rm_rules("rm -f out.log") == []
+
+
+def test_rm_of_an_absolute_path_inside_cwd_is_allowed():
+    assert rm_rules("rm -rf /home/u/proj/sub/x") == []
+
+
+def test_rm_of_a_stale_git_lock_is_allowed():
+    assert rm_rules("rm .git/index.lock") == []
+
+
+def test_tilde_home_pwd_and_tmpdir_expand_before_the_check():
+    assert rm_rules("rm -rf ~/proj/sub") == []
+    assert rm_rules("rm -rf $HOME/proj/sub") == []
+    assert rm_rules("rm -rf ${HOME}/proj/sub") == []
+    assert rm_rules("rm -rf $PWD/build") == []
+    assert rm_rules("rm -rf $TMPDIR/x", tmp_roots=TMP + ("/run/user/1000/tmp",), tmpdir="/run/user/1000/tmp") == []
+
+
+def test_glob_below_a_directory_inside_cwd_is_allowed():
+    assert rm_rules("rm -rf build/*") == []
+    assert rm_rules("rm -f logs/*.log") == []
+
+
+def test_glob_component_with_a_literal_prefix_stays_inside_its_parent():
+    assert rm_rules("rm -rf /tmp/codex-jail-wt.*") == []
+
+
+def test_quoted_target_with_spaces_is_resolved_as_one_path():
+    assert rm_rules('rm -f "a b/c.txt"') == []
+
+
+def test_rm_inside_a_string_argument_is_not_a_command():
+    assert rm_rules('git commit -m "rm -rf /"') == []
+    assert rm_rules("grep -rn 'rm -rf' .") == []
+
+
+def test_rm_without_targets_is_ignored():
+    assert rm_rules("rm --help") == []
+    assert rm_rules("which rm") == []
+    assert rm_rules("command -v rm") == []
+
+
+def test_rm_after_a_safe_command_in_a_compound_is_allowed():
+    assert rm_rules("ls && rm -rf build") == []
+    assert rm_rules("make clean; rm -f out.o") == []
+
+
+def test_rm_outside_cwd_is_blocked():
+    assert "outside" in rm_rules("rm -rf ../other")[0]
+    assert "outside" in rm_rules("rm -rf ~/.config")[0]
+    assert "outside" in rm_rules("rm ~/foo")[0]
+    assert "outside" in rm_rules("rm -rf /home/u/other")[0]
+    assert "outside" in rm_rules("rm -rf /")[0]
+    assert "outside" in rm_rules("rm -rf /etc/passwd")[0]
+
+
+def test_rm_of_an_allowed_root_itself_is_blocked():
+    for cmd in ("rm -rf .", "rm -rf ./", "rm -rf *", "rm -rf ./*", "rm -rf .*", "rm -rf /tmp", "rm -rf /tmp/*", "rm -rf /home/u/proj"):
+        assert any("root" in r for r in rm_rules(cmd)), cmd
+
+
+def test_rm_of_git_metadata_is_blocked():
+    for cmd in ("rm -rf .git", "rm -rf .git/objects", "rm -rf sub/.git", "rm .git/HEAD"):
+        assert any(".git" in r for r in rm_rules(cmd)), cmd
+
+
+def test_rm_with_an_unresolved_expansion_is_blocked():
+    for cmd in ("rm -rf $DIR/x", "rm -rf ${DIR}/x", "rm -rf $(pwd)/x", "rm -rf `pwd`/x", "rm -rf ~other/x"):
+        assert any("expansion" in r for r in rm_rules(cmd)), cmd
+
+
+def test_rm_no_preserve_root_is_blocked():
+    assert any("no-preserve-root" in r for r in rm_rules("rm --no-preserve-root -rf build"))
+
+
+def test_sudo_rm_is_blocked_regardless_of_target():
+    assert any("sudo" in r for r in rm_rules("sudo rm -rf build"))
+    assert any("sudo" in r for r in rm_rules("doas rm -rf build"))
+
+
+def test_relative_rm_after_cd_is_blocked_absolute_is_checked():
+    assert any("cd" in r for r in rm_rules("cd /tmp && rm -rf x"))
+    assert rm_rules("cd /tmp && rm -rf /tmp/x") == []
+
+
+def test_rm_through_a_shell_c_or_eval_is_checked_too():
+    assert any("outside" in r for r in rm_rules('bash -c "rm -rf ~/x"'))
+    assert any("outside" in r for r in rm_rules("eval rm -rf ~/x"))
+    assert rm_rules("sh -c 'rm -rf build'") == []
+
+
+def test_rm_by_path_and_behind_known_wrappers_is_checked():
+    for cmd in ("/bin/rm -rf ~/x", "env rm -rf ~/x", "timeout 5 rm -rf ~/x", "nohup rm -rf ~/x", "FOO=1 rm -rf ~/x"):
+        assert any("outside" in r for r in rm_rules(cmd)), cmd
+
+
+def test_rm_behind_an_unrecognized_wrapper_is_blocked():
+    assert any("wrapper" in r for r in rm_rules("chronic rm -rf build"))
+
+
+def test_cwd_at_home_or_root_is_not_a_deletable_area():
+    assert any("outside" in r for r in rm_rules("rm -rf foo", cwd="/home/u"))
+    assert any("outside" in r for r in rm_rules("rm -rf etc", cwd="/"))
+    assert rm_rules("rm -rf /tmp/x", cwd="/home/u") == []
+
+
+def test_unparseable_rm_command_is_blocked():
+    assert any("parse" in r for r in rm_rules("rm 'x"))
+
+
+def test_symlink_escaping_the_session_directory_is_blocked(tmp_path):
+    proj = tmp_path / "proj"
+    outside = tmp_path / "outside"
+    (proj).mkdir()
+    (outside / "sub").mkdir(parents=True)
+    (proj / "link").symlink_to(outside)
+    rules = rm_rules("rm -rf link/sub", cwd=str(proj), home=str(tmp_path), tmp_roots=())
+    assert any("outside" in r for r in rules)
+    assert rm_rules("rm -rf link", cwd=str(proj), home=str(tmp_path), tmp_roots=()) == []
+
+
+def test_heredoc_body_mentioning_rm_does_not_break_parsing():
+    # A heredoc may carry apostrophes and rm-looking text (a Python script,
+    # a commit message); it is data for the command, not a command.
+    cmd = "\n".join(
+        [
+            "python3 - <<'PY'",
+            "old = '''  - \"rm -rf:*\"",
+            "# rm is judged by the agent's own hook now",
+            "'''",
+            "PY",
+        ]
+    )
+    assert rm_rules(cmd) == []
+
+
+def test_comment_mentioning_rm_is_ignored():
+    assert rm_rules("ls # rm -rf 'x") == []
+
+
+def test_rm_after_a_heredoc_is_still_checked():
+    cmd = "cat <<EOF\nnotes\nEOF\nrm -rf ~/x"
+    assert any("outside" in r for r in rm_rules(cmd))
+
+
+def test_analyze_applies_the_rm_policy_with_the_given_cwd():
+    blocks = analyze("rm -rf ~/x", cwd=CWD)
+    assert any("outside" in b.rule for b in blocks)
+
+
 # --- main(): stdin event → exit code -----------------------------------------
 
 
@@ -242,6 +416,34 @@ def test_allows_safe_bash(monkeypatch):
         {"tool_name": "Bash", "tool_input": {"command": "ls -la"}}, monkeypatch
     )
     assert rc == 0
+
+
+def test_blocks_rm_outside_the_event_cwd(monkeypatch):
+    rc = run_main(
+        {"tool_name": "Bash", "tool_input": {"command": "rm -rf ../other"}, "cwd": CWD},
+        monkeypatch,
+    )
+    assert rc == 2
+
+
+def test_allows_rm_inside_the_event_cwd(monkeypatch):
+    rc = run_main(
+        {"tool_name": "Bash", "tool_input": {"command": "rm -rf build"}, "cwd": CWD},
+        monkeypatch,
+    )
+    assert rc == 0
+
+
+def test_a_crash_in_the_rm_policy_blocks_instead_of_allowing(monkeypatch):
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(block_dangerous_command, "analyze_rm", boom)
+    rc = run_main(
+        {"tool_name": "Bash", "tool_input": {"command": "rm -rf build"}, "cwd": CWD},
+        monkeypatch,
+    )
+    assert rc == 2
 
 
 def test_skips_apply_patch(monkeypatch):
