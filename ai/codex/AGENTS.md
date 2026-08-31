@@ -56,3 +56,11 @@ The active permission profile is authoritative.
 - Never request command-prefix approval.
 - Run commands normally within the active permission profile.
 - If an operation is denied by the sandbox, report the denied resource and continue with a materially safe alternative.
+
+## GitHub inside the jail
+
+`gh` and `git push` work through a scoped token (`GH_TOKEN`). Its permissions cannot
+be widened from inside; do not try `gh auth login`. `gh pr checks` fails with
+"Resource not accessible by personal access token" (the token type has no Checks
+permission) — read CI results with `gh run list --branch <branch>` and
+`gh run view <id> --log-failed` instead.
