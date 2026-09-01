@@ -272,5 +272,22 @@ WSL 統合が daemon を提供する環境で `docker-ce` を入れると
 重なったため、192.168.100.0/24 に固定している。値を変えるときは社内 LAN と
 VPN の経路表と重ならないことを先に確認する。
 
+## sshd（Windows ホストから WSL へ接続）
+
+`ssh/install.sh` が sshd の hardening drop-in・`openssh-server`・ssh.socket の
+待受アドレス drop-in・`~/.ssh/authorized_keys`・`/etc/wsl.conf` の `systemd=true`
+を冪等に整える。Windows 側の公開鍵は `wslvar USERPROFILE`（wslu、
+`[bootstrap.packages]` 済み）で `%USERPROFILE%\.ssh\id_ed25519.pub` を探す。
+
+`openssh-server` を `[bootstrap.packages]` に入れないのは、apt がインストール直後に
+リスナーを起動するため、hardening が先に置かれていないと初回起動がパスワード認証
+有効のまま外に出るから。スクリプトは drop-in を置いてからパッケージを入れる。
+
+Ubuntu の sshd は socket activation（`ssh.socket`）で起動するため、`sshd_config` の
+`Port` / `ListenAddress` は効かず、待受アドレスは `ssh.socket.d/` の drop-in で持つ。
+WSL の mirrored networking では 0.0.0.0 待受が Windows ホスト経由で LAN からも
+届くので、loopback（127.0.0.1 / ::1）だけに絞っている。LAN から使いたくなったら
+`ssh/ssh.socket.d/10-dotfiles.conf` の `ListenStream` を広げる。
+
 [AikidoSec/safe-chain]: https://github.com/AikidoSec/safe-chain
 [ba0918/clipboard2path-wsl]: https://github.com/ba0918/clipboard2path-wsl

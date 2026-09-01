@@ -19,6 +19,10 @@ git clone <this-repo> ~/develop/dotfiles
 # 4. (opt-in) Docker Desktop を使わない機械だけ: WSL 内に dockerd を直接入れる
 ~/develop/dotfiles/docker/install.sh --dry-run   # 計画を確認
 ~/develop/dotfiles/docker/install.sh             # 適用（sudo。systemd 未有効なら wsl --shutdown が必要）
+
+# 5. (opt-in) Windows 側の IDE / エージェントから WSL へ ssh する機械だけ
+~/develop/dotfiles/ssh/install.sh --dry-run      # 計画を確認
+~/develop/dotfiles/ssh/install.sh                # 適用（sudo。Windows 側に ssh-keygen 済みの鍵が要る）
 ```
 
 mise は `curl https://mise.run | sh` でも `apt install mise`（`apt/mise.sources` を
@@ -55,6 +59,7 @@ repo に含めない）。
 | `apt/` | `/etc/apt/sources.list.d/` | 同梱 apt リポジトリ（bootstrap.sh が配布） |
 | `devbox/` | `~/.local/share/devbox/...` | PHP ツールチェーン（nix ベース） |
 | `docker/` | `/etc/docker/daemon.json` | WSL 内ネイティブ dockerd（opt-in） |
+| `ssh/` | `/etc/ssh/sshd_config.d/`, `/etc/systemd/system/ssh.socket.d/` | Windows ホストから接続する sshd（opt-in） |
 | `mise/` | `MISE_GLOBAL_CONFIG_FILE` | グローバル config 実体 |
 
 詳細な構成は [docs/layout.md](docs/layout.md) を参照。

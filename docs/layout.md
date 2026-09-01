@@ -95,6 +95,10 @@ dotfiles/
 │   ├── install.sh             # 導入スクリプト（Desktop 検出で拒否、--dry-run あり）
 │   ├── docker.sources         # Docker 公式 apt リポジトリ
 │   └── daemon.json            # → /etc/docker/daemon.json
+├── ssh/                       # Windows ホストから WSL へ ssh する sshd（opt-in）
+│   ├── install.sh             # 導入スクリプト（--dry-run あり）
+│   ├── sshd_config.d/         # → /etc/ssh/sshd_config.d/（鍵認証のみ・root 禁止）
+│   └── ssh.socket.d/          # → /etc/systemd/system/ssh.socket.d/（loopback のみ待受）
 ├── mise/
 │   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
 ├── meta/                      # 仕様書・手順書

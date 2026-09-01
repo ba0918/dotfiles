@@ -64,6 +64,7 @@ bash scripts/test_generate_deny.sh         # deny 生成スクリプト
 bash scripts/test_run_optional.sh          # 外部依存ラッパのスキップ挙動
 bash scripts/test_codex_jail.sh            # codex jail の mount 検証
 bash scripts/test_docker_install.sh        # Docker 導入スクリプト
+bash scripts/test_ssh_install.sh           # sshd 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
 bash scripts/test_lint.sh                  # lint 入口（lint.sh）自身
 bash scripts/test_pre_commit.sh            # git template の pre-commit hook（secretlint。要 mise run bootstrap）
@@ -122,6 +123,19 @@ Docker Desktop 環境では使わない。opt-in の導入スクリプト。
 ```bash
 ~/develop/dotfiles/docker/install.sh --dry-run   # 計画を確認
 ~/develop/dotfiles/docker/install.sh             # 適用（sudo）
+```
+
+## sshd（Windows ホストから WSL へ接続）
+
+Windows 側の IDE / エージェントから WSL を ssh で操作するための opt-in スクリプト。
+鍵認証のみ・loopback のみ待受にした sshd を systemd で常時起動にする。
+先に Windows 側で鍵ペアを作っておく（`ssh-keygen -t ed25519`）と、その公開鍵を
+`~/.ssh/authorized_keys` に登録するところまで行う。
+
+```bash
+~/develop/dotfiles/ssh/install.sh --dry-run   # 計画を確認
+~/develop/dotfiles/ssh/install.sh             # 適用（sudo。systemd 未有効なら wsl --shutdown が必要）
+ssh mizumi@localhost                          # Windows 側から接続確認
 ```
 
 ## サプライチェーン対策の確認
