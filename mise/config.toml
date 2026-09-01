@@ -97,7 +97,7 @@ compile = false
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
 # APM: ユーザースコープの manifest。規範スキル（agentic-rules 等）を各エージェント CLI に
-# 配る宣言で、実体は bootstrap ステップの `apm install -g` が ~/.claude/skills と
+# 配る宣言で、実体は bootstrap ステップの `apm update -g --yes` が ~/.claude/skills と
 # ~/.agents/skills に置く。apm.lock.yaml は生成物として ~/.apm 側に留める
 "~/.apm/apm.yml" = "../ai/apm/apm.yml"
 
@@ -249,13 +249,14 @@ npm = "11.19.0"
 "npm:fkill-cli" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:
-# - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを導入する
+# - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。
+#   `apm install` は lock の commit に留まるため、追従には update が要る
 # - git の pre-commit hook が使う secretlint を git/.config/secretlint/ に lockfile どおり入れる。
 #   hook は PATH 上の secretlint ではなく config の隣の node_modules/.bin を直接呼ぶ。
 #   mise の npm backend（npm:secretlint）は preset を同梱できず config を読めないので使わない
 [tasks.bootstrap]
 run = """
-apm install -g
+apm update -g --yes
 npm ci --prefix ${MISE_TASK_DIR}/../git/.config/secretlint --ignore-scripts --no-fund --no-audit
 """
 

@@ -13,9 +13,10 @@ targets:
   - codex
 dependencies:
   apm:
-    # Pinned to a release tag: agentic-rules delivers by version, and an
-    # unpinned ref silently drifts between machines.
-    - ba0918/agentic-rules#v0.7.0
+    # Unpinned on purpose: these are the owner's own repositories, and the
+    # goal is to follow their latest state. `apm update -g` (bootstrap) moves
+    # the lock forward; a pin would freeze it at one release.
+    - ba0918/agentic-rules
     - ba0918/agentic-meta
     - ba0918/skills/skills/ba0918-handoff
   mcp: []

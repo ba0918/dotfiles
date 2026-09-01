@@ -234,9 +234,11 @@ bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パ�
 
 - **apm** — `[tools]` の `pipx:apm-cli` で導入。Agent Package Manager。
   ユーザースコープの `~/.apm/apm.yml` は `ai/apm/apm.yml` から symlink 配布し、
-  `mise run bootstrap` の `apm install -g` が宣言どおりに規範スキル
-  （`ba0918/agentic-rules` をリリースタグで pin）を `~/.claude/skills` と
-  `~/.agents/skills` に置く。プロジェクト単位の `apm.yml` はそれぞれのリポジトリで管理する
+  `mise run bootstrap` の `apm update -g --yes` が宣言どおりに規範スキルを
+  `~/.claude/skills` と `~/.agents/skills` に最新化する。依存は自分のリポジトリ
+  （`ba0918/agentic-rules` 等）なので pin せず main を追従する。`apm install -g` は
+  `apm.lock.yaml` の commit に留まるため、追従させたいときは update を使う。
+  プロジェクト単位の `apm.yml` はそれぞれのリポジトリで管理する
 - **ripgrep** — `[tools]` の `ripgrep`。旧 apt 版から mise 管理へ移行済み
 - **ollama** — `[tools]` の `ollama`（aqua）。公式 installer は使わず
   `ollama serve` で手動起動
