@@ -1,6 +1,5 @@
 {
   "cleanupPeriodDays": 360,
-  "includeCoAuthoredBy": false,
   "attribution": {
       "commit": "",
       "pr": "",
