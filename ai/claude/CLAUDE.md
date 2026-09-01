@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## 重要
+
+- 最初に `ba0918-using-workflow` を必ず読み込むこと（新しい依頼の入口を決める）
+
 ## Core
 
 - 日本語で応答すること

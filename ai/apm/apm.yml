@@ -17,6 +17,7 @@ dependencies:
     # goal is to follow their latest state. `apm update -g` (bootstrap) moves
     # the lock forward; a pin would freeze it at one release.
     - ba0918/agentic-rules
+    - ba0918/agentic-workflow
     - ba0918/agentic-meta
     - ba0918/skills/skills/ba0918-handoff
   mcp: []
