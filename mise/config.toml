@@ -66,17 +66,19 @@ compile = false
 "~/.config/secretlint" = "../git/.config/secretlint"
 
 # Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
-# CLAUDE.md のみ template 配布（shared 文書への @ 参照をハーネスが展開するため）。
-# output-styles/gal.md は shared/persona/gal.md への symlink、共通契約
-# （interaction.md / human-readable.md）は ~/.claude/rules/ の symlink で常時適用。
+# CLAUDE.md は規範をスキル名で指すルーティング表だけなので symlink（規範本体は
+# apm が ~/.claude/skills に配る）。output-styles/gal.md は shared/persona/gal.md への
+# symlink、共通契約（interaction.md / human-readable.md / tools-guide.md）は
+# ~/.claude/rules/ の symlink で常時適用。
 # Claude 専用のルール（model-routing.md）と、それが参照する agent 定義
 # （judge / scout）は ai/claude/ 配下から symlink する
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
-"~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
+"~/.claude/CLAUDE.md" = "../ai/claude/CLAUDE.md"
 "~/.claude/bash-env.sh" = "../ai/claude/bash-env.sh"
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
+"~/.claude/rules/tools-guide.md" = "../ai/shared/tools-guide.md"
 "~/.claude/rules/model-routing.md" = "../ai/claude/rules/model-routing.md"
 "~/.claude/agents/judge.md" = "../ai/claude/agents/judge.md"
 "~/.claude/agents/scout.md" = "../ai/claude/agents/scout.md"
@@ -93,6 +95,11 @@ compile = false
 # Codex: グローバル AGENTS.md。共有文書への絶対パス参照（{{ vars.dotfiles_root }}）があるため
 # symlink ではなく template で配布する（rendered 実ファイルになる）
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
+
+# APM: ユーザースコープの manifest。規範スキル（agentic-rules 等）を各エージェント CLI に
+# 配る宣言で、実体は bootstrap ステップの `apm install -g` が ~/.claude/skills と
+# ~/.agents/skills に置く。apm.lock.yaml は生成物として ~/.apm 側に留める
+"~/.apm/apm.yml" = "../ai/apm/apm.yml"
 
 # Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
 # スクリプト実体は Claude と共有（ai/shared/hooks/）。ファイル単位で宣言するのは、
@@ -242,13 +249,13 @@ npm = "11.19.0"
 "npm:fkill-cli" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:
-# - claude-skills 共有文書を ai/shared/vendor/ に同期する（CLAUDE_SKILLS_VERSION で ref 上書き可）
+# - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを導入する
 # - git の pre-commit hook が使う secretlint を git/.config/secretlint/ に lockfile どおり入れる。
 #   hook は PATH 上の secretlint ではなく config の隣の node_modules/.bin を直接呼ぶ。
 #   mise の npm backend（npm:secretlint）は preset を同梱できず config を読めないので使わない
 [tasks.bootstrap]
 run = """
-bash ${MISE_TASK_DIR}/../scripts/sync-shared.sh
+apm install -g
 npm ci --prefix ${MISE_TASK_DIR}/../git/.config/secretlint --ignore-scripts --no-fund --no-audit
 """
 
@@ -259,7 +266,7 @@ run = "bash ${MISE_TASK_DIR}/../scripts/run-tests.sh"
 [tasks.lint]
 run = "bash ${MISE_TASK_DIR}/../scripts/lint.sh"
 
-# pre-dotfiles: dotfiles の template 配布（CLAUDE.md / AGENTS.md / opencode.json）は
+# pre-dotfiles: dotfiles の template 配布（AGENTS.md / opencode.json）は
 # {{ vars.dotfiles_root }} = {{ config_root }} を参照し、MISE_GLOBAL_CONFIG_ROOT が repo ルートを
 # 指す前提で絶対パスにレンダリングされる。未設定 / 不一致のまま apply すると壊れたパス
 # （$HOME/ai/shared/...）で静かに上書きされるため、ここで検証して失敗させる。

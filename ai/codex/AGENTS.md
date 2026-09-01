@@ -20,27 +20,30 @@
 - `{{ vars.dotfiles_root }}/ai/shared/interaction.md`
   - 質問、判断、原因分析、進捗報告、作業の進め方
 
-## Engineering References
+## Rule Routing
 
-作業を開始する前に、タスク種別に対応する共有ルールを確認し、
-該当する共有文書（`ai/shared/vendor/` に vendor 化済み）を必ず読む。
+規範はスキル（`ba0918-*`、agentic-rules から導入）として入っている。
+該当する作業を始める前に、対応するスキルを名前で読む。
 
-| Task | Required references |
+| When | Read |
 |---|---|
-| 設計・実装 | `{{ vars.dotfiles_root }}/ai/shared/vendor/design-principles.md` |
-| テスト実装 | `{{ vars.dotfiles_root }}/ai/shared/vendor/tdd-contract.md` |
-| テスト設計・レビュー | `{{ vars.dotfiles_root }}/ai/shared/vendor/testing-anti-patterns.md` |
-| コード・テスト・コメント・コミットの情報配置 | `{{ vars.dotfiles_root }}/ai/shared/vendor/information-placement.md` |
-| コミット | `{{ vars.dotfiles_root }}/ai/shared/commit-rules.md` |
-| 開発ツールの利用 | `{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` |
+| Always | ba0918-design, ba0918-placement, ba0918-readability, ba0918-secrets |
+| commit | ba0918-commit |
+| delegate | ba0918-delegation |
+| design | ba0918-reuse |
+| diff-review | ba0918-diff-review |
+| implement | ba0918-tdd |
+| release | ba0918-release |
+| review | ba0918-verification |
 
-共有文書は claude-skills プラグインから取得せず、このローカルパスから読む。
-プラグインは導入済みだが、vendor 化によりパスが安定している。
+Always 行は作業種別に関わらず読む。複数の行に該当する場合は、対応する
+スキルをすべて読む。読んでいない状態で、そのスキルが規定する作業を
+開始しない。
 
-複数のタスク種別に該当する場合は、対応する文書をすべて読む。
+## Tool Guide
 
-これらの文書を読んでいない状態で、
-その文書が規定する作業を開始しない。
+開発ツール（ast-grep / fd / rg / jq）の使い分けは
+`{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` を読む。
 
 ## Local Instructions
 

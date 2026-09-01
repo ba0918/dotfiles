@@ -81,9 +81,6 @@ Thumbs.db
 .agents/artifacts/
 .agents/runtime/
 
-# ===== AI shared docs: vendored fetch (reproduced by `mise bootstrap`) =====
-ai/shared/vendor/
-
 # ===== secretlint for the git pre-commit hook (reproduced by `mise run bootstrap` via npm ci) =====
 git/.config/secretlint/node_modules/
 

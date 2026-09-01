@@ -233,7 +233,10 @@ bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パ�
 ## その他
 
 - **apm** — `[tools]` の `pipx:apm-cli` で導入。Agent Package Manager。
-  各プロジェクトの `apm.yml` で宣言管理する
+  ユーザースコープの `~/.apm/apm.yml` は `ai/apm/apm.yml` から symlink 配布し、
+  `mise run bootstrap` の `apm install -g` が宣言どおりに規範スキル
+  （`ba0918/agentic-rules` をリリースタグで pin）を `~/.claude/skills` と
+  `~/.agents/skills` に置く。プロジェクト単位の `apm.yml` はそれぞれのリポジトリで管理する
 - **ripgrep** — `[tools]` の `ripgrep`。旧 apt 版から mise 管理へ移行済み
 - **ollama** — `[tools]` の `ollama`（aqua）。公式 installer は使わず
   `ollama serve` で手動起動

@@ -1,0 +1,23 @@
+# User-scope APM manifest (-> ~/.apm/apm.yml). Rule skills for every agent
+# CLI are declared here once; `apm install -g` (run by `mise run bootstrap`)
+# deploys them under ~/.claude/skills and ~/.agents/skills.
+# apm.lock.yaml next to this file is generated and stays local.
+name: mizumi
+version: 1.0.0
+description: APM project for mizumi
+author: ba0918
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+targets:
+  - claude
+  - codex
+dependencies:
+  apm:
+    # Pinned to a release tag: agentic-rules delivers by version, and an
+    # unpinned ref silently drifts between machines.
+    - ba0918/agentic-rules#v0.7.0
+    - ba0918/agentic-meta
+    - ba0918/skills/skills/ba0918-handoff
+  mcp: []
+includes: auto
+scripts: {}

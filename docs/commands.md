@@ -42,7 +42,7 @@ ai/claude/build-settings --status   # managed vs runtime allow の内訳を表�
 scripts/generate-deny.sh claude     # deny-patterns.yaml → Claude Code 形式で stdout
 scripts/generate-deny.sh opencode   # deny-patterns.yaml → OpenCode 形式で stdout
 scripts/generate-deny.sh opencode-apply  # ~/.opencode/opencode.json の deny を上書き
-scripts/sync-shared.sh                # claude-skills 共有文書を ai/shared/vendor/ に同期
+apm install -g                      # ~/.apm/apm.yml の宣言どおりに規範スキルを導入（bootstrap でも実行）
 ```
 
 ## テスト
@@ -62,7 +62,6 @@ mise run lint                              # 追跡中の bash スクリプト�
 pytest ai/shared/hooks/tests               # security hooks（[tools] の pipx:pytest。python3 -m pytest は不可）
 bash scripts/test_generate_deny.sh         # deny 生成スクリプト
 bash scripts/test_run_optional.sh          # 外部依存ラッパのスキップ挙動
-bash scripts/test_sync_shared.sh           # claude-skills 同期
 bash scripts/test_codex_jail.sh            # codex jail の mount 検証
 bash scripts/test_docker_install.sh        # Docker 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
