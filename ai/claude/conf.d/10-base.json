@@ -1,6 +1,11 @@
 {
   "cleanupPeriodDays": 360,
   "includeCoAuthoredBy": false,
+  "attribution": {
+      "commit": "",
+      "pr": "",
+      "sessionUrl": false
+  },
   "model": "claude-opus-4-6[1m]",
   "effortLevel": "high",
   "advisorModel": "fable",
