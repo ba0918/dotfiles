@@ -249,10 +249,16 @@ mkdir -p "$(dirname "${MASK_SRC}")"
 : > "${MASK_SRC}"
 
 hide() {
-	if [ -d "$1" ]; then
-		BWRAP+=(--tmpfs "$1")
-	elif [ -e "$1" ]; then
-		BWRAP+=(--ro-bind "${MASK_SRC}" "$1")
+	local target="$1"
+	# bwrap cannot mount over a symlink inside the new root (the target
+	# filesystem may not be propagated, e.g. ~/.aws -> /mnt/c/… on WSL).
+	if [ -L "$target" ]; then
+		target="$(realpath -e "$target" 2>/dev/null)" || return 0
+	fi
+	if [ -d "$target" ]; then
+		BWRAP+=(--tmpfs "$target")
+	elif [ -e "$target" ]; then
+		BWRAP+=(--ro-bind "${MASK_SRC}" "$target")
 	fi
 	return 0
 }
