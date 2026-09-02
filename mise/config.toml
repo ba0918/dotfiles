@@ -187,8 +187,8 @@ bun = "latest"
 # AI CLI (claude / codex) は最新追従が優先のため、グローバルの minimum_release_age (7d)
 # を per-tool で 1d に短縮する（当日リリースを 1 日待つだけ）。aqua の cosign /
 # GitHub Artifact Attestations 検証はそのまま効く。急ぎの最新は明示ピンで回避可能
-claude = { version = "latest", minimum_release_age = "1d" }
-codex = { version = "latest", minimum_release_age = "1d" }
+claude = { version = "latest", minimum_release_age = "0d" }
+codex = { version = "latest", minimum_release_age = "0d" }
 deno = "latest"
 "aqua:jetify-com/devbox" = "latest"
 direnv = "latest"
@@ -216,7 +216,7 @@ node = "25.9.0"
 # ollama: ローカル LLM。公式 installer（/usr/local/bin + systemd service）ではなく
 # バイナリだけを mise で持つ。サーバは使うときに `ollama serve` で手動起動
 ollama = "latest"
-opencode = { version = "latest", minimum_release_age = "1d" }
+opencode = { version = "latest", minimum_release_age = "0d" }
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"
@@ -247,6 +247,8 @@ zoxide = "latest"
 lefthook = "latest"
 npm = "11.19.0"
 "npm:fkill-cli" = "latest"
+"npm:hunkdiff" = "latest"
+gcloud = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。
