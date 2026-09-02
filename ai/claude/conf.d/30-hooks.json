@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" --cd \"$HOME/develop/claude-notify\" \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" --cd \"$HOME/develop/claude-notify\" \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
           }
         ]
       }
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" \"$HOME/.claude/hooks/herdr-agent-state.sh\" -- bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+            "command": "run-if-present path \"$HOME/.claude/hooks/herdr-agent-state.sh\" -- bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
             "timeout": 10
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" --cd \"$HOME/develop/claude-notify\" \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
           }
         ]
       }

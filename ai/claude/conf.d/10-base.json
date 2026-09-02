@@ -15,6 +15,6 @@
   "showTurnDuration": true,
   "statusLine": {
     "type": "command",
-    "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""
+    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""
   }
 }

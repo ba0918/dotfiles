@@ -88,9 +88,6 @@ compile = false
 "~/.claude/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
 "~/.claude/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
-# 外部依存（statusline.py / claude-notify / herdr-agent-state.sh）を存在チェック
-# 付きで起動する共通ラッパ。未導入マシンで hook が毎回エラーになるのを防ぐ
-"~/.claude/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
 
 # Codex: グローバル AGENTS.md。共有文書への絶対パス参照（{{ vars.dotfiles_root }}）があるため
 # symlink ではなく template で配布する（rendered 実ファイルになる）
@@ -110,7 +107,6 @@ compile = false
 "~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
 "~/.codex/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
 "~/.codex/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
-"~/.codex/hooks/run-optional.sh" = "../ai/shared/hooks/run-optional.sh"
 
 # Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
 "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
@@ -249,6 +245,7 @@ npm = "11.19.0"
 "npm:fkill-cli" = "latest"
 "npm:hunkdiff" = "latest"
 gcloud = "latest"
+"github:ba0918/run-if-present" = { version = "latest", minimum_release_age = "0d" }
 
 # bootstrap ステップ 15（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。
