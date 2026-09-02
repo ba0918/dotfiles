@@ -12,6 +12,7 @@
   "language": "Japanese",
   "tui": "fullscreen",
   "skipAutoPermissionPrompt": true,
+  "showTurnDuration": true,
   "statusLine": {
     "type": "command",
     "command": "bash \"$HOME/.claude/hooks/run-optional.sh\" \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""

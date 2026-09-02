@@ -1,7 +1,6 @@
 {
   "env": {
     "BASH_ENV": "$HOME/.claude/bash-env.sh",
-    "ENABLE_LSP_TOOL": "1",
     "PATH": "$HOME/.local/share/mise/shims:$PATH"
   }
 }
