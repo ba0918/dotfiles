@@ -17,4 +17,4 @@
 | hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`mise bootstrap dotfiles status` で確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する |
 | `devbox global shellenv` が "environment may be out of date" 警告 | 新規マシンでは `bootstrap.sh` が自動で再生成する。手動変更後は `devbox global shellenv --init-hook -r \| source` で環境を再生成 |
-| statusline が空 / 通知が飛ばない | 参照先が未導入。`run-optional.sh` が無音でスキップしている。導入すればそのまま有効になる |
+| statusline が空 / 通知が飛ばない | 参照先が未導入。`run-if-present` が無音でスキップしている。導入すればそのまま有効になる |

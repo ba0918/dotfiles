@@ -211,8 +211,11 @@ jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 
 `~/.claude` / `~/.codex` の hook 設定には、この repo が導入しない対象を
 参照するものがある。新マシンではこれらは存在しないので、すべて
-`run-optional.sh`（`ai/shared/hooks/run-optional.sh` → 両方の hooks/ に配布）
-経由で起動し、対象が無ければ無音でスキップする。
+`run-if-present` の `path` mode 経由で起動し、対象が無ければ無音でスキップする。
+hook プロセスは agent CLI を起動したプロセスの PATH を引き継ぐため、mise の
+shims ディレクトリ（`~/.local/share/mise/shims`）がその PATH に含まれている必要がある。
+`run-if-present` は `mise/config.toml` の `[tools]` table
+（`github:ba0918/run-if-present`）で導入する。
 
 | 参照先 | 使う設定 | 管轄 |
 |--------|----------|------|
@@ -220,15 +223,16 @@ jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 | `$HOME/develop/claude-notify` | `30-hooks.json` の Notification / Stop | 別 repo。手動 clone |
 | `~/.claude/hooks/herdr-agent-state.sh`、`~/.codex/herdr-agent-state.sh` | 両者の SessionStart | herdr 管轄。dotfiles 配布外 |
 
-ラッパの呼び出し方:
+`run-if-present` の呼び出し方:
 
 ```bash
-bash "$HOME/.claude/hooks/run-optional.sh" <存在チェックするパス> -- <実行するコマンド>
-bash "$HOME/.claude/hooks/run-optional.sh" --cd <作業ディレクトリ> <パス> -- <コマンド>
+run-if-present path <存在チェックするパス> -- <実行するコマンド>
+run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド>
 ```
 
-ラッパが飲み込むのは「依存が無い」ケースだけで、コマンド自体の失敗は
-そのまま終了コードとして伝播する。
+`run-if-present` が飲み込むのは「依存が無い」ケースだけで、コマンド自体の失敗は
+そのまま終了コードとして伝播する。存在チェック自体が失敗した場合（権限エラーなど）、
+旧ラッパーは無音だったが、`run-if-present` は 1 行の診断を出して終了コード 1 で終了する。
 
 ## その他
 
