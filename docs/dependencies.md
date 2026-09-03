@@ -92,11 +92,11 @@ ext の再ビルドが手動になるのが理由。
 ## LLM ツール（claude / codex / opencode）
 
 - **claude-code** — `[tools]` の `claude`（`aqua:anthropics/claude-code`）で導入。
-  リリース高頻度のため `minimum_release_age` を per-tool で 1d に短縮。
+  最新追従を優先し `minimum_release_age` を per-tool で 0d にしている。
   設定は `ai/claude/` で管理
-- **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入。同じく per-tool で 1d。
+- **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入。同じく per-tool で 0d。
   設定は `ai/codex/` で管理
-- **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入。
+- **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入。同じく per-tool で 0d。
   グローバル config は `ai/opencode/opencode.json` で template 配布。
   **claude-skills** プラグインは `opencode plugin ba0918/claude-skills --force --global`
   で導入（スキル本体は opencode のキャッシュに配置されるため repo 外）
@@ -268,8 +268,12 @@ run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド
 3 層構成でパッケージの導入リスクを軽減する:
 
 1. **mise `minimum_release_age = "7d"`** — ツールバイナリの導入をリリースから
-   7 日以上経過したものに制限（claude / codex は最新追従のため per-tool で 1d に短縮。
-   aqua の cosign / GitHub Artifact Attestations 検証は有効）
+   7 日以上経過したものに制限。per-tool で待たない（0d）例外は次の 2 種:
+   - **claude / codex / opencode** — AI CLI の最新追従を優先。aqua 経由なので
+     cosign / GitHub Artifact Attestations 検証はそのまま効く
+   - **run-if-present**（`github:ba0918/run-if-present`）— 自作 CLI で、自分が
+     リリースしたものをすぐ入れたい。github backend は aqua registry を通らないため
+     署名検証は無く、信頼の根拠はリリース年齢ではなく自分のリポジトリであること
 2. **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
 3. **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
    最小リリース年齢を適用。`bootstrap.sh` が sha256 検証付きで導入

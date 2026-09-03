@@ -180,9 +180,9 @@ atuin = "latest"
 aws-cli = { version = "latest", symlink_bins = "true" }
 bottom = "latest"
 bun = "latest"
-# AI CLI (claude / codex) は最新追従が優先のため、グローバルの minimum_release_age (7d)
-# を per-tool で 1d に短縮する（当日リリースを 1 日待つだけ）。aqua の cosign /
-# GitHub Artifact Attestations 検証はそのまま効く。急ぎの最新は明示ピンで回避可能
+# AI CLI (claude / codex / opencode) は最新追従が優先のため、グローバルの
+# minimum_release_age (7d) を per-tool で 0d にして待たない。aqua の cosign /
+# GitHub Artifact Attestations 検証はそのまま効く
 claude = { version = "latest", minimum_release_age = "0d" }
 codex = { version = "latest", minimum_release_age = "0d" }
 deno = "latest"
@@ -245,6 +245,9 @@ npm = "11.19.0"
 "npm:fkill-cli" = "latest"
 "npm:hunkdiff" = "latest"
 gcloud = "latest"
+# run-if-present: hook の repo 外依存を存在チェック付きで起動する自作 CLI。
+# 自分がリリースするので minimum_release_age で待たない（0d）。github backend は
+# aqua registry を通らないため、上の AI CLI と違い cosign / Attestations 検証は無い
 "github:ba0918/run-if-present" = { version = "latest", minimum_release_age = "0d" }
 
 # bootstrap ステップ 15（mise run bootstrap）:

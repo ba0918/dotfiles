@@ -69,9 +69,8 @@ repo に含めない）。
 パッケージ導入のリスクを 3 層で軽減する:
 
 - **mise `minimum_release_age = "7d"`** — ツールバイナリの導入をリリースから
-  7 日以上経過したものに制限
-  （ただし **claude / codex** は AI CLI の最新追従が優先のため per-tool で 1d に短縮。
-  aqua の cosign / GitHub Artifact Attestations 検証は有効）
+  7 日以上経過したものに制限。per-tool の例外は
+  [docs/dependencies.md](docs/dependencies.md) の「サプライチェーン対策」を参照
 - **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
   （`min-release-age` / `minimumReleaseAge`。単位はエコシステムごとに異なる）
 - **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
