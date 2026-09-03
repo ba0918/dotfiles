@@ -212,8 +212,20 @@ jail に入るのは対話セッション・`exec`・`resume`・`fork`。
 `~/.claude` / `~/.codex` の hook 設定には、この repo が導入しない対象を
 参照するものがある。新マシンではこれらは存在しないので、すべて
 `run-if-present` の `path` mode 経由で起動し、対象が無ければ無音でスキップする。
-hook プロセスは agent CLI を起動したプロセスの PATH を引き継ぐため、mise の
-shims ディレクトリ（`~/.local/share/mise/shims`）がその PATH に含まれている必要がある。
+hook が動く PATH で `run-if-present` が解決できる必要があるが、そこに載る経路は
+Claude 側と Codex 側で違う。
+
+- Claude Code 側: `ai/claude/conf.d/40-env.json` の `env.PATH` が mise の shims
+  ディレクトリ（`~/.local/share/mise/shims`）を先頭に置き、`ai/claude/build-settings`
+  がそれを `~/.claude/settings.json` に展開する。起動したシェルの PATH に関わらず、
+  hook と `statusLine` には settings.json 経由で届く
+- Codex 側: hook は `ai/codex/bin/codex` の bwrap jail 内で動き、jail は起動プロセスの
+  PATH の先頭に `jail-bin` を足して渡すだけ（`--setenv PATH "${JAIL_BIN}:${PATH}"`）で、
+  mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で
+  `run-if-present` が解決できること。fish は `config.fish` の mise activate で満たしている。
+  対話シェルは `mise activate fish` が tool の installs ディレクトリを直接 PATH に置き、
+  非対話シェルは `mise activate fish --shims` が shims ディレクトリを置く
+
 `run-if-present` は `mise/config.toml` の `[tools]` table
 （`github:ba0918/run-if-present`）で導入する。
 

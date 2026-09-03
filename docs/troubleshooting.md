@@ -17,4 +17,6 @@
 | hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`mise bootstrap dotfiles status` で確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する |
 | `devbox global shellenv` が "environment may be out of date" 警告 | 新規マシンでは `bootstrap.sh` が自動で再生成する。手動変更後は `devbox global shellenv --init-hook -r \| source` で環境を再生成 |
-| statusline が空 / 通知が飛ばない | 参照先が未導入。`run-if-present` が無音でスキップしている。導入すればそのまま有効になる |
+| statusline が空 / 通知が飛ばない（hook のエラー出力は無い） | 参照先が未導入。`run-if-present` が無音でスキップしている。導入すればそのまま有効になる |
+| Claude Code の hook のたびに `run-if-present: command not found`（exit 127）が出る / statusline が空 | `~/.claude/settings.json` の `env.PATH`（build-settings 実行時に固定）で `run-if-present` が見つからない。`claude` を起動したシェルの PATH を変えても効かない。`~/.local/share/mise/shims/run-if-present` が無ければ `mise install`（`mise bootstrap` でも可）で `[tools]` の `github:ba0918/run-if-present` を入れる。`jq -r .env.PATH ~/.claude/settings.json` が `~/.local/share/mise/shims`（`$HOME` 展開済みの絶対パス）で始まっていなければ `ai/claude/build-settings` を実行し直す |
+| codex の hook のたびに `run-if-present: command not found`（exit 127）が出る | jail は `codex` を起動したシェルの PATH をそのまま渡すので、そのシェルで `command -v run-if-present` を確認する。無ければ `mise install` で入れ、`config.fish` の `mise activate`（対話シェルは installs ディレクトリ、非対話シェルは `--shims` で shims ディレクトリを PATH に置く）が効いているか確認する |
