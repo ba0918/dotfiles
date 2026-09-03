@@ -11,6 +11,8 @@ disable=SC2016
 # check string, which shellcheck cannot see into.
 disable=SC2034
 # SC2088 (warning): "tilde does not expand in quotes". The codex jail shim
-# matches a literal leading "~/" in order to expand it itself, because a quoted
-# "~/x" in a hook command string reaches it unexpanded.
+# reads jail.conf, whose path column uses a leading "~" for $HOME, and expands
+# it itself by matching the literal "~/" prefix; the jail test harness names
+# its check() cases after those home-relative paths, so the test-name strings
+# spell a literal "~/" inside double quotes.
 disable=SC2088
