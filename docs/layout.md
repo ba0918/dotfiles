@@ -127,4 +127,14 @@ dotfiles/
 3. `.gitignore` に runtime / secret パターンを追記する
 4. `mise/config.toml` の `[dotfiles]` に source を追記して適用する
 
+## 配布ファイルの撤去手順
+
+`[dotfiles]` の行を消しても、適用済みマシンの symlink は残ってリンク切れになる
+（`mise bootstrap` は宣言から消えた対象を回収せず、`dotfiles status` にも出ない）。
+
+1. 宣言を消す前に `mise bootstrap dotfiles unapply <配布先パス>` で対象を回収する
+2. `[dotfiles]` から行を消し、実体ファイルを削除する
+3. 先に宣言を消してしまった場合は `find ~/.claude ~/.codex -maxdepth 2 -xtype l` で
+   リンク切れを探して `rm` する（[docs/troubleshooting.md](troubleshooting.md) 参照）
+
 既存の `~/.config/...` を取り込むときは [meta/MIGRATION.md](../meta/MIGRATION.md) を参照。

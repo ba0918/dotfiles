@@ -14,6 +14,7 @@
 | herdr plugin の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
 | codex の security hook が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または symlink が未適用（`mise bootstrap dotfiles status` で確認） |
 | `~/.codex/hooks` の apply が "refusing to overwrite" | 旧方式のディレクトリ symlink が残っている。`rm ~/.codex/hooks`（symlink 自体を消す）してから `mise bootstrap dotfiles apply` でファイル単位に張り直す |
+| `[dotfiles]` から外した配布先にリンク切れ symlink が残る（例: `~/.claude/hooks/run-optional.sh`） | `mise bootstrap` は宣言から消えたリンクを回収せず、`dotfiles status` にも出ない。`find ~/.claude ~/.codex -maxdepth 2 -xtype l` で探して `rm` する。宣言を外す前なら `mise bootstrap dotfiles unapply <配布先パス>` で回収できる |
 | hook が `ModuleNotFoundError: hook_input` で落ちる | 配布先ディレクトリに `hook_input.py` が無い。`mise bootstrap dotfiles status` で確認 |
 | `generate-deny.sh` が "deny pattern extraction is incomplete" | deny-patterns.yaml に足したカテゴリが `ALL_CATEGORIES` に未登録。スクリプト側にも追加する |
 | `devbox global shellenv` が "environment may be out of date" 警告 | 新規マシンでは `bootstrap.sh` が自動で再生成する。手動変更後は `devbox global shellenv --init-hook -r \| source` で環境を再生成 |
