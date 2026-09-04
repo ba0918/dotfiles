@@ -20,7 +20,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Colon-separated: pytest suites live wherever the code they cover lives, so
 # the list grows as packages gain tests. Each runs as its own suite, keeping
 # the report readable and one failure from hiding the others.
-PYTEST_DIRS="${RUN_TESTS_PYTEST_DIRS:-${ROOT}/ai/shared/hooks/tests}"
+PYTEST_DIRS="${RUN_TESTS_PYTEST_DIRS:-${ROOT}/ai/shared/hooks/tests:${ROOT}/ai/claude/tests}"
 HARNESS_DIR="${RUN_TESTS_HARNESS_DIR:-${ROOT}/scripts}"
 
 failed=()
