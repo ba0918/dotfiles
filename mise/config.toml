@@ -75,6 +75,7 @@ compile = false
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
 "~/.claude/CLAUDE.md" = "../ai/claude/CLAUDE.md"
 "~/.claude/bash-env.sh" = "../ai/claude/bash-env.sh"
+"~/.claude/statusline.py" = "../ai/claude/statusline.py"
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"

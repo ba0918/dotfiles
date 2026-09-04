@@ -231,7 +231,6 @@ Claude 側と Codex 側で違う。
 
 | 参照先 | 使う設定 | 管轄 |
 |--------|----------|------|
-| `~/.claude/statusline.py` | `10-base.json` の `statusLine` | ローカル専用。repo 未管理 |
 | `$HOME/develop/claude-notify` | `30-hooks.json` の Notification / Stop | 別 repo。手動 clone |
 | `~/.claude/hooks/herdr-agent-state.sh`、`~/.codex/herdr-agent-state.sh` | 両者の SessionStart | herdr 管轄。dotfiles 配布外 |
 
@@ -241,6 +240,11 @@ Claude 側と Codex 側で違う。
 run-if-present path <存在チェックするパス> -- <実行するコマンド>
 run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド>
 ```
+
+`statusLine` の `~/.claude/statusline.py` は repo 管理（`ai/claude/statusline.py` を
+`[dotfiles]` が symlink する）だが、同じく `run-if-present` で包む。`mise bootstrap` を
+まだ流していないマシンでは symlink が無く、素通しだと statusline のたびに
+「ファイルが無い」エラーが出続けるため。
 
 `run-if-present` が飲み込むのは「依存が無い」ケースだけで、コマンド自体の失敗は
 そのまま終了コードとして伝播する。存在チェック自体が失敗した場合（権限エラーなど）、

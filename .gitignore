@@ -45,6 +45,7 @@ ai/claude/*
 !ai/claude/build-settings
 !ai/claude/rules/
 !ai/claude/agents/
+!ai/claude/statusline.py
 # (explicit allow-list is appended as assets are adopted)
 
 # ===== Python dev artifacts =====
