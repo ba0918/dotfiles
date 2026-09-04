@@ -37,9 +37,12 @@
 
 - **fish 本体** — 4.x は repo 同梱の PPA（`apt/fish-shell-ubuntu-release-4-noble.sources`）
   から `apt:fish` で導入
-- **シェルツール** — `bat` / `fd-find` / `eza` / `zoxide` / `fzf`。
-  config.fish の alias / abbr / プロンプト連携に使う。すべて `[bootstrap.packages]`
+- **シェルツール** — `bat` / `fd-find` / `eza` / `zoxide`。
+  config.fish の alias / abbr / プロンプト連携に使う。`[bootstrap.packages]`
   の `apt:*` 宣言
+- **fzf** — fisher プラグイン `patrickf1/fzf.fish` が PATH 上の `fzf` を呼ぶ。
+  apt 版は 0.44 系でプラグインが前提にする新しめのオプションに追いつかないため、
+  `[bootstrap.packages]` ではなく `[tools]` の `fzf` で導入する
 - **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。
   クリップボードの画像をファイル保存してパスを返す daemon。
   binary は `[settings] aqua.registries` で参照するツール repo 公開の

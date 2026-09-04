@@ -32,7 +32,6 @@ compile = false
 "apt:fd-find" = "latest"
 "apt:eza" = "latest"
 "apt:zoxide" = "latest"
-"apt:fzf" = "latest"
 "apt:jq" = "latest"
 # codex jail shim（ai/codex/bin/codex）の mount namespace 構築に使う
 "apt:bubblewrap" = "latest"
@@ -192,6 +191,9 @@ direnv = "latest"
 dust = "latest"
 # dotenvx: .env の暗号化（aqua:dotenvx/dotenvx）。curl installer で ~/.local/bin に置いていたものを移行
 dotenvx = "latest"
+# fzf: fish の fzf.fish プラグインが PATH 上の fzf を呼ぶ。apt 版は 0.44 系で
+# プラグインが前提にする新しめのオプションに追いつかないため、apt ではなく mise で持つ
+fzf = "latest"
 gh = "latest"
 ghq = "latest"
 glab = "latest"
@@ -229,10 +231,11 @@ uv = "latest"
 "cargo:cargo-mutants" = "latest"
 "cargo:cargo-nextest" = "latest"
 "cargo:cargo-outdated" = "latest"
-# similarity-rs / -ts: コード重複検出（refactor-similarity-rs / -ts スキルが呼ぶ）。
+# similarity-rs / -ts / -php: コード重複検出（refactor-similarity-* スキルが呼ぶ）。
 # 手動の cargo install 版（~/.cargo/bin）から移行
 "cargo:similarity-rs" = "latest"
 "cargo:similarity-ts" = "latest"
+"cargo:similarity-php" = "latest"
 shellcheck = "latest"
 # usage: mise の補完が要求する（mise completion fish が usage CLI をチェックする）
 usage = "latest"
