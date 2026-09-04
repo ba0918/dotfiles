@@ -36,7 +36,7 @@ from datetime import datetime, timezone
 # ============================================
 
 SHOW_LINE1 = True  # \U0001f4c1 dotfiles │ \U0001f33f main        mod 3 │ +182 -47
-SHOW_LINE2 = True  # \u2605 Opus 5 1M · high │ \U0001f50b 5h ▀▀ 5% 50m · 7d ▀▀ 58% 3d10h
+SHOW_LINE2 = True  # \u2605 Opus 5 1M · high │ 5h ▀▀ 5% 50m │ 7d ▀▀ 58% 3d10h
 SHOW_LINE3 = True  # \U0001f4dc █▌ 26% 263.7K │ \U0001f4be 99% warm 47m/1h │ 💰 $6.02 │ ⏱ 16m
 
 # Plan allowance thresholds, in percent used
@@ -60,7 +60,6 @@ BAR_W = 6
 ICON_PROJECT = "\U0001f4c1"   # folder
 ICON_BRANCH = "\U0001f33f"    # herb
 ICON_WORKTREE = "\U0001f332"  # evergreen
-ICON_QUOTA = "\U0001f50b"     # battery
 ICON_CONTEXT = "\U0001f4dc"   # scroll
 ICON_CACHE = "\U0001f4be"     # floppy disk
 ICON_COST = "\U0001f4b0"      # money bag
@@ -68,7 +67,7 @@ ICON_ELAPSED = "\u23f3"       # hourglass with flowing sand
 ICON_FAST = "\u26a1"          # high voltage
 
 EMOJI_ICONS = (
-    ICON_PROJECT, ICON_BRANCH, ICON_WORKTREE, ICON_QUOTA,
+    ICON_PROJECT, ICON_BRANCH, ICON_WORKTREE,
     ICON_CONTEXT, ICON_CACHE, ICON_COST, ICON_ELAPSED, ICON_FAST,
 )
 
@@ -578,7 +577,7 @@ def build_line1(data: dict, probe: Probe) -> str:
 
 
 def build_line2(data: dict, probe: Probe) -> str:
-    """\u2605 Opus 5 1M · high │ \U0001f50b 5h ▀▀░░ 5% 1h50m · 7d ▀▀▀░ 58% 3d10h"""
+    """\u2605 Opus 5 1M · high │ 5h ▀▀░░ 5% 1h50m │ 7d ▀▀▀░ 58% 3d10h"""
     # The countdowns are the least of it; the meters and percentages are what
     # the line exists for, so they are what survives a narrow window
     return first_that_fits(
@@ -604,10 +603,6 @@ def _line2(data: dict, now: float, resets: bool) -> str:
     parts.append(head)
 
     rl = data.get("rate_limits") or {}
-    # The two windows measure one thing - what is left of the plan allowance -
-    # so they share a single badge and sit in one group rather than reading as
-    # two unrelated segments
-    windows = []
     for key, label, window in (("five_hour", "5h", 18000), ("seven_day", "7d", 604800)):
         window_data = rl.get(key) or {}
         pct = window_data.get("used_percentage")
@@ -624,11 +619,7 @@ def _line2(data: dict, now: float, resets: bool) -> str:
         reset = fmt_reset_time(window_data.get("resets_at"), now) if resets else ""
         if reset:
             seg += f" {C.DIM}{reset}{C.RESET}"
-        windows.append(seg)
-
-    if windows:
-        joined = f" {C.DIM}·{C.RESET} ".join(windows)
-        parts.append(f"{ICON_QUOTA} {joined}")
+        parts.append(seg)
 
     return f" {C.DIM}│{C.RESET} ".join(parts)
 
