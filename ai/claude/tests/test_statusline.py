@@ -19,7 +19,6 @@ from statusline import (
     model_label,
     parse_porcelain,
     render_subagents,
-    right_align,
     strip_ansi,
     truncate_to_width,
 )
@@ -103,31 +102,6 @@ def test_the_result_never_exceeds_the_width(text, width):
 def test_truncation_never_splits_an_escape_sequence():
     cut = truncate_to_width(f"{ESC}abcdefghij{RESET}", 5)
     assert "\033[9" not in strip_ansi(cut)
-
-
-# --- right_align --------------------------------------------------------------
-# The fallback order is the point: dropping the leading group keeps the churn
-# counts, while letting truncation run would keep the file counts instead.
-
-
-def test_both_blocks_fit_with_the_right_one_at_the_far_end():
-    out = right_align("left", ["right"], 20, " | ")
-    assert out.startswith("left") and out.endswith("right")
-    assert display_width(out) <= 20
-
-
-def test_the_first_right_group_is_dropped_when_space_runs_out():
-    out = right_align("left", ["dropped", "kept"], 16, " | ")
-    assert "dropped" not in out
-    assert out.endswith("kept")
-
-
-def test_only_the_left_block_survives_a_width_that_fits_nothing_else():
-    assert right_align("left", ["a", "b"], 6, " | ") == "left"
-
-
-def test_an_absent_right_block_leaves_the_left_one_alone():
-    assert right_align("left", [], 40, " | ") == "left"
 
 
 # --- first_that_fits ----------------------------------------------------------

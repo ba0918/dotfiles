@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 # CONFIG
 # ============================================
 
-SHOW_LINE1 = True  # \U0001f4c1 dotfiles │ \U0001f33f main        mod 3 │ +182 -47
+SHOW_LINE1 = True  # \U0001f4c1 dotfiles │ \U0001f33f main │ mod 3 │ +182 -47
 SHOW_LINE2 = True  # \u2605 Opus 5 1M · high │ 5h ▀▀ 5% 50m │ 7d ▀▀ 58% 3d10h
 SHOW_LINE3 = True  # \U0001f4dc █▌ 26% 263.7K │ \U0001f4be 99% warm 47m/1h │ 💰 $6.02 │ ⏱ 16m
 
@@ -362,25 +362,6 @@ def first_that_fits(width: int, *renderings: str) -> str:
     return renderings[-1]
 
 
-def right_align(left: str, right_parts: list[str], width: int, sep: str) -> str:
-    """Left block, then the right blocks pushed to the far column.
-
-    When they will not all fit, right blocks are dropped from the front rather
-    than the line being truncated: truncation cuts from the end, which would
-    take the churn counts - the part worth keeping - before the file counts.
-    """
-    parts = list(right_parts)
-    while parts:
-        right = sep.join(parts)
-        # One cell short of the edge: a status line that ends exactly at the
-        # last column is one width miscount away from being truncated
-        gap = width - 1 - display_width(left) - display_width(right)
-        if gap >= 1:
-            return left + " " * gap + right
-        parts.pop(0)
-    return left
-
-
 def short_model(name: str) -> str:
     """Trim the one display name long enough to crowd the line."""
     return name.replace(" (1M context)", " 1M")
@@ -534,46 +515,55 @@ def probe_environment(data: dict) -> Probe:
 
 
 def build_line1(data: dict, probe: Probe) -> str:
-    """📁 dotfiles │ 🌿 main            add 1 mod 3 del 0 ? 2 │ +182 -47"""
+    """\U0001f4c1 dotfiles │ \U0001f33f main │ mod 3 │ +182 -47
+
+    Left to right like the other two lines. Pushing the counts to the far
+    column stretched this line to the full terminal width, which left it one
+    width miscount away from being cut - and the host reserves columns this
+    script cannot see. A short line is never near the edge to begin with.
+    """
     sep = f" {C.DIM}│{C.RESET} "
 
+    place = []
     root = project_root(data)
-
-    left = []
     if root:
         name = os.path.basename(root.rstrip("/"))
         if name:
-            left.append(f"{ICON_PROJECT} {C.WHITE}{name}{C.RESET}")
+            place.append(f"{ICON_PROJECT} {C.WHITE}{name}{C.RESET}")
     if probe.branch:
-        left.append(f"{ICON_BRANCH} {C.GREEN}{probe.branch}{C.RESET}")
+        place.append(f"{ICON_BRANCH} {C.GREEN}{probe.branch}{C.RESET}")
     wt = data.get("worktree")
     if wt:
-        left.append(f"{ICON_WORKTREE} {C.CYAN}{wt.get('name', '?')}{C.RESET}")
+        place.append(f"{ICON_WORKTREE} {C.CYAN}{wt.get('name', '?')}{C.RESET}")
 
-    right = []
-    counts = probe.file_counts
-    if counts and any(counts.values()):
-        shown = [
-            f"{label} {n}"
-            for label, n in (
-                ("add", counts["add"]), ("mod", counts["mod"]),
-                ("del", counts["del"]), ("?", counts["new"]),
-            )
-            if n
-        ]
-        right.append(f"{C.DIM}{' '.join(shown)}{C.RESET}")
+    counts = probe.file_counts or {}
+    shown = [
+        f"{label} {n}"
+        for label, n in (
+            ("add", counts.get("add", 0)), ("mod", counts.get("mod", 0)),
+            ("del", counts.get("del", 0)), ("?", counts.get("new", 0)),
+        )
+        if n
+    ]
+    files = [f"{C.DIM}{' '.join(shown)}{C.RESET}"] if shown else []
 
     cost = data.get("cost", {})
     added, removed = cost.get("total_lines_added", 0), cost.get("total_lines_removed", 0)
-    if added or removed:
-        churn = []
-        if added:
-            churn.append(f"{C.GREEN}+{added}{C.RESET}")
-        if removed:
-            churn.append(f"{C.RED}-{removed}{C.RESET}")
-        right.append(" ".join(churn))
+    churn = []
+    if added:
+        churn.append(f"{C.GREEN}+{added}{C.RESET}")
+    if removed:
+        churn.append(f"{C.RED}-{removed}{C.RESET}")
+    lines_changed = [" ".join(churn)] if churn else []
 
-    return right_align(sep.join(left), right, probe.width, sep)
+    # Churn outlives the file counts: how much has been written is the figure
+    # worth keeping, while how many files hold it is the elaboration
+    return first_that_fits(
+        probe.width,
+        sep.join(place + files + lines_changed),
+        sep.join(place + lines_changed),
+        sep.join(place),
+    )
 
 
 def build_line2(data: dict, probe: Probe) -> str:
@@ -845,7 +835,10 @@ def main():
             print(json.dumps(row, ensure_ascii=False))
         return
 
-    for line in render(data, probe_environment(data)):
+    probe = probe_environment(data)
+    lines = render(data, probe)
+
+    for line in lines:
         print(line)
 
 
