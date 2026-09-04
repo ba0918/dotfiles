@@ -13,9 +13,12 @@ import pytest
 
 from statusline import (
     EMOJI_ICONS,
+    context_pct,
     display_width,
     first_that_fits,
+    model_label,
     parse_porcelain,
+    render_subagents,
     right_align,
     strip_ansi,
     truncate_to_width,
@@ -193,3 +196,100 @@ def test_records_accumulate_across_kinds():
 @pytest.mark.parametrize("junk", ["", "\0", "x\0", "\0\0"])
 def test_malformed_output_yields_no_counts(junk):
     assert parse_porcelain(junk) == EMPTY
+
+
+# --- model_label --------------------------------------------------------------
+# The agent panel is handed raw model ids, not the display name the main line
+# gets, so the panel is the only place that has to decode them.
+
+
+@pytest.mark.parametrize(
+    "model_id,expected",
+    [
+        ("claude-haiku-4-5-20251001", "Haiku 4.5"),
+        ("claude-opus-5", "Opus 5"),
+        ("claude-opus-5[1m]", "Opus 5 1M"),
+        ("claude-sonnet-5", "Sonnet 5"),
+        ("claude-fable-5-1", "Fable 5.1"),
+    ],
+)
+def test_a_model_id_reads_as_its_name(model_id, expected):
+    assert model_label(model_id) == expected
+
+
+@pytest.mark.parametrize("unknown", ["gpt-5", "", "something-else"])
+def test_an_unrecognised_model_is_passed_through_unchanged(unknown):
+    assert model_label(unknown) == unknown
+
+
+# --- context_pct --------------------------------------------------------------
+
+
+def test_context_fill_is_a_percentage_of_the_window():
+    assert context_pct({"tokenCount": 50000, "contextWindowSize": 200000}) == 25.0
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        {},
+        {"tokenCount": 5},
+        {"contextWindowSize": 200000},
+        {"tokenCount": 5, "contextWindowSize": 0},
+        {"tokenCount": "many", "contextWindowSize": 200000},
+    ],
+)
+def test_an_unusable_pair_yields_no_percentage(task):
+    assert context_pct(task) is None
+
+
+# --- render_subagents ---------------------------------------------------------
+# Rows are keyed by id and read as columns, so the panel must keep both: a row
+# without its id is dropped by Claude Code, and ragged columns defeat the point.
+
+TASK = {
+    "id": "a1",
+    "label": "Explore",
+    "description": "map the repo",
+    "model": "claude-haiku-4-5-20251001",
+    "tokenCount": 68000,
+    "contextWindowSize": 200000,
+}
+
+
+def rows(payload, width=120):
+    return render_subagents(payload, width)
+
+
+def test_no_tasks_produce_no_rows():
+    assert rows({"tasks": []}) == []
+    assert rows({}) == []
+
+
+def test_each_row_carries_the_id_it_was_given():
+    out = rows({"tasks": [TASK, {**TASK, "id": "b2"}]})
+    assert [r["id"] for r in out] == ["a1", "b2"]
+
+
+def test_rows_share_one_width_so_the_columns_line_up():
+    out = rows({"tasks": [TASK, {**TASK, "id": "b2", "label": "much-longer-name"}]})
+    assert len({display_width(r["content"]) for r in out}) == 1
+
+
+def test_a_row_never_exceeds_the_panel_width():
+    out = rows({"tasks": [TASK, {**TASK, "id": "b2", "label": "much-longer-name"}]}, width=40)
+    assert all(display_width(r["content"]) <= 40 for r in out)
+
+
+def test_a_description_repeating_the_label_is_not_printed_twice():
+    out = rows({"tasks": [{**TASK, "description": "Explore"}]})
+    assert out[0]["content"].count("Explore") == 1
+
+
+def test_a_task_without_a_label_still_renders():
+    out = rows({"tasks": [{"id": "a1", "tokenCount": 1, "contextWindowSize": 200000}]})
+    assert out[0]["id"] == "a1" and out[0]["content"].strip()
+
+
+def test_a_non_dict_task_is_skipped():
+    assert rows({"tasks": ["nonsense", TASK]}) == rows({"tasks": [TASK]})

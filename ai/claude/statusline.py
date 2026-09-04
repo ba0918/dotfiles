@@ -669,6 +669,127 @@ def _line3(data: dict, now: float, detail: bool) -> str:
 
 
 # ============================================
+# AGENT PANEL
+# ============================================
+
+
+_MODEL_DATE = re.compile(r"-\d{8}$")
+
+
+def model_label(model: str) -> str:
+    """A model id as it is written for people: claude-haiku-4-5-... -> Haiku 4.5.
+
+    The agent panel is given raw ids while the main line gets a display name,
+    so this is the only place that has to know the id shape. Anything that does
+    not match is passed through: a wrong guess is worse than a long name.
+    """
+    name = _MODEL_DATE.sub("", model.strip())
+    if not name.startswith("claude-"):
+        return model
+    name = name[len("claude-"):]
+    suffix = ""
+    if name.endswith("[1m]"):
+        name, suffix = name[: -len("[1m]")], " 1M"
+    family, _, version = name.partition("-")
+    if not family:
+        return model
+    version = version.replace("-", ".")
+    return f"{family.capitalize()}{' ' + version if version else ''}{suffix}"
+
+
+def pad(text: str, cells: int) -> str:
+    """Right-pad to a display width, counting escapes as nothing."""
+    return text + " " * max(0, cells - display_width(text))
+
+
+def context_pct(task: dict) -> float | None:
+    """How full a subagent's context is, from its token count and window."""
+    used, size = task.get("tokenCount"), task.get("contextWindowSize")
+    if not isinstance(used, (int, float)) or not isinstance(size, (int, float)):
+        return None
+    if size <= 0:
+        return None
+    return max(0.0, min(100.0, used / size * 100))
+
+
+def subagent_name(task: dict) -> str:
+    """What to call this agent. There is no name field; label is what is set."""
+    return str(task.get("label") or task.get("description") or "agent")
+
+
+def subagent_row(task: dict, widths: dict) -> tuple[str, str, str]:
+    """One agent as three column groups: gauge, what it is, what it is doing."""
+    pct = context_pct(task)
+    name = subagent_name(task)
+    gauge = [pad(name, widths["name"])]
+    meter = solid_bar(pct, BAR_W, ctx_sgr) if pct is not None else ""
+    if meter:
+        gauge.append(meter)
+    gauge.append(C.paint(ctx_sgr(pct or 0.0), f"{pct or 0:.0f}%".rjust(4)))
+    tokens = task.get("tokenCount")
+    if widths["tokens"]:
+        gauge.append(pad(f"{C.DIM}{fmt_tokens(tokens)}{C.RESET}" if tokens else "",
+                         widths["tokens"]))
+
+    model = model_label(str(task.get("model") or ""))
+    effort = str(task.get("effort") or "")
+    ident = f"{model} {C.DIM}·{C.RESET} {effort}" if model and effort else model or effort
+
+    # label and description carry the same text unless the agent was named, and
+    # printing it twice fills the row with nothing
+    desc = str(task.get("description") or "")
+    return " ".join(gauge), pad(ident, widths["ident"]), "" if desc == name else desc
+
+
+def render_subagents(payload: dict, width: int) -> list[dict]:
+    """One row per running subagent, keyed by the id Claude Code sent.
+
+    Laid out as columns rather than free text: with several agents running the
+    eye reads down a column, and rows that each set their own widths force it
+    to find every field again on every line.
+
+    Columns are dropped for the whole panel or not at all - dropping one on the
+    row that happens to overflow would break the alignment the layout is for.
+    """
+    tasks = [t for t in (payload.get("tasks") or []) if isinstance(t, dict)]
+    if not tasks:
+        return []
+
+    widths = {
+        "name": max(display_width(subagent_name(t)) for t in tasks),
+        "tokens": max(
+            (display_width(fmt_tokens(t["tokenCount"])) for t in tasks if t.get("tokenCount")),
+            default=0,
+        ),
+        "ident": 0,
+    }
+    widths["ident"] = max(
+        (display_width(subagent_row(t, widths)[1]) for t in tasks), default=0
+    )
+
+    sep = f" {C.DIM}│{C.RESET} "
+    parts = [subagent_row(t, widths) for t in tasks]
+    # Identity before description: which agent this is stays useful when the
+    # panel is narrow, while a clipped task sentence stops being readable
+    for keep in (("gauge", "ident", "desc"), ("gauge", "ident"), ("gauge",)):
+        rows = []
+        for gauge, ident, desc in parts:
+            cells = [gauge]
+            if "ident" in keep and ident.strip():
+                cells.append(ident)
+            if "desc" in keep and desc:
+                cells.append(f"{C.DIM}{desc}{C.RESET}")
+            rows.append(sep.join(cells))
+        if all(display_width(r) <= width for r in rows):
+            break
+
+    return [
+        {"id": str(t.get("id") or ""), "content": truncate_to_width(r, width)}
+        for t, r in zip(tasks, rows)
+    ]
+
+
+# ============================================
 # MAIN
 # ============================================
 
@@ -688,10 +809,18 @@ def render(data: dict, probe: Probe) -> list[str]:
 
 
 def main():
+    subagent = "--subagent" in sys.argv[1:]
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, EOFError):
-        print("[statusline: no data]")
+        if not subagent:  # the agent panel expects JSON rows or nothing at all
+            print("[statusline: no data]")
+        return
+
+    if subagent:
+        width = data.get("columns") or term_width()
+        for row in render_subagents(data, width):
+            print(json.dumps(row, ensure_ascii=False))
         return
 
     for line in render(data, probe_environment(data)):

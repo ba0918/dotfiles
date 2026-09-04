@@ -16,5 +16,9 @@
   "statusLine": {
     "type": "command",
     "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\" --subagent"
   }
 }
