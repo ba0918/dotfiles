@@ -11,13 +11,16 @@
 # Usage: bash scripts/run-tests.sh
 #
 # Overrides (testing):
-#   RUN_TESTS_PYTEST_DIR   pytest target in place of ai/shared/hooks/tests
+#   RUN_TESTS_PYTEST_DIRS  colon-separated pytest targets in place of the defaults
 #   RUN_TESTS_HARNESS_DIR  directory holding test_*.sh in place of scripts/
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PYTEST_DIR="${RUN_TESTS_PYTEST_DIR:-${ROOT}/ai/shared/hooks/tests}"
+# Colon-separated: pytest suites live wherever the code they cover lives, so
+# the list grows as packages gain tests. Each runs as its own suite, keeping
+# the report readable and one failure from hiding the others.
+PYTEST_DIRS="${RUN_TESTS_PYTEST_DIRS:-${ROOT}/ai/shared/hooks/tests}"
 HARNESS_DIR="${RUN_TESTS_HARNESS_DIR:-${ROOT}/scripts}"
 
 failed=()
@@ -47,7 +50,15 @@ if ! command -v pytest >/dev/null 2>&1; then
 	exit 1
 fi
 
-run_suite "pytest ${PYTEST_DIR}" pytest -q "${PYTEST_DIR}"
+IFS=':' read -r -a pytest_dirs <<<"${PYTEST_DIRS}"
+for dir in "${pytest_dirs[@]}"; do
+	[ -n "${dir}" ] || continue
+	if [ ! -d "${dir}" ]; then
+		echo "error: pytest directory not found: ${dir}" >&2
+		exit 1
+	fi
+	run_suite "pytest ${dir}" pytest -q "${dir}"
+done
 
 harnesses=("${HARNESS_DIR}"/test_*.sh)
 if [ ! -e "${harnesses[0]}" ]; then

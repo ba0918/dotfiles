@@ -4,7 +4,7 @@
 #
 # The runner exists so that "run the tests" is one command for humans, the
 # mise task and CI alike. What matters is asserted here from fixture suites
-# (RUN_TESTS_PYTEST_DIR / RUN_TESTS_HARNESS_DIR overrides), so the harness never
+# (RUN_TESTS_PYTEST_DIRS / RUN_TESTS_HARNESS_DIR overrides), so the harness never
 # runs the real suites: every suite runs even after an earlier one fails, a
 # single failure makes the whole run fail, and an empty suite set is an error
 # rather than a silent pass.
@@ -45,6 +45,10 @@ PY_OK="${TMP}/py-ok"
 mkdir -p "${PY_OK}"
 printf 'def test_ok():\n    assert True\n' > "${PY_OK}/test_ok.py"
 
+PY_OK2="${TMP}/py-ok2"
+mkdir -p "${PY_OK2}"
+printf 'def test_second_suite():\n    assert True\n' > "${PY_OK2}/test_second_suite.py"
+
 PY_BAD="${TMP}/py-bad"
 mkdir -p "${PY_BAD}"
 printf 'def test_bad():\n    assert False\n' > "${PY_BAD}/test_bad.py"
@@ -64,7 +68,7 @@ mkdir -p "${HARNESS_EMPTY}"
 
 run() {
 	set +e
-	OUT="$(RUN_TESTS_PYTEST_DIR="$1" RUN_TESTS_HARNESS_DIR="$2" "${SCRIPT}" 2>&1)"
+	OUT="$(RUN_TESTS_PYTEST_DIRS="$1" RUN_TESTS_HARNESS_DIR="$2" "${SCRIPT}" 2>&1)"
 	RC=$?
 	set -e
 }
@@ -92,6 +96,20 @@ check "a failing pytest suite makes the run fail" '[ "${RC}" -ne 0 ]'
 
 run "${PY_OK}" "${HARNESS_EMPTY}"
 check "no bash harness found is an error" '[ "${RC}" -ne 0 ] && grep -qi "no test harness" <<<"${OUT}"'
+
+# --- several pytest targets: each is a suite of its own -----------------------
+
+run "${PY_OK}:${PY_OK2}" "${HARNESS_OK}"
+check "every pytest target runs" '[ "${RC}" -eq 0 ] && grep -q "py-ok2" <<<"${OUT}"'
+check "each pytest target is reported separately" '[ "$(grep -c "^---- pytest" <<<"${OUT}")" -eq 2 ]'
+
+run "${PY_OK}:${PY_BAD}" "${HARNESS_OK}"
+check "one failing pytest target fails the run" '[ "${RC}" -ne 0 ]'
+
+# --- a configured target that does not exist is an error ----------------------
+
+run "${PY_OK}:${TMP}/absent" "${HARNESS_OK}"
+check "a missing pytest target is an error" '[ "${RC}" -ne 0 ] && grep -qi "not found" <<<"${OUT}"'
 
 # --- summary -----------------------------------------------------------------
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"
