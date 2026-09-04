@@ -31,7 +31,6 @@ compile = false
 "apt:bat" = "latest"
 "apt:fd-find" = "latest"
 "apt:eza" = "latest"
-"apt:zoxide" = "latest"
 "apt:jq" = "latest"
 # codex jail shim（ai/codex/bin/codex）の mount namespace 構築に使う
 "apt:bubblewrap" = "latest"
