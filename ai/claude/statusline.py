@@ -712,6 +712,21 @@ def context_pct(task: dict) -> float | None:
     return max(0.0, min(100.0, used / size * 100))
 
 
+_FAILURE = ("fail", "error", "cancel", "abort", "timeout")
+
+
+def failed(task: dict) -> bool:
+    """Whether this agent stopped badly enough to be worth pointing at.
+
+    The full set of status values is not documented and could not be read out
+    of the binary; "completed" and "failed" are what has actually been seen.
+    So the test names the bad outcomes rather than the good ones: an unknown
+    status then goes unmarked, which is the existing behaviour, while a
+    whitelist of good ones would flag every value it had not been told about.
+    """
+    return any(word in str(task.get("status") or "").lower() for word in _FAILURE)
+
+
 def subagent_name(task: dict) -> str:
     """What to call this agent. There is no name field; label is what is set."""
     return str(task.get("label") or task.get("description") or "agent")
@@ -734,6 +749,8 @@ def subagent_row(task: dict, widths: dict) -> tuple[str, str, str]:
     model = model_label(str(task.get("model") or ""))
     effort = str(task.get("effort") or "")
     ident = f"{model} {C.DIM}·{C.RESET} {effort}" if model and effort else model or effort
+    if failed(task):
+        ident = f"{ident} {C.RED}failed{C.RESET}" if ident else f"{C.RED}failed{C.RESET}"
 
     # label and description carry the same text unless the agent was named, and
     # printing it twice fills the row with nothing
@@ -783,8 +800,10 @@ def render_subagents(payload: dict, width: int) -> list[dict]:
         if all(display_width(r) <= width for r in rows):
             break
 
+    # Padding is what aligns the columns, but on the last one it is trailing
+    # whitespace the panel would render as an over-long selection
     return [
-        {"id": str(t.get("id") or ""), "content": truncate_to_width(r, width)}
+        {"id": str(t.get("id") or ""), "content": truncate_to_width(r.rstrip(), width)}
         for t, r in zip(tasks, rows)
     ]
 

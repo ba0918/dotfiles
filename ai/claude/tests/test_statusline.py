@@ -293,3 +293,26 @@ def test_a_task_without_a_label_still_renders():
 
 def test_a_non_dict_task_is_skipped():
     assert rows({"tasks": ["nonsense", TASK]}) == rows({"tasks": [TASK]})
+
+
+# --- subagent status ----------------------------------------------------------
+# The full status vocabulary is undocumented; "completed" and "failed" are what
+# has been observed. The test names bad outcomes, so an unknown value is left
+# unmarked rather than mislabelled.
+
+
+@pytest.mark.parametrize("status", ["failed", "cancelled", "errored", "timeout", "ABORTED"])
+def test_a_bad_outcome_is_called_out(status):
+    out = rows({"tasks": [{**TASK, "status": status}]})
+    assert "failed" in out[0]["content"]
+
+
+@pytest.mark.parametrize("status", ["completed", "running", "", None, "something-new"])
+def test_any_other_outcome_is_left_alone(status):
+    out = rows({"tasks": [{**TASK, "status": status}]})
+    assert "failed" not in out[0]["content"]
+
+
+def test_no_row_ends_in_padding():
+    out = rows({"tasks": [TASK, {**TASK, "id": "b2", "model": "claude-opus-5[1m]"}]})
+    assert all(r["content"] == r["content"].rstrip() for r in out)
