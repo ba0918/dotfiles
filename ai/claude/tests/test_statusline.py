@@ -7,9 +7,12 @@ parser are the opposite - a mistake there prints a plausible line that happens
 to be untrue, which is exactly what nobody notices.
 """
 
+import unicodedata
+
 import pytest
 
 from statusline import (
+    EMOJI_ICONS,
     display_width,
     first_that_fits,
     parse_porcelain,
@@ -20,6 +23,24 @@ from statusline import (
 
 ESC = "\033[92m"
 RESET = "\033[0m"
+
+
+# --- segment icons ------------------------------------------------------------
+# A Neutral or Narrow codepoint is allocated one cell while an emoji font draws
+# it across two, so the glyph covers the space that follows and the icon ends
+# up flush against its value. U+23F1 was exactly that.
+
+
+@pytest.mark.parametrize("icon", EMOJI_ICONS)
+def test_every_icon_is_allocated_two_cells(icon):
+    assert unicodedata.east_asian_width(icon) == "W"
+
+
+@pytest.mark.parametrize("icon", EMOJI_ICONS)
+def test_every_icon_is_a_single_codepoint(icon):
+    # A variation selector or ZWJ sequence measures as one character here while
+    # terminals disagree on how to draw it
+    assert len(icon) == 1
 
 
 # --- display_width ------------------------------------------------------------

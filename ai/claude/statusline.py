@@ -51,6 +51,29 @@ CTX_CRIT = 80
 # Meter widths, in terminal cells
 BAR_W = 6
 
+# Segment icons. Every one must be East Asian Wide, so the terminal reserves
+# the two cells an emoji font draws into. A Neutral or Narrow codepoint gets
+# one cell, the glyph is painted over the next, and it swallows the space that
+# follows - which is how U+23F1 (stopwatch) came to sit flush against its
+# value. ICON_MODEL is deliberately outside EMOJI_ICONS: it is a text glyph
+# drawn at text width, not an emoji.
+ICON_PROJECT = "\U0001f4c1"   # folder
+ICON_BRANCH = "\U0001f33f"    # herb
+ICON_WORKTREE = "\U0001f332"  # evergreen
+ICON_QUOTA = "\U0001f50b"     # battery
+ICON_CONTEXT = "\U0001f4dc"   # scroll
+ICON_CACHE = "\U0001f4be"     # floppy disk
+ICON_COST = "\U0001f4b0"      # money bag
+ICON_ELAPSED = "\u23f3"       # hourglass with flowing sand
+ICON_FAST = "\u26a1"          # high voltage
+
+EMOJI_ICONS = (
+    ICON_PROJECT, ICON_BRANCH, ICON_WORKTREE, ICON_QUOTA,
+    ICON_CONTEXT, ICON_CACHE, ICON_COST, ICON_ELAPSED, ICON_FAST,
+)
+
+ICON_MODEL = "\u2605"  # black star
+
 
 # ============================================
 # COLORS
@@ -442,7 +465,7 @@ def cache_segment(data: dict, now: float, detail: bool = True) -> str | None:
     if isinstance(ratio, (int, float)):
         pct = ratio * 100
         color = C.GREEN if pct >= 50 else C.YELLOW if pct >= 20 else C.DIM
-        bits.append(f"\U0001f4be {color}{pct:.0f}%{C.RESET}")
+        bits.append(f"{ICON_CACHE} {color}{pct:.0f}%{C.RESET}")
 
     if pc.get("warm"):
         # Time to cold is the actionable half: past it the next request pays to
@@ -521,12 +544,12 @@ def build_line1(data: dict, probe: Probe) -> str:
     if root:
         name = os.path.basename(root.rstrip("/"))
         if name:
-            left.append(f"📁 {C.WHITE}{name}{C.RESET}")
+            left.append(f"{ICON_PROJECT} {C.WHITE}{name}{C.RESET}")
     if probe.branch:
-        left.append(f"🌿 {C.GREEN}{probe.branch}{C.RESET}")
+        left.append(f"{ICON_BRANCH} {C.GREEN}{probe.branch}{C.RESET}")
     wt = data.get("worktree")
     if wt:
-        left.append(f"🌲 {C.CYAN}{wt.get('name', '?')}{C.RESET}")
+        left.append(f"{ICON_WORKTREE} {C.CYAN}{wt.get('name', '?')}{C.RESET}")
 
     right = []
     counts = probe.file_counts
@@ -577,7 +600,7 @@ def _line2(data: dict, now: float, resets: bool) -> str:
     if (data.get("thinking") or {}).get("enabled") is False:
         head += f" {C.DIM}no-think{C.RESET}"
     if data.get("fast_mode"):
-        head += " ⚡"
+        head += f" {ICON_FAST}"
     parts.append(head)
 
     rl = data.get("rate_limits") or {}
@@ -605,7 +628,7 @@ def _line2(data: dict, now: float, resets: bool) -> str:
 
     if windows:
         joined = f" {C.DIM}·{C.RESET} ".join(windows)
-        parts.append(f"\U0001f50b {joined}")
+        parts.append(f"{ICON_QUOTA} {joined}")
 
     return f" {C.DIM}│{C.RESET} ".join(parts)
 
@@ -628,7 +651,7 @@ def _line3(data: dict, now: float, detail: bool) -> str:
     used_pct = ctx.get("used_percentage")
     if used_pct is not None:
         meter = solid_bar(used_pct, BAR_W, ctx_sgr)
-        seg = "\U0001f4dc"
+        seg = ICON_CONTEXT
         if meter:
             seg += f" {meter}"
         seg += " " + C.paint(ctx_sgr(used_pct), f"{used_pct:.0f}%")
@@ -646,10 +669,10 @@ def _line3(data: dict, now: float, detail: bool) -> str:
     cost = data.get("cost", {})
     total_cost = cost.get("total_cost_usd")
     if total_cost is not None:
-        parts.append(f"💰 {C.YELLOW}{fmt_cost(total_cost)}{C.RESET}")
+        parts.append(f"{ICON_COST} {C.YELLOW}{fmt_cost(total_cost)}{C.RESET}")
     dur = cost.get("total_duration_ms")
     if dur is not None:
-        parts.append(f"⏱ {C.MAGENTA}{fmt_duration(dur)}{C.RESET}")
+        parts.append(f"{ICON_ELAPSED} {C.MAGENTA}{fmt_duration(dur)}{C.RESET}")
 
     return f" {C.DIM}│{C.RESET} ".join(parts)
 
