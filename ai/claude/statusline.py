@@ -536,16 +536,20 @@ def build_line1(data: dict, probe: Probe) -> str:
     if wt:
         place.append(f"{ICON_WORKTREE} {C.CYAN}{wt.get('name', '?')}{C.RESET}")
 
+    # Dim labels against plain numbers, rather than a colour per kind: green
+    # and red already mean safe and alarming on the meters below, and a deleted
+    # file is neither. Contrast alone separates four counts that would
+    # otherwise read as one grey run
     counts = probe.file_counts or {}
     shown = [
-        f"{label} {n}"
+        f"{C.DIM}{label}{C.RESET} {C.WHITE}{n}{C.RESET}"
         for label, n in (
             ("add", counts.get("add", 0)), ("mod", counts.get("mod", 0)),
             ("del", counts.get("del", 0)), ("?", counts.get("new", 0)),
         )
         if n
     ]
-    files = [f"{C.DIM}{' '.join(shown)}{C.RESET}"] if shown else []
+    files = [" ".join(shown)] if shown else []
 
     cost = data.get("cost", {})
     added, removed = cost.get("total_lines_added", 0), cost.get("total_lines_removed", 0)
