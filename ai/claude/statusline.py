@@ -593,7 +593,10 @@ def _line2(data: dict, now: float, resets: bool) -> str:
     model = short_model(data.get("model", {}).get("display_name", "?"))
     level = (data.get("effort") or {}).get("level")
     label = f"{model} {C.DIM}·{C.RESET}{C.CYAN}{C.BOLD} {level}" if level else model
-    head = f"{C.paint(C.OK, chr(0x2605))} {C.CYAN}{C.BOLD}{label}{C.RESET}"
+    # Two spaces, not one: the emoji icons carry their own padding inside a
+    # two-cell glyph, while this text glyph fills its cell edge to edge, so the
+    # same single space reads tighter here than it does after an emoji
+    head = f"{C.paint(C.OK, ICON_MODEL)}  {C.CYAN}{C.BOLD}{label}{C.RESET}"
     # Extended thinking is on by default, so a badge for it would be constant
     # and tell nothing. The state worth surfacing is the one you did not expect
     if (data.get("thinking") or {}).get("enabled") is False:
