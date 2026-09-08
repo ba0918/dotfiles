@@ -139,9 +139,10 @@ mawk で無言に一致しなくなる。
 - **$HOME 変数**: パスは `$HOME` で記述し、build-settings が build 時に展開する。
   `//` プレフィックス内の `$HOME`（`//$HOME/...`）は先に処理して `///` 化を防ぐ
 - **$DOTFILES_ROOT 変数**: repo 内のパスは `$DOTFILES_ROOT` で記述する。
-  展開先は `MISE_GLOBAL_CONFIG_ROOT` が設定されていればその値（config.fish と
-  mise の bootstrap hook が立てる、正本の checkout）、未設定なら build-settings が
-  自身の位置から求める repo ルート（スクリプト内の `REPO_ROOT`）。
+  展開先は `MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh / fish config.fish が repo ルートに
+  設定し、mise の pre-dotfiles hook が検証する）が設定されていればその値（正本の
+  checkout）、未設定なら build-settings が自身の位置から求める repo ルート
+  （スクリプト内の `REPO_ROOT`）。
   `$HOME` と同じ walk で展開する
 
 ## build-settings
