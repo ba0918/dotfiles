@@ -144,10 +144,12 @@ shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex`
 して起動しても隔離の中からその場で書き換えられない（守りは部分的で、祖先ディレクトリの
 改名による差し替えは残る。仕様 5.6 節）。
 ただし dotfiles をワークスペースにすると、ホストが起動のたびに読む `mise/config.toml`
-（シムを PATH の先頭に置く `env._.path` を持つ）と `fish/.config/fish/config.fish` も
-`rw` の中に入り、隔離の中から書き換えられる。この 2 つを `ro` にすると dotfiles を編集する
-作業そのものができなくなるので塞いでいない。防波堤は、apply や新しいシェルを開く前に
-`git diff` を見ること。
+（シムを PATH の先頭に置く `env._.path` を持つ）と `fish/.config/fish/config.fish`、
+ホストの Claude Code が `~/.claude/rules` / `~/.claude/agents` / `~/.claude/output-styles`
+のリンク越しに読む指示文書（リンク先は `ai/shared/` と `ai/claude/` 配下）も `rw` の中に
+入り、隔離の中から書き換えられる。プロファイルで塞ぐのはホストが人の目を通さず実行する
+コードだけで、これらを `ro` にするとそれらのファイルを編集する作業ができなくなるので
+塞いでいない。防波堤は、apply や新しいシェルを開く前に `git diff` を見ること。
 シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
 `cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
 1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
