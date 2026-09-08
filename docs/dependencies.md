@@ -140,6 +140,9 @@ Bash tool と hook では `ai/claude/conf.d/40-env.json` の `env.PATH` が `~/.
 `ai/claude/conf.d/40-env.json` の `env.PATH` が `~/.claude/settings.json` 経由で
 shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex` が
 `~/.local/share/mise/installs/codex/...` を返したらシムを経由していない。
+このシムディレクトリはプロファイルの `ro` にも載せてあるので、dotfiles をワークスペースに
+して起動しても隔離の中からその場で書き換えられない（守りは部分的で、祖先ディレクトリの
+改名による差し替えは残る。仕様 5.6 節）。
 シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
 `cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
 1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
