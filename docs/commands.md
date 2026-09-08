@@ -142,3 +142,12 @@ ssh mizumi@localhost                          # Windows 側から接続確認
 npm safe-chain-verify               # safe-chain が有効か確認（pnpm / bun / pip でも可）
 safe-chain --version                 # safe-chain のバージョン確認
 ```
+
+公開から 48 時間未満のパッケージは既定で弾かれる。どうしても入れるときは、そのコマンド
+1 回だけに Safe Chain の環境変数を付ける（シェルの設定に書かない。Safe Chain 自体は外さない）。
+
+```bash
+SAFE_CHAIN_MINIMUM_PACKAGE_AGE_HOURS=0 npm install <pkg>              # 年齢の下限をこの 1 回だけ 0 にする
+SAFE_CHAIN_NPM_MINIMUM_PACKAGE_AGE_EXCLUSIONS=<pkg> npm install <pkg>  # npm でこのパッケージだけ年齢検査を除外
+SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS=<pkg> pip install <pkg>      # pip など npm 以外の除外
+```

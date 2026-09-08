@@ -53,7 +53,27 @@
   パッケージマネージャをラップし、マルウェア検知 + 最小リリース年齢（デフォルト 48h）
   を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。`bootstrap.sh` が sha256
   検証付きで導入。config.fish は存在する場合のみ source する。
-  非対話シェル（LLM エージェント等）へは mise の PATH 経由で shim が渡る
+  経路は 2 つある。fish（対話・非対話とも）は `mise/config.toml` の `env._.path` が
+  `~/.safe-chain/shims` を mise の shims より前に置き、`init-fish.fish` の関数も効く。
+  Claude Code の Bash tool と hook は fish を通らず、`~/.claude/settings.json` の
+  `env.PATH`（正本 `ai/claude/conf.d/40-env.json`）が PATH を決めるので、そこに
+  `~/.safe-chain/shims` と本体の `~/.safe-chain/bin` を書いてある。順序は
+  process-wrap の shim → Safe Chain の shims → mise の shims → Safe Chain の本体。
+  shims が mise より後ろだと npm / pnpm / bun / pip が mise 側に解決されて素通りし、
+  本体が PATH に無いと shim が警告 1 行で素の npm に落ちる（本体を PATH に載せるのは
+  fish の init スクリプトだけなので、fish を通らない PATH では明示が要る）。本体を mise の
+  shims より後ろに置くのは、前に置く理由が無く、将来そのディレクトリに増えた実行ファイルが
+  mise で固定した版を覆うのを避けるため。この順序は `ai/claude/build-settings` が
+  検査し、崩れていれば settings.json を書かずに止まり、apply も止まる
+  （[docs/spec/safe-chain-path.md](spec/safe-chain-path.md)）。
+  隔離（process-wrap）の中も同じ PATH を継承するので、codex が起動する
+  パッケージマネージャも Safe Chain を通る（隔離の中で `npm safe-chain-verify` と実際の
+  `npm install` が通ることは実測済み）。`~/.safe-chain` は隔離の中では読み取り専用で、
+  マルウェア DB の更新はホスト側の実行に任せる（隔離の中で更新が要る状態になったときの
+  振る舞いは未検証）。Claude Code が起動する MCP サーバーも同じ `env.PATH` で起動すると
+  考えられる（未検証）。今は `npx` / `uvx` で起動する MCP サーバーが無い（context7 は
+  HTTP）ので影響は無く、browser-use プラグインを有効にすると `uvx` 起動なので Safe Chain
+  の shim を通る
 - **opencode** — `[tools]` で導入（`aqua:anomalyco/opencode`）。
   fish の config.fish が opencode の有無で alias / hook をロードする
 
@@ -257,12 +277,15 @@ hook が動く PATH で `run-if-present` が解決できる必要があるが、
 Claude 側と Codex 側で違う。
 
 - Claude Code 側: `ai/claude/conf.d/40-env.json` の `env.PATH` が process-wrap の shim
-  ディレクトリ（`ai/process-wrap/shim`）を先頭に、mise の shims ディレクトリ
-  （`~/.local/share/mise/shims`）を 2 番目に置き、`ai/claude/build-settings` がそれを
-  `~/.claude/settings.json` に展開する。起動したシェルの PATH に関わらず、hook と
-  `statusLine` には settings.json 経由で届く（この `env.PATH` は Bash tool の PATH でも
-  あるので、shim ディレクトリが mise の shims より前でなければ `codex` が隔離を
-  素通りする。順序に意味がある）
+  ディレクトリ（`ai/process-wrap/shim`）を先頭に、Safe Chain の shims
+  （`~/.safe-chain/shims`）を 2 番目、mise の shims ディレクトリ
+  （`~/.local/share/mise/shims`）を 3 番目、Safe Chain の本体（`~/.safe-chain/bin`）を
+  4 番目に置き、`ai/claude/build-settings` がそれを `~/.claude/settings.json` に展開する。
+  起動したシェルの PATH に関わらず、hook と `statusLine` には settings.json 経由で届く
+  （この `env.PATH` は Bash tool の PATH でもあるので、shim ディレクトリが mise の shims
+  より前でなければ `codex` が隔離を素通りし、Safe Chain の shims が mise より後ろなら
+  パッケージマネージャが Safe Chain を素通りする。順序に意味があり、`build-settings` が
+  先頭 4 要素を検査する）
 - Codex 側: hook は process-wrap の隔離の中で動く。process-wrap は起動したシェルの PATH を
   引き継ぎ、プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）を先頭に
   足すだけで、mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で
