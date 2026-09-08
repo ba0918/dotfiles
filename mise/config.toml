@@ -77,8 +77,12 @@ compile = false
 # 通常ファイルに差し替えられる（同 5.6 節の既知の隙間）。実体で配れば ro の
 # マウント点そのものになり、この差し替えが塞がる。statusline.py は statusLine として
 # ホストが隔離の外で実行するので、書き換えられるとホスト側で任意コードが動く。
-# ディレクトリ単位で ro にする hooks / rules / agents /
-# output-styles の中身は、親ディレクトリの ro がリンクの名前ごと守るため symlink のまま。
+# hooks / rules / agents / output-styles の中身は symlink のまま。ただし親ディレクトリの
+# ro が守るのはリンクの名前（消して通常ファイルに差し替える経路）だけで、リンク先が rw の
+# 中（dotfiles をワークスペースにしたときの checkout）にあればリンク越しに書ける。ホストが
+# 人の目を通さず実行する hooks は、プロファイルの ro にリンク先（ai/shared/hooks）も
+# 載せた。rules / agents / output-styles のリンク先は載せていない（人が git diff で見る
+# 指示文書なので、限界として docs/dependencies.md に書いた）。
 # template にしたファイルは、編集後に `mise bootstrap dotfiles apply` で配り直すまで
 # $HOME 側に反映されない
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
@@ -121,8 +125,8 @@ compile = false
 # __pycache__ まで ~/.codex/hooks に露出し、$HOME 側から repo に書き戻す経路も
 # 生むため。hooks.json は rw の ~/.codex 直下に単体で置かれる ro なので、上の
 # ~/.claude 直下の 2 つと同じ理由（仕様 5.6 節・6.2 節）で template で実体を配る。
-# hooks/ 配下のスクリプトは ~/.codex/hooks をディレクトリごと ro にしているので
-# symlink のままでよい
+# hooks/ 配下のスクリプトは symlink のまま。~/.codex/hooks の ro が守るのはリンクの名前
+# だけだが、リンク先の ai/shared/hooks もプロファイルの ro に載せてある
 "~/.codex/hooks.json" = { source = "../ai/codex/hooks.json", mode = "template" }
 "~/.codex/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
 "~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
