@@ -42,10 +42,13 @@ rw-file = ["~/.claude.json"]
 
 # The instructions and settings the agent CLIs run under are read-only; their runtime
 # state above is rw. Every single file named here is distributed as a real file, not as
-# a symbolic link: `ro` binds the resolved target, so a link left in the rw parent could
-# be removed inside the isolation and replaced with a regular file (specification
-# sections 5.6 and 6.2). Links under the directories named here are covered by the
-# directory's own bind.
+# a symbolic link, except the items whose own comment says the host executes this
+# repository's checkout directly: `ro` binds the resolved target, so a link left in the
+# rw parent could be removed inside the isolation and replaced with a regular file
+# (specification sections 5.6 and 6.2). Links under the directories named here are
+# covered by the directory's own bind, but that covers the link, not what it points at:
+# when the target resolves into a writable item, it stays writable through the link, so
+# the target has to be named here as well (`~/.claude/hooks` and its target below).
 ro = [
     "~/.codex/AGENTS.md",
     "~/.codex/hooks.json",
@@ -70,6 +73,27 @@ ro = [
     "~/.claude/agents",
     "~/.claude/commands",
     "~/.claude/skills",
+    # The shim directory the host runs `codex` from, through PATH (fish via the mise
+    # config, the Claude Code Bash tool and hooks via settings.json). Unlike everything
+    # above, it is not distributed: the host executes this repository's checkout itself,
+    # so the header's "distributed as a real file" does not apply here, and the same
+    # directory is inside the rw workspace whenever dotfiles is the work place. Without
+    # this item the isolation could rewrite the shim into host code for the next launch.
+    # The protection is partial: it stops a rewrite in place, but the directory sits three
+    # levels under the workspace, and renaming `ai` or `ai/process-wrap` to put another
+    # tree at the same path is still allowed (specification section 5.6). The item below
+    # carries the same route; every other ro-under-rw item here sits directly under its
+    # mount point and has no such route.
+    "{{ vars.dotfiles_root }}/ai/process-wrap/shim",
+    # The hook scripts the host runs outside the isolation, named by settings.json.
+    # `~/.claude/hooks` above only covers the directory the links sit in: the `*.py`
+    # entries there are symbolic links `mise bootstrap` made, and `ro` binds the resolved
+    # target (specification section 5.6), which is this repository's checkout and
+    # therefore inside the rw workspace whenever dotfiles is the work place. Like the
+    # shim above it is not distributed, and the protection is partial in the same way:
+    # the directory sits three levels under the workspace, so renaming `ai` or
+    # `ai/shared` is still a route to another tree at the same path.
+    "{{ vars.dotfiles_root }}/ai/shared/hooks",
     # The image-paste stand-in reads the PNG clipboard2path-wsl keeps here. It sits
     # under the hidden /run/user below, so it has to be named back in.
     "/run/user/1000/clipboard2path",
@@ -90,6 +114,18 @@ hide = [
     "~/.config/gcloud",
     "~/.docker",
     "~/.kube",
+    # Claude Code writes a snapshot-bash-*.sh here when a session starts, and its Bash
+    # tool runs `source <snapshot> && eval ...` on the host, outside the isolation, on
+    # every call. It is under the rw ~/.claude above, so it needs an item of its own.
+    # Hidden rather than read-only: a hidden directory is empty but writable (section
+    # 6.1), so a claude spawned inside still writes its own snapshots there, while the
+    # host's snapshots stay invisible and untouchable.
+    "~/.claude/shell-snapshots",
+    # Claude Code writes <session id>/sessionstart-hook-*.sh here when a session starts,
+    # and the `export` lines inside become environment variables of the host's Bash tool,
+    # outside the isolation. It is under the rw ~/.claude above, and it is hidden rather
+    # than read-only for the same reason as shell-snapshots above.
+    "~/.claude/session-env",
     # WSL interop: binfmt_misc hands every MZ file to /init, which launches it as a
     # Windows process through the socket in /run/WSL, outside every hide above, with the
     # whole distro readable via \\wsl$. Hiding the drives below only removes the obvious
