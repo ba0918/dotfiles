@@ -308,8 +308,13 @@ run = "test -n \"${MISE_GLOBAL_CONFIG_FILE:-}\" && [ \"${MISE_GLOBAL_CONFIG_ROOT
 # post-dotfiles: deny-patterns.yaml から各ツールの deny 設定を合成・適用
 # Claude Code: conf.d/ → settings.json（[dotfiles] 管轄外、runtime allow 保持）
 # OpenCode: template 配布後に deny パターンを上書き
+# set -e が無いと hook の終了コードは最後のコマンドのものになり、build-settings が
+# env.PATH の順序の検査（docs/spec/safe-chain-path.md 3.2）で非 0 を返しても apply が
+# 成功と報告する。build-settings で止めれば後続の opencode の deny 適用も走らないが、
+# 正本を直して apply し直せば両方が適用されるので、それでよい。
 [bootstrap.hooks.post-dotfiles]
 run = """
+set -e
 REPO_ROOT="$(dirname "$(dirname "${MISE_GLOBAL_CONFIG_FILE}")")"
 bash "$REPO_ROOT/ai/claude/build-settings"
 bash "$REPO_ROOT/scripts/generate-deny.sh" opencode-apply

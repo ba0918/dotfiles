@@ -62,6 +62,10 @@ for f in "$CONF_DIR"/*.json; do
   BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
 done
 
+# Keep the unexpanded env.PATH for the order check in Step 5. Step 3 expands the trailing
+# $PATH token in the same pass as the other variables and leaves no unexpanded copy behind.
+RAW_ENV_PATH=$(echo "$BASE" | jq -r '.env.PATH // ""')
+
 # Step 3: Expand $HOME, $DOTFILES_ROOT and $PATH in merged base. The // prefixed forms
 # (//$HOME/ and //$DOTFILES_ROOT/) are expanded first, with the leading slash of the
 # expansion dropped, so a permission rule keeps its // prefix (//home/...) instead of
@@ -99,7 +103,49 @@ if $STATUS; then
   exit 0
 fi
 
-# Step 5: Merge runtime allow/ask from existing settings.json
+# Step 5: Check the order of env.PATH before anything is written (docs/spec/safe-chain-path.md,
+# section 3.2). Only the entries written in conf.d are checked: the trailing $PATH token, which
+# brings in the PATH of the shell that ran this script, is dropped before comparing. The
+# inherited part differs by shell, and fish already carries the Safe Chain directories there,
+# so checking the expanded value would not notice an entry missing from conf.d.
+#
+# This PATH is what Claude Code's Bash tool and hooks run with, so the first four entries are
+# fixed, in this order:
+#   1. the process-wrap shim directory: the host runs codex from there, and it has to beat the
+#      mise shims or codex runs outside the isolation;
+#   2. the Safe Chain shims: after the mise shims, npm / pnpm / bun / pip resolve to mise and
+#      skip Safe Chain;
+#   3. the mise shims;
+#   4. the Safe Chain binary: the shims only need `command -v safe-chain` to succeed, and only
+#      fish puts that directory on PATH. It goes after the mise shims because nothing in it
+#      needs to win, and anything that later appears there would otherwise shadow a
+#      mise-pinned tool.
+# A generated settings.json with these out of order would silently drop the protection, which
+# is why the script fails here instead of writing (AGENTS.md rule 7).
+CHECKED_PATH="${RAW_ENV_PATH%:\$PATH}"
+CHECKED_PATH="${CHECKED_PATH//\$HOME/$HOME}"
+CHECKED_PATH="${CHECKED_PATH//\$DOTFILES_ROOT/$DOTFILES_ROOT}"
+IFS=: read -r -a PATH_ENTRIES <<< "$CHECKED_PATH"
+EXPECTED_PATH_HEAD=(
+  "$DOTFILES_ROOT/ai/process-wrap/shim"
+  "$HOME/.safe-chain/shims"
+  "$HOME/.local/share/mise/shims"
+  "$HOME/.safe-chain/bin"
+)
+for i in 0 1 2 3; do
+  if [ "${PATH_ENTRIES[$i]:-}" != "${EXPECTED_PATH_HEAD[$i]}" ]; then
+    echo "error: env.PATH in conf.d/40-env.json is out of order: entry $((i + 1)) must be" >&2
+    echo "  ${EXPECTED_PATH_HEAD[$i]}" >&2
+    echo "but is" >&2
+    echo "  ${PATH_ENTRIES[$i]:-(missing)}" >&2
+    echo "The first four entries must be, in order:" >&2
+    printf '  %s\n' "${EXPECTED_PATH_HEAD[@]}" >&2
+    echo "settings.json was not written. See docs/spec/safe-chain-path.md section 3.2." >&2
+    exit 1
+  fi
+done
+
+# Step 6: Merge runtime allow/ask from existing settings.json
 if ! $CLEAN && [ -f "$TARGET" ]; then
   # Extract runtime-added allow entries (in existing but not in base)
   RUNTIME_ALLOW=$(jq -n \
@@ -123,7 +169,7 @@ else
   RESULT="$BASE"
 fi
 
-# Step 6: Output
+# Step 7: Output
 if $DRY_RUN; then
   echo "$RESULT" | jq .
 else
