@@ -143,7 +143,8 @@ mawk で無言に一致しなくなる。
   設定し、mise の pre-dotfiles hook が検証する）が設定されていればその値（正本の
   checkout）、未設定か空なら build-settings が自身の位置から求める repo ルート
   （スクリプト内の `REPO_ROOT`）。
-  `$HOME` と同じ walk で展開する
+  `$HOME` と同じ walk で展開し、`//` プレフィックス内の `$DOTFILES_ROOT`
+  （`//$DOTFILES_ROOT/...`）も `$HOME` と同様に先に処理して `///` 化を防ぐ
 
 ## build-settings
 
@@ -154,7 +155,8 @@ mawk で無言に一致しなくなる。
 ```
 1. generate-deny.sh claude → conf.d/20-deny.json を生成
 2. conf.d/*.json を番号順に deep merge → base
-3. $HOME / $DOTFILES_ROOT / $PATH を展開（//$HOME/ は //home/user/ に正しく変換）
+3. $HOME / $DOTFILES_ROOT / $PATH を展開（//$HOME/ と //$DOTFILES_ROOT/ は
+   //home/user/ 形に正しく変換）
 4. 既存 settings.json があれば runtime allow/ask を抽出して base に追加
 5. 結果を ~/.claude/settings.json に書き出し
 ```

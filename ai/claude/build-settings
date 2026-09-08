@@ -62,14 +62,19 @@ for f in "$CONF_DIR"/*.json; do
   BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
 done
 
-# Step 3: Expand $HOME, $DOTFILES_ROOT and $PATH in merged base, then fix triple-slash
-# from //$HOME → //home/...
+# Step 3: Expand $HOME, $DOTFILES_ROOT and $PATH in merged base. The // prefixed forms
+# (//$HOME/ and //$DOTFILES_ROOT/) are expanded first, with the leading slash of the
+# expansion dropped, so a permission rule keeps its // prefix (//home/...) instead of
+# turning into ///home/...
 # env.PATH is the PATH that Claude Code's Bash tool and hooks run with, so it has to be
 # a complete list: $PATH carries the inherited entries, and $DOTFILES_ROOT lets the
 # process-wrap shim directory be placed ahead of the mise shims directory.
 HOME_NO_SLASH="${HOME#/}"
-BASE=$(echo "$BASE" | jq --arg home_abs "$HOME" --arg home_rel "$HOME_NO_SLASH" --arg path "${PATH:-}" --arg dotfiles_root "$DOTFILES_ROOT" \
-  'walk(if type == "string" then gsub("//\\$HOME/"; "//" + $home_rel + "/") | gsub("\\$HOME"; $home_abs) | gsub("\\$DOTFILES_ROOT"; $dotfiles_root) | gsub("\\$PATH"; $path) else . end)')
+DOTFILES_ROOT_NO_SLASH="${DOTFILES_ROOT#/}"
+BASE=$(echo "$BASE" | jq \
+  --arg home_abs "$HOME" --arg home_rel "$HOME_NO_SLASH" --arg path "${PATH:-}" \
+  --arg dotfiles_root "$DOTFILES_ROOT" --arg dotfiles_root_rel "$DOTFILES_ROOT_NO_SLASH" \
+  'walk(if type == "string" then gsub("//\\$HOME/"; "//" + $home_rel + "/") | gsub("\\$HOME"; $home_abs) | gsub("//\\$DOTFILES_ROOT/"; "//" + $dotfiles_root_rel + "/") | gsub("\\$DOTFILES_ROOT"; $dotfiles_root) | gsub("\\$PATH"; $path) else . end)')
 
 # Step 4: Handle --status
 if $STATUS; then
