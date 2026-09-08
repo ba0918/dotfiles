@@ -143,6 +143,11 @@ shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex`
 このシムディレクトリはプロファイルの `ro` にも載せてあるので、dotfiles をワークスペースに
 して起動しても隔離の中からその場で書き換えられない（守りは部分的で、祖先ディレクトリの
 改名による差し替えは残る。仕様 5.6 節）。
+ただし dotfiles をワークスペースにすると、ホストが起動のたびに読む `mise/config.toml`
+（シムを PATH の先頭に置く `env._.path` を持つ）と `fish/.config/fish/config.fish` も
+`rw` の中に入り、隔離の中から書き換えられる。この 2 つを `ro` にすると dotfiles を編集する
+作業そのものができなくなるので塞いでいない。防波堤は、apply や新しいシェルを開く前に
+`git diff` を見ること。
 シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
 `cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
 1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
