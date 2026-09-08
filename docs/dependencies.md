@@ -135,7 +135,11 @@ clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.c
 `fish_add_path` は hook-env が走らない非対話シェル向けの保険で、それだけだと
 組み直しの時点で本体に負ける）。`which codex` が
 `~/.local/share/mise/installs/codex/...` を返したらシムを経由していない。
-シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写しで、1 バイトも変えない。
+シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
+`cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
+1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
+2 つの一覧（下の「素通しは許可リストだけ」）だけで、本体はいつでも雛形と一致させたまま
+にする。雛形が更新されたら写し直したうえで、その 2 つの一覧を入れ直す。
 
 **素通しは許可リストだけ** — 既定ではすべての呼び出しが隔離に入る。`--help` も `--version`
 も例外ではなく、サブコマンドを見て隔離の要否を決める分岐も無い。外れるのは
