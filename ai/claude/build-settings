@@ -17,8 +17,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # MISE_GLOBAL_CONFIG_ROOT (set by bootstrap.sh / fish config.fish, verified by the mise
-# pre-dotfiles hook) is the canonical checkout that $DOTFILES_ROOT expands to; without it,
-# fall back to the repository this script lives in, which is what a worktree run gets.
+# pre-dotfiles hook) is the canonical checkout that $DOTFILES_ROOT expands to; when the
+# variable is unset or empty, fall back to the repository this script lives in.
 DOTFILES_ROOT="${MISE_GLOBAL_CONFIG_ROOT:-$REPO_ROOT}"
 CONF_DIR="$SCRIPT_DIR/conf.d"
 TARGET="$HOME/.claude/settings.json"
