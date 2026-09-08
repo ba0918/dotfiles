@@ -59,10 +59,11 @@ dotfiles/
 │   │   └── agents/            # → ~/.claude/agents/*（judge / scout の agent 定義）
 │   ├── codex/                 # → ~/.codex/*
 │   │   ├── AGENTS.md          # template 配布
-│   │   ├── hooks.json         # symlink 配布
-│   │   ├── jail.conf          # bubblewrap の mount table
-│   │   ├── bin/codex          # jail shim
-│   │   └── jail-bin/          # jail 内でだけ PATH 先頭に来る代替コマンド
+│   │   └── hooks.json         # symlink 配布
+│   ├── process-wrap/          # codex を隔離して起動する仕組み
+│   │   ├── shim/codex         # PATH の先頭に来る起動シム（_.path で本体より前）
+│   │   ├── profile/           # プロファイルの正本（default.toml。template 配布）
+│   │   └── bin/powershell.exe # 隔離の中でだけ PATH 先頭に来る代替コマンド（template 配布）
 │   ├── opencode/              # → ~/.opencode/opencode.json（template 配布）
 │   │   └── opencode.json
 │   └── shared/                # Claude / Codex 共通

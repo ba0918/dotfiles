@@ -117,30 +117,51 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 以前は Claude 用と Codex 用に同じ検出ロジックを 2 部持っていたが、
 イベント形式の差は `hook_input.edited_files` が吸収するので統合した。
 
-### codex jail
+### process-wrap
 
-`codex` コマンドは `ai/codex/bin/codex` を経由して起動する。この shim
+`codex` は process-wrap（`~/develop/process-wrap`）の隔離の中で起動する。境界を組み立てる
+のは process-wrap 本体で、dotfiles 側が持つのは起動シム・プロファイル・代替コマンドの 3 つ。
+
+**導入** — process-wrap はまだ公開していないので mise の `[tools]` では入れない。
+clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.cargo/bin` に入れる
+（`env._.path` が `~/.cargo/bin` を PATH に載せている）。mount namespace を組む `bwrap` は
+`[bootstrap.packages]` の `apt:bubblewrap` で導入する。
+
+**シム** — `codex` コマンドは `ai/process-wrap/shim/codex` を経由して起動する。この shim
 ディレクトリは `mise/config.toml` の `env._.path` で mise 管理の codex 本体より
 前に置く（mise の hook-env が PATH を組み直しても順序が保たれる。config.fish の
 `fish_add_path` は hook-env が走らない非対話シェル向けの保険で、それだけだと
 組み直しの時点で本体に負ける）。`which codex` が
-`~/.local/share/mise/installs/codex/...` を返したら jail を経由していない。
-このシムは bubblewrap で mount
-namespace を組み、以下の境界を作る:
+`~/.local/share/mise/installs/codex/...` を返したらシムを経由していない。
+シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写しで、1 バイトも変えない。
 
-| アクセス | 対象 |
-|----------|------|
-| **読み書き可** | 現在の worktree、共有 `.git`、`/tmp`、各種 cache、`~/.codex` の状態 |
-| **隠蔽** | `~/.ssh` `~/.aws` `~/.gnupg` `~/.config/gh`、Windows ドライブ（`/mnt/c` 等）、WSL interop のソケット（`/run/WSL`）、worktree 内の `.env*`（雛形と `node_modules` 配下を除く） |
-| **読み取り専用** | それ以外すべて（`~/.codex/config.toml` / `AGENTS.md` / hooks 等の指示ファイルを含む） |
+**素通しは許可リストだけ** — 既定ではすべての呼び出しが隔離に入る。`--help` も `--version`
+も例外ではなく、サブコマンドを見て隔離の要否を決める分岐も無い。外れるのは
+`PROCESS_WRAP_SHIM_OFF=1` を付けたときと、シム冒頭の許可リストに名前を足したときだけで、
+許可リストとフラグ無しの一覧はどちらも空で配っている。`app-server` / `mcp-server`
+（Claude Code の codex plugin 経由の実行）も同じく隔離に入る。壊れたときにどちらの一覧へ
+名前を足すか、あるいはどちらでもなくプロファイルを直すかは、シムのヘッダーにある表に従う。
 
-この中で `codex --dangerously-bypass-approvals-and-sandbox` を動かす。
-codex 自身の Permission Profile（Beta）は `.git` の read-only mount や
-deny glob の fail-closed が重なって実用に耐えないため、境界を codex の外に出した。
+**プロファイル** — 境界の中身（`rw` / `rw-file` / `ro` / `hide`、`.env` の走査、
+ネットワーク、環境変数、秘密、git の URL 書き換え）はプロファイルが持つ。正本は
+`ai/process-wrap/profile/default.toml` で、`mise bootstrap dotfiles apply` が
+`~/.config/process-wrap/profile/default.toml` に実体として書き出す（template モード）。
+symlink で配らないのは、設定ディレクトリのファイルが `rw` の中を通る symlink だと、
+dotfiles をワークスペースにした起動が仕様 5.6 節の検査で止まるため。直したら apply し直す。
+`process-wrap init` は使わない（配布後は `profile/default.toml` が既にあるので、
+仕様 4.1 節どおり `init` は種類 `path` の診断で止まる）。
 
-GitHub へのアクセスは、`gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
-workflow + gist に届く OAuth token）ではなく、`~/.config/codex-jail/gh-token` に
-置いた **fine-grained PAT** を shim が `GH_TOKEN` として箱の中に渡す。
+**GitHub トークン** — `gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
+workflow + gist に届く OAuth token）はプロファイルが隠す。代わりに
+`~/.config/process-wrap/secrets/gh-token` に置いた **fine-grained PAT** を、プロファイルの
+`[secrets]` の `GH_TOKEN` が隔離の中へ渡す。置き場所は `init` を使えないので手で作る:
+
+```bash
+mise bootstrap dotfiles apply                  # 先にプロファイルを配る
+mkdir -m 700 ~/.config/process-wrap/secrets
+mv ~/.config/codex-jail/gh-token ~/.config/process-wrap/secrets/gh-token
+```
+
 `~/.config/gh` を意図的に un-hide する手段は用意していない。箱の中では環境変数も
 本物の `gh` バイナリも見えるので、中に入った token を中で絞ることはできない。
 境界は **token に GitHub 側が付ける権限**そのもので、Free プランの private
@@ -158,57 +179,45 @@ workflow + gist に届く OAuth token）ではなく、`~/.config/codex-jail/gh-
 | gist 作成 | 拒否 | token に gist 権限が無い |
 | `gh pr checks` | 失敗 | fine-grained PAT には Checks 権限自体が存在しない（`gh run list` / `gh run view --log` で代替） |
 
-token ファイルが無ければ GitHub の認証情報は一切入らない（以前と同じ挙動）。
-ファイルが空なら shim は起動を拒否する。ホストのシェルに `GH_TOKEN` /
-`GITHUB_TOKEN` が設定されていても箱には入らない（より広い token の漏れ込み防止）。
-token を入れるときは `~/.ssh` が隠れているため、`git@github.com:` /
-`ssh://git@github.com/` の remote を `url.<https>.insteadOf` の環境変数注入で
-HTTPS に読み替える（ホストの `.gitconfig` は触らない）。token は
+token ファイルが無ければ警告が 1 行出るだけで、GitHub の認証情報は一切入らない。
+中身が空なら起動を拒否する。ホストのシェルに `GH_TOKEN` / `GITHUB_TOKEN` が
+設定されていても箱には入らない（プロファイルの `env.unset` が名前で落とし、秘密の
+段が同名の変数を先に消す）。token を入れるときは `~/.ssh` が隠れているため、
+`git@github.com:` / `ssh://git@github.com/` の remote をプロファイルの
+`[git.instead-of]` で HTTPS に読み替える（ホストの `.gitconfig` は触らない）。token は
 `gh auth git-credential`（`.gitconfig` の credential helper）経由で git にも渡る。
 
 推奨する token の権限（All repositories）: Contents / Issues / Pull requests を
 Read and write、Actions / Commit statuses を Read。Workflows と Administration は
 付けない。有効期限が切れたら同じファイルに置き直す。
-mount table は `ai/codex/jail.conf`（`rw` / `rw-file` / `ro` / `hide` の
-4 directive、`~` 展開あり）。`rw` はディレクトリ専用で、ファイル単体を指すと
-起動を拒否する。ファイル単体の bind はマウントポイントになり、tmp + rename で
-保存するツール（codex の `config.toml` など）が EBUSY で落ちるため。親を rw に
-できないファイルだけ `rw-file` で明示的に bind する（その場でしか書けない）。cycle や skill-regression が箱の中から起動する opencode / claude
-の状態ディレクトリも `rw` にしてある（それらの設定・指示ファイルは `ro`）。
-別の CLI が `Read-only file system` で落ちたら、その CLI の状態ディレクトリを
-`rw` で足す。
 
-WSL では `.exe` を実行すると binfmt_misc が `/init` を呼び、`/run/WSL` の
-ソケット経由で **Windows 側にプロセスを起動する**。生まれたプロセスは bwrap の
+**WSL の interop** — `.exe` を実行すると binfmt_misc が `/init` を呼び、`/run/WSL` の
+ソケット経由で **Windows 側にプロセスを起動する**。生まれたプロセスは隔離の
 外で動き、`\\wsl$` 経由で distro 全体を読めるので、ドライブを隠すだけでは
-（`.exe` を持ち込めば）抜けられる。そのため `/run/WSL` も隠して interop 自体を
-切っている。
+（`.exe` を持ち込めば）抜けられる。そのためプロファイルは `/run/WSL` も隠して
+interop 自体を切っている。
 
-codex の画像ペースト（Ctrl+V）は WSL ではこの interop に依存している。codex の
-プロセス内クリップボード読み出しは WSLg では成功せず（compositor が出すのは
+**画像ペースト** — codex の画像ペースト（Ctrl+V）は WSL ではこの interop に依存している。
+codex のプロセス内クリップボード読み出しは WSLg では成功せず（compositor が出すのは
 `image/bmp` で codex は `image/png` を要求する）、`powershell.exe` に
 `Get-Clipboard -Format Image` を実行させて `C:\...` を `/mnt/c/...` に読み替える
-フォールバックへ必ず落ちる。jail の中ではその要求だけを
-`ai/codex/jail-bin/powershell.exe` が肩代わりする。clipboard2path-wsl の
-デーモンが `$XDG_RUNTIME_DIR/clipboard2path/latest.png` に保存した画像を、
-jail が空の tmpfs に差し替えている `/mnt/c` 配下へコピーし、codex が期待する
-`C:\` 形式のパスを返す。`ai/codex/jail-bin` は shim が jail の中でだけ PATH の
-先頭に足すので、外では本物の PowerShell がそのまま動く。
+フォールバックへ必ず落ちる。隔離の中ではその要求だけを
+`~/.local/lib/process-wrap/bin/powershell.exe` が肩代わりする。正本は
+`ai/process-wrap/bin/powershell.exe` で、プロファイルと同じく template で実体を配り、
+プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）が隔離の中でだけ
+PATH の先頭に足す。apply したら
+`test -x ~/.local/lib/process-wrap/bin/powershell.exe` で実行ビットを確かめ、
+落ちていれば `chmod +x` する。clipboard2path-wsl のデーモンが
+`$XDG_RUNTIME_DIR/clipboard2path/latest.png` に保存した画像を、`hide` で空の書ける
+ディレクトリに差し替わっている `/mnt/c` 配下へコピーし、codex が期待する `C:\` 形式の
+パスを返す。`/run/user` は隠しているので、読み出し元だけプロファイルの `ro` に
+`/run/user/1000/clipboard2path` として名指しで戻してある。
 `Get-Clipboard -Format Image` 以外の PowerShell 呼び出しは拒否する。
 
-jail に入るのは対話セッション・`exec`・`resume`・`fork`。
-`app-server` / `mcp-server` は jail の外で動き、codex 自身の sandbox が
-境界になる（Claude Code の codex plugin 経由の実行はこちら）。
-`login` / `mcp` / `--version` などエージェントがコマンドを実行しない
-呼び出しも素通しする。
-
-環境変数での調整:
-- `CODEX_JAIL_RW` / `CODEX_JAIL_HIDE`（コロン区切り）— 一時的な追加用
-- `CODEX_JAIL_CONF` — table ごと差し替え
-- `CODEX_JAIL_GH_TOKEN_FILE` — GitHub token ファイルの置き場所を差し替え
-- `CODEX_JAIL_OFF=1` — jail 自体を外す
-
-検証は `bash scripts/test_codex_jail.sh`。
+**検証** — 境界の検証は process-wrap 側のテスト（`~/develop/process-wrap` で `cargo test`）。
+dotfiles 側にハーネスは持たない。シムの写しを本物の codex を動かさずに確かめる手順は、
+シムのヘッダーに書いてある（PATH の先頭に stand-in を 2 つ置き、シムが何を決めたかを
+印字させる）。
 
 ### hook の repo 外依存
 
@@ -222,9 +231,9 @@ Claude 側と Codex 側で違う。
   ディレクトリ（`~/.local/share/mise/shims`）を先頭に置き、`ai/claude/build-settings`
   がそれを `~/.claude/settings.json` に展開する。起動したシェルの PATH に関わらず、
   hook と `statusLine` には settings.json 経由で届く
-- Codex 側: hook は `ai/codex/bin/codex` の bwrap jail 内で動き、jail は起動プロセスの
-  PATH の先頭に `jail-bin` を足して渡すだけ（`--setenv PATH "${JAIL_BIN}:${PATH}"`）で、
-  mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で
+- Codex 側: hook は process-wrap の隔離の中で動く。process-wrap は起動したシェルの PATH を
+  引き継ぎ、プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）を先頭に
+  足すだけで、mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で
   `run-if-present` が解決できること。fish は `config.fish` の mise activate で満たしている。
   対話シェルは `mise activate fish` が tool の installs ディレクトリを直接 PATH に置き、
   非対話シェルは `mise activate fish --shims` が shims ディレクトリを置く
