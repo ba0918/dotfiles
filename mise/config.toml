@@ -1,11 +1,11 @@
 [env]
 # bun global installs (e.g. agent-browser) are not in mise-managed paths.
-# ai/codex/bin (codex jail shim) は mise 管理の codex 本体より前に来る必要があるが、
+# ai/process-wrap/shim（process-wrap のシム）は mise 管理の codex 本体より前に来る必要があるが、
 # config.fish で fish_add_path しても mise activate の hook-env が PATH を組み直す
 # たびに tool の bin 群の後ろへ押し出される。_.path は mise が組む PATH ブロックの
 # 先頭（tool の bin より前）に置かれるので、組み直されても shim が先に残る
 _.path = [
-  "{{config_root}}/ai/codex/bin",
+  "{{config_root}}/ai/process-wrap/shim",
   "~/.bun/bin",
   "~/.cargo/bin",
   "~/.safe-chain/shims",
@@ -32,7 +32,7 @@ compile = false
 "apt:fd-find" = "latest"
 "apt:eza" = "latest"
 "apt:jq" = "latest"
-# codex jail shim（ai/codex/bin/codex）の mount namespace 構築に使う
+# process-wrap の隔離に使う（mount namespace の構築）
 "apt:bubblewrap" = "latest"
 # 汎用アーカイブ
 "apt:zip" = "latest"
@@ -91,6 +91,15 @@ compile = false
 # Codex: グローバル AGENTS.md。共有文書への絶対パス参照（{{ vars.dotfiles_root }}）があるため
 # symlink ではなく template で配布する（rendered 実ファイルになる）
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
+
+# process-wrap: プロファイルの正本と、隔離の中で PATH の先頭に来る代替コマンド。
+# どちらも symlink ではなく実体を書くため template モードで配る。設定ディレクトリの
+# ファイルや env.path-prepend の項目が rw の中を通る symlink だと、dotfiles を
+# ワークスペースにした起動が仕様 5.6 節の検査（隔離の中から差し替えられる置き場）で
+# 止まるため。apply 後に `test -x ~/.local/lib/process-wrap/bin/powershell.exe` で
+# 実行ビットを確かめ、落ちていれば `chmod +x` する
+"~/.config/process-wrap/profile/default.toml" = { source = "../ai/process-wrap/profile/default.toml", mode = "template" }
+"~/.local/lib/process-wrap/bin/powershell.exe" = { source = "../ai/process-wrap/bin/powershell.exe", mode = "template" }
 
 # APM: ユーザースコープの manifest。規範スキル（agentic-rules 等）を各エージェント CLI に
 # 配る宣言で、実体は bootstrap ステップの `apm update -g --yes` が ~/.claude/skills と
