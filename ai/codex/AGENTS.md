@@ -54,6 +54,11 @@ Always 行は作業種別に関わらず読む。複数の行に該当する場�
 より具体的な `AGENTS.md` やプロジェクト固有の契約が存在する場合は、
 この共通契約をそのプロジェクトへ具体化するものとして扱う。
 
+## Subagent operation rules
+
+- We have noticed that calling subagents in Codex leads to unnecessarily high token usage. Because of this, try to avoid invoking them unless really needed. They should mainly be saved for cases that require a fresh context, such as getting a review from a different perspective.
+- Whenever you call `wait_agent`, set `timeout_ms` to double the estimated time left until completion, in milliseconds. Make sure this fits within the tool’s min and max limits. If you cannot estimate the remaining time, simply use the default value. There is no need to shorten the wait time for quick checks, since notifications will cancel it early anyway. If a timeout happens, recalculate the expected completion time and wait again based on the same rules.
+
 ## Permission handling
 
 The active permission profile is authoritative.
