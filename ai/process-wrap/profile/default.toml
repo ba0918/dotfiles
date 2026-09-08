@@ -49,6 +49,12 @@ rw-file = ["~/.claude.json"]
 # covered by the directory's own bind, but that covers the link, not what it points at:
 # when the target resolves into a writable item, it stays writable through the link, so
 # the target has to be named here as well (`~/.claude/hooks` and its target below).
+# On this repository's checkout, the target is named only for the code the host runs
+# without a person reading it first (the shim and `ai/shared/hooks` below). What the
+# links under `~/.claude/rules`, `agents` and `output-styles` point at is left out on
+# purpose: they are instruction documents a person reviews in `git diff`, and `ro`
+# would make them uneditable; the process-wrap section of docs/dependencies.md records
+# that limit.
 ro = [
     "~/.codex/AGENTS.md",
     "~/.codex/hooks.json",
