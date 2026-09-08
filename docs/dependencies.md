@@ -125,7 +125,9 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 **導入** — process-wrap はまだ公開していないので mise の `[tools]` では入れない。
 clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.cargo/bin` に入れる
 （`env._.path` が `~/.cargo/bin` を PATH に載せている）。mount namespace を組む `bwrap` は
-`[bootstrap.packages]` の `apt:bubblewrap` で導入する。
+`[bootstrap.packages]` の `apt:bubblewrap` で導入する。入れる前に `codex` を打つと、
+シムは最終行の `exec process-wrap` に届いて `not found` の終了コード 127 で落ちる
+（シムは本体の不在を自分では見ない）。
 
 **シム** — `codex` コマンドは `ai/process-wrap/shim/codex` を経由して起動する。この shim
 ディレクトリは `mise/config.toml` の `env._.path` で mise 管理の codex 本体より
