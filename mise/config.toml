@@ -70,20 +70,19 @@ compile = false
 # ~/.claude/rules/ の symlink で常時適用。
 # Claude 専用のルール（model-routing.md）と、それが参照する agent 定義
 # （judge / scout）は ai/claude/ 配下から symlink する。
-# ~/.claude 直下の CLAUDE.md / bash-env.sh / statusline.py だけは symlink ではなく
+# ~/.claude 直下の CLAUDE.md / statusline.py だけは symlink ではなく
 # template（実体を書く）で配る。process-wrap のプロファイルは ~/.claude を rw に
-# したうえでこの 3 つを ro にするが、ro が効くのは symlink を解決した実体で
+# したうえでこの 2 つを ro にするが、ro が効くのは symlink を解決した実体で
 # （process-wrap 仕様 6.2 節）、rw の親に残るリンクの名前自体は隔離の中から rm して
 # 通常ファイルに差し替えられる（同 5.6 節の既知の隙間）。実体で配れば ro の
-# マウント点そのものになり、この差し替えが塞がる。bash-env.sh は BASH_ENV、
-# statusline.py は statusLine としてホストが隔離の外で実行するので、書き換えられると
-# ホスト側で任意コードが動く。ディレクトリ単位で ro にする hooks / rules / agents /
+# マウント点そのものになり、この差し替えが塞がる。statusline.py は statusLine として
+# ホストが隔離の外で実行するので、書き換えられるとホスト側で任意コードが動く。
+# ディレクトリ単位で ro にする hooks / rules / agents /
 # output-styles の中身は、親ディレクトリの ro がリンクの名前ごと守るため symlink のまま。
 # template にしたファイルは、編集後に `mise bootstrap dotfiles apply` で配り直すまで
 # $HOME 側に反映されない
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
 "~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
-"~/.claude/bash-env.sh" = { source = "../ai/claude/bash-env.sh", mode = "template" }
 "~/.claude/statusline.py" = { source = "../ai/claude/statusline.py", mode = "template" }
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
@@ -121,7 +120,7 @@ compile = false
 # （ai/shared/hooks/）。ファイル単位で宣言するのは、ディレクトリ単位だと tests/ や
 # __pycache__ まで ~/.codex/hooks に露出し、$HOME 側から repo に書き戻す経路も
 # 生むため。hooks.json は rw の ~/.codex 直下に単体で置かれる ro なので、上の
-# ~/.claude 直下の 3 つと同じ理由（仕様 5.6 節・6.2 節）で template で実体を配る。
+# ~/.claude 直下の 2 つと同じ理由（仕様 5.6 節・6.2 節）で template で実体を配る。
 # hooks/ 配下のスクリプトは ~/.codex/hooks をディレクトリごと ro にしているので
 # symlink のままでよい
 "~/.codex/hooks.json" = { source = "../ai/codex/hooks.json", mode = "template" }

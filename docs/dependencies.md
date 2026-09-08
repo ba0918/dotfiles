@@ -133,7 +133,10 @@ clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.c
 ディレクトリは `mise/config.toml` の `env._.path` で mise 管理の codex 本体より
 前に置く（mise の hook-env が PATH を組み直しても順序が保たれる。config.fish の
 `fish_add_path` は hook-env が走らない非対話シェル向けの保険で、それだけだと
-組み直しの時点で本体に負ける）。`which codex` が
+組み直しの時点で本体に負ける）。この 2 つはどちらも fish 経由の経路なので、fish を
+通さない Claude Code の Bash tool と hook には届かない。そちらは
+`ai/claude/conf.d/40-env.json` の `env.PATH` が `~/.claude/settings.json` 経由で
+shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex` が
 `~/.local/share/mise/installs/codex/...` を返したらシムを経由していない。
 シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
 `cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
@@ -156,11 +159,11 @@ symlink で配らないのは、設定ディレクトリのファイルが `rw` 
 dotfiles をワークスペースにした起動が仕様 5.6 節の検査で止まるため。直したら apply し直す。
 `process-wrap init` は使わない（配布後は `profile/default.toml` が既にあるので、
 仕様 4.1 節どおり `init` は種類 `path` の診断で止まる）。プロファイルが `ro` に載せる
-`~/.claude/CLAUDE.md`・`~/.claude/bash-env.sh`・`~/.claude/statusline.py`・
-`~/.codex/hooks.json` の 4 つも `[dotfiles]` から template で実体を配る（`ro` が効くのは
+`~/.claude/CLAUDE.md`・`~/.claude/statusline.py`・
+`~/.codex/hooks.json` の 3 つも `[dotfiles]` から template で実体を配る（`ro` が効くのは
 symlink を解決した実体なので、`rw` の `~/.claude` / `~/.codex` の直下に残るリンクの名前は
 隔離の中から消して通常ファイルに差し替えられる。仕様 5.6 節・6.2 節）。
-既に apply 済みのマシンでは、この 4 つが旧方式の symlink のまま残っていることがある。
+既に apply 済みのマシンでは、この 3 つが旧方式の symlink のまま残っていることがある。
 apply の後に実体へ置き換わったかを確かめる手順と、リンクが残ったときの直し方は
 [docs/troubleshooting.md](troubleshooting.md) を参照。
 
@@ -240,10 +243,13 @@ dotfiles 側にハーネスは持たない。シムの写しを本物の codex �
 hook が動く PATH で `run-if-present` が解決できる必要があるが、そこに載る経路は
 Claude 側と Codex 側で違う。
 
-- Claude Code 側: `ai/claude/conf.d/40-env.json` の `env.PATH` が mise の shims
-  ディレクトリ（`~/.local/share/mise/shims`）を先頭に置き、`ai/claude/build-settings`
-  がそれを `~/.claude/settings.json` に展開する。起動したシェルの PATH に関わらず、
-  hook と `statusLine` には settings.json 経由で届く
+- Claude Code 側: `ai/claude/conf.d/40-env.json` の `env.PATH` が process-wrap の shim
+  ディレクトリ（`ai/process-wrap/shim`）を先頭に、mise の shims ディレクトリ
+  （`~/.local/share/mise/shims`）を 2 番目に置き、`ai/claude/build-settings` がそれを
+  `~/.claude/settings.json` に展開する。起動したシェルの PATH に関わらず、hook と
+  `statusLine` には settings.json 経由で届く（この `env.PATH` は Bash tool の PATH でも
+  あるので、shim ディレクトリが mise の shims より前でなければ `codex` が隔離を
+  素通りする。順序に意味がある）
 - Codex 側: hook は process-wrap の隔離の中で動く。process-wrap は起動したシェルの PATH を
   引き継ぎ、プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）を先頭に
   足すだけで、mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で

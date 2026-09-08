@@ -40,7 +40,6 @@ git/.config/git/config.local
 ai/claude/*
 !ai/claude/.gitkeep
 !ai/claude/CLAUDE.md
-!ai/claude/bash-env.sh
 !ai/claude/conf.d/
 !ai/claude/build-settings
 !ai/claude/rules/

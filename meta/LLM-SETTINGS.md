@@ -138,6 +138,9 @@ mawk で無言に一致しなくなる。
   同じ配列キー（例: `permissions.allow`）は 1 つのファイルにしか書かない
 - **$HOME 変数**: パスは `$HOME` で記述し、build-settings が build 時に展開する。
   `//` プレフィックス内の `$HOME`（`//$HOME/...`）は先に処理して `///` 化を防ぐ
+- **$DOTFILES_ROOT 変数**: repo 内のパスは `$DOTFILES_ROOT` で記述する。
+  build-settings が自身の位置から求める repo ルート（スクリプト内の `REPO_ROOT`）に
+  `$HOME` と同じ walk で展開する
 
 ## build-settings
 
@@ -148,7 +151,7 @@ mawk で無言に一致しなくなる。
 ```
 1. generate-deny.sh claude → conf.d/20-deny.json を生成
 2. conf.d/*.json を番号順に deep merge → base
-3. $HOME を展開（//$HOME/ は //home/user/ に正しく変換）
+3. $HOME / $DOTFILES_ROOT / $PATH を展開（//$HOME/ は //home/user/ に正しく変換）
 4. 既存 settings.json があれば runtime allow/ask を抽出して base に追加
 5. 結果を ~/.claude/settings.json に書き出し
 ```

@@ -54,7 +54,6 @@ dotfiles/
 ├── ai/                        # LLM 設定の集約（secret 混入厳禁）
 │   ├── claude/                # → ~/.claude/*
 │   │   ├── CLAUDE.md          # template 配布（規範をスキル名で指すルーティング表）
-│   │   ├── bash-env.sh        # template 配布
 │   │   ├── build-settings     # conf.d/ → settings.json 合成スクリプト
 │   │   ├── conf.d/            # settings.json の分割管理（10-base〜60-plugins）
 │   │   ├── rules/             # → ~/.claude/rules/*（Claude 専用ルール。model-routing）

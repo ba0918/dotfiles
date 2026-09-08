@@ -1,6 +1,6 @@
 {
   "env": {
-    "BASH_ENV": "$HOME/.claude/bash-env.sh",
-    "PATH": "$HOME/.local/share/mise/shims:$PATH"
+    "PATH": "$DOTFILES_ROOT/ai/process-wrap/shim:$HOME/.local/share/mise/shims:$HOME/.local/share/pnpm:$PATH",
+    "PNPM_HOME": "$HOME/.local/share/pnpm"
   }
 }

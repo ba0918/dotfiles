@@ -61,10 +61,8 @@ ro = [
     # and plugins/ is where an installed plugin's own hooks live.
     "~/.claude/settings.local.json",
     "~/.claude/plugins",
-    # The host runs these two outside the isolation: bash-env.sh through BASH_ENV on
-    # every shell it spawns, statusline.py through statusLine. Writable here would mean
-    # arbitrary code on the host.
-    "~/.claude/bash-env.sh",
+    # The host runs statusline.py outside the isolation, through statusLine. Writable
+    # here would mean arbitrary code on the host.
     "~/.claude/statusline.py",
     "~/.claude/hooks",
     "~/.claude/rules",
