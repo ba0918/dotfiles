@@ -147,9 +147,10 @@ shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex`
 （シムを PATH の先頭に置く `env._.path` を持つ）と `fish/.config/fish/config.fish`、
 ホストの Claude Code が `~/.claude/rules` / `~/.claude/agents` / `~/.claude/output-styles`
 のリンク越しに読む指示文書（リンク先は `ai/shared/` と `ai/claude/` 配下）も `rw` の中に
-入り、隔離の中から書き換えられる。プロファイルで塞ぐのはホストが人の目を通さず実行する
-コードだけで、これらを `ro` にするとそれらのファイルを編集する作業ができなくなるので
-塞いでいない。防波堤は、apply や新しいシェルを開く前に `git diff` を見ること。
+入り、隔離の中から書き換えられる。この checkout の実体までプロファイルの `ro` に
+載せるのは、ホストが人の目を通さず実行するコード（シムと `ai/shared/hooks`）だけで、
+これらを `ro` にするとそれらのファイルを編集する作業ができなくなるので塞いでいない。
+防波堤は、apply や新しいシェルを開く前に `git diff` を見ること。
 シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
 `cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
 1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
