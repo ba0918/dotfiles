@@ -160,6 +160,9 @@ dotfiles をワークスペースにした起動が仕様 5.6 節の検査で止
 `~/.codex/hooks.json` の 4 つも `[dotfiles]` から template で実体を配る（`ro` が効くのは
 symlink を解決した実体なので、`rw` の `~/.claude` / `~/.codex` の直下に残るリンクの名前は
 隔離の中から消して通常ファイルに差し替えられる。仕様 5.6 節・6.2 節）。
+既に apply 済みのマシンでは、この 4 つが旧方式の symlink のまま残っていることがある。
+apply の後に実体へ置き換わったかを確かめる手順と、リンクが残ったときの直し方は
+[docs/troubleshooting.md](troubleshooting.md) を参照。
 
 **GitHub トークン** — `gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
 workflow + gist に届く OAuth token）はプロファイルが隠す。代わりに
