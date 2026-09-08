@@ -141,7 +141,7 @@ mawk で無言に一致しなくなる。
 - **$DOTFILES_ROOT 変数**: repo 内のパスは `$DOTFILES_ROOT` で記述する。
   展開先は `MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh / fish config.fish が repo ルートに
   設定し、mise の pre-dotfiles hook が検証する）が設定されていればその値（正本の
-  checkout）、未設定なら build-settings が自身の位置から求める repo ルート
+  checkout）、未設定か空なら build-settings が自身の位置から求める repo ルート
   （スクリプト内の `REPO_ROOT`）。
   `$HOME` と同じ walk で展開する
 
