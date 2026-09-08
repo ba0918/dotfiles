@@ -41,7 +41,11 @@ rw = [
 rw-file = ["~/.claude.json"]
 
 # The instructions and settings the agent CLIs run under are read-only; their runtime
-# state above is rw.
+# state above is rw. Every single file named here is distributed as a real file, not as
+# a symbolic link: `ro` binds the resolved target, so a link left in the rw parent could
+# be removed inside the isolation and replaced with a regular file (specification
+# sections 5.6 and 6.2). Links under the directories named here are covered by the
+# directory's own bind.
 ro = [
     "~/.codex/AGENTS.md",
     "~/.codex/hooks.json",
@@ -51,6 +55,11 @@ ro = [
     "~/.config/opencode",
     "~/.claude/CLAUDE.md",
     "~/.claude/settings.json",
+    # The host runs these two outside the isolation: bash-env.sh through BASH_ENV on
+    # every shell it spawns, statusline.py through statusLine. Writable here would mean
+    # arbitrary code on the host.
+    "~/.claude/bash-env.sh",
+    "~/.claude/statusline.py",
     "~/.claude/hooks",
     "~/.claude/rules",
     "~/.claude/output-styles",

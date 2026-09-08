@@ -149,7 +149,11 @@ clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.c
 symlink で配らないのは、設定ディレクトリのファイルが `rw` の中を通る symlink だと、
 dotfiles をワークスペースにした起動が仕様 5.6 節の検査で止まるため。直したら apply し直す。
 `process-wrap init` は使わない（配布後は `profile/default.toml` が既にあるので、
-仕様 4.1 節どおり `init` は種類 `path` の診断で止まる）。
+仕様 4.1 節どおり `init` は種類 `path` の診断で止まる）。プロファイルが `ro` に載せる
+`~/.claude/CLAUDE.md`・`~/.claude/bash-env.sh`・`~/.claude/statusline.py`・
+`~/.codex/hooks.json` の 4 つも `[dotfiles]` から template で実体を配る（`ro` が効くのは
+symlink を解決した実体なので、`rw` の `~/.claude` / `~/.codex` の直下に残るリンクの名前は
+隔離の中から消して通常ファイルに差し替えられる。仕様 5.6 節・6.2 節）。
 
 **GitHub トークン** — `gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
 workflow + gist に届く OAuth token）はプロファイルが隠す。代わりに

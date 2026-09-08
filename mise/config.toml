@@ -63,17 +63,28 @@ compile = false
 "~/.config/git/template" = "../git/.config/git/template"
 "~/.config/secretlint" = "../git/.config/secretlint"
 
-# Claude Code: symlink で配布する個別ファイルのみ (tests / pyc は除外)
-# CLAUDE.md は規範をスキル名で指すルーティング表だけなので symlink（規範本体は
-# apm が ~/.claude/skills に配る）。output-styles/gal.md は shared/persona/gal.md への
+# Claude Code: 個別ファイルのみ配布する (tests / pyc は除外)
+# CLAUDE.md は規範をスキル名で指すルーティング表だけ（規範本体は apm が
+# ~/.claude/skills に配る）。output-styles/gal.md は shared/persona/gal.md への
 # symlink、共通契約（interaction.md / human-readable.md / tools-guide.md）は
 # ~/.claude/rules/ の symlink で常時適用。
 # Claude 専用のルール（model-routing.md）と、それが参照する agent 定義
-# （judge / scout）は ai/claude/ 配下から symlink する
+# （judge / scout）は ai/claude/ 配下から symlink する。
+# ~/.claude 直下の CLAUDE.md / bash-env.sh / statusline.py だけは symlink ではなく
+# template（実体を書く）で配る。process-wrap のプロファイルは ~/.claude を rw に
+# したうえでこの 3 つを ro にするが、ro が効くのは symlink を解決した実体で
+# （process-wrap 仕様 6.2 節）、rw の親に残るリンクの名前自体は隔離の中から rm して
+# 通常ファイルに差し替えられる（同 5.6 節の既知の隙間）。実体で配れば ro の
+# マウント点そのものになり、この差し替えが塞がる。bash-env.sh は BASH_ENV、
+# statusline.py は statusLine としてホストが隔離の外で実行するので、書き換えられると
+# ホスト側で任意コードが動く。ディレクトリ単位で ro にする hooks / rules / agents /
+# output-styles の中身は、親ディレクトリの ro がリンクの名前ごと守るため symlink のまま。
+# template にしたファイルは、編集後に `mise bootstrap dotfiles apply` で配り直すまで
+# $HOME 側に反映されない
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
-"~/.claude/CLAUDE.md" = "../ai/claude/CLAUDE.md"
-"~/.claude/bash-env.sh" = "../ai/claude/bash-env.sh"
-"~/.claude/statusline.py" = "../ai/claude/statusline.py"
+"~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
+"~/.claude/bash-env.sh" = { source = "../ai/claude/bash-env.sh", mode = "template" }
+"~/.claude/statusline.py" = { source = "../ai/claude/statusline.py", mode = "template" }
 "~/.claude/output-styles/gal.md" = "../ai/shared/persona/gal.md"
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
@@ -106,11 +117,14 @@ compile = false
 # ~/.agents/skills に置く。apm.lock.yaml は生成物として ~/.apm 側に留める
 "~/.apm/apm.yml" = "../ai/apm/apm.yml"
 
-# Codex: hooks 定義と hook スクリプトは symlink で配布（変数を含まないため）。
-# スクリプト実体は Claude と共有（ai/shared/hooks/）。ファイル単位で宣言するのは、
-# ディレクトリ単位だと tests/ や __pycache__ まで ~/.codex/hooks に露出し、
-# $HOME 側から repo に書き戻す経路も生むため
-"~/.codex/hooks.json" = "../ai/codex/hooks.json"
+# Codex: hooks 定義と hook スクリプト。スクリプト実体は Claude と共有
+# （ai/shared/hooks/）。ファイル単位で宣言するのは、ディレクトリ単位だと tests/ や
+# __pycache__ まで ~/.codex/hooks に露出し、$HOME 側から repo に書き戻す経路も
+# 生むため。hooks.json は rw の ~/.codex 直下に単体で置かれる ro なので、上の
+# ~/.claude 直下の 3 つと同じ理由（仕様 5.6 節・6.2 節）で template で実体を配る。
+# hooks/ 配下のスクリプトは ~/.codex/hooks をディレクトリごと ro にしているので
+# symlink のままでよい
+"~/.codex/hooks.json" = { source = "../ai/codex/hooks.json", mode = "template" }
 "~/.codex/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
 "~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
 "~/.codex/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
