@@ -88,10 +88,10 @@ ro = [
     # The hook scripts the host runs outside the isolation, named by settings.json.
     # `~/.claude/hooks` above only covers the directory the links sit in: the `*.py`
     # entries there are symbolic links `mise bootstrap` made, and `ro` binds the resolved
-    # target (specification section 5.6), which is this repository's checkout and
-    # therefore inside the rw workspace whenever dotfiles is the work place. Like the
-    # shim above it is not distributed, and the protection is partial in the same way:
-    # the directory sits three levels under the workspace, so renaming `ai` or
+    # target (specification sections 5.6 and 6.2), which is this repository's checkout
+    # and therefore inside the rw workspace whenever dotfiles is the work place. Like
+    # the shim above it is not distributed, and the protection is partial in the same
+    # way: the directory sits three levels under the workspace, so renaming `ai` or
     # `ai/shared` is still a route to another tree at the same path.
     "{{ vars.dotfiles_root }}/ai/shared/hooks",
     # The image-paste stand-in reads the PNG clipboard2path-wsl keeps here. It sits
