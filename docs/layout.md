@@ -19,7 +19,9 @@
   symlink 経由で repo ファイルそのものが変更される点に注意
 - **template 配布** — `mise/config.toml` で `mode = "template"` を指定すると、
   `{{ config_root }}` などのプレースホルダを展開した実ファイルが生成される。
-  `opencode.json` のように repo ルートの絶対パスが必要な場合に使う。
+  `opencode.json` のように repo ルートの絶対パスが必要な場合と、
+  `~/.claude/CLAUDE.md` のようにリンクではなく実体が置かれていること自体が
+  必要な場合（[docs/dependencies.md](dependencies.md) の process-wrap 節）に使う。
   `{{ config_root }}` は `MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh と config.fish
   が設定する）で repo ルートに解決される
 
@@ -51,15 +53,15 @@ dotfiles/
 │   └── .config/nvim/
 ├── ai/                        # LLM 設定の集約（secret 混入厳禁）
 │   ├── claude/                # → ~/.claude/*
-│   │   ├── CLAUDE.md          # symlink 配布（規範をスキル名で指すルーティング表）
-│   │   ├── bash-env.sh        # symlink 配布
+│   │   ├── CLAUDE.md          # template 配布（規範をスキル名で指すルーティング表）
+│   │   ├── bash-env.sh        # template 配布
 │   │   ├── build-settings     # conf.d/ → settings.json 合成スクリプト
 │   │   ├── conf.d/            # settings.json の分割管理（10-base〜60-plugins）
 │   │   ├── rules/             # → ~/.claude/rules/*（Claude 専用ルール。model-routing）
 │   │   └── agents/            # → ~/.claude/agents/*（judge / scout の agent 定義）
 │   ├── codex/                 # → ~/.codex/*
 │   │   ├── AGENTS.md          # template 配布
-│   │   └── hooks.json         # symlink 配布
+│   │   └── hooks.json         # template 配布
 │   ├── process-wrap/          # codex を隔離して起動する仕組み
 │   │   ├── shim/codex         # PATH の先頭に来る起動シム（_.path で本体より前）
 │   │   ├── profile/           # プロファイルの正本（default.toml。template 配布）

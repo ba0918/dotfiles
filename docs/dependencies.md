@@ -264,9 +264,11 @@ run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド
 ```
 
 `statusLine` の `~/.claude/statusline.py` は repo 管理（`ai/claude/statusline.py` を
-`[dotfiles]` が symlink する）だが、同じく `run-if-present` で包む。`mise bootstrap` を
-まだ流していないマシンでは symlink が無く、素通しだと statusline のたびに
-「ファイルが無い」エラーが出続けるため。
+`[dotfiles]` が template で実体として書き出す）だが、同じく `run-if-present` で包む。
+`mise bootstrap` をまだ流していないマシンでは配布先にファイルが無く、素通しだと
+statusline のたびに「ファイルが無い」エラーが出続けるため。実体を配る方式なので、
+`ai/claude/statusline.py` を直したら `mise bootstrap dotfiles apply` で配り直すまで
+`~/.claude/statusline.py` には反映されない。
 
 `run-if-present` が飲み込むのは「依存が無い」ケースだけで、コマンド自体の失敗は
 そのまま終了コードとして伝播する。存在チェック自体が失敗した場合（権限エラーなど）、
