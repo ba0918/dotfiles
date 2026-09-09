@@ -3,3 +3,11 @@
 # 単位は「秒」（7 日 = 7 * 24 * 60 * 60 = 604800）
 [install]
 minimumReleaseAge = 604800
+# 自作の 2 つと、ccusage-ledger が版を固定して依存する ccusage は公開直後から
+# 導入したいので、経過日数ガードの対象外にする（ccusage は他者製なので、
+# この 1 つはガードが効かないまま入る）
+minimumReleaseAgeExcludes = [
+  "@ba0918-dev/agentic-skill-vendor",
+  "ccusage-ledger",
+  "ccusage",
+]
