@@ -12,6 +12,7 @@ _.path = [
 [settings]
 dotfiles.default_mode = "symlink"
 minimum_release_age = "7d"
+auto_update = true
 
 [vars]
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
