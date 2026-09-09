@@ -66,3 +66,6 @@
 	last = log -1 HEAD --stat
 	unstage = reset HEAD --
 	amend = commit --amend --no-edit
+[credential "http://localhost:3030"]
+	helper = 
+	helper = !tea login helper
