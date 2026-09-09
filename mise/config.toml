@@ -14,8 +14,6 @@ _.path = [
 [settings]
 dotfiles.default_mode = "symlink"
 minimum_release_age = "7d"
-# 自作ツールの aqua カスタムレジストリ（ツール repo が公開する URL）
-aqua.registries = ["https://raw.githubusercontent.com/ba0918/clipboard2path-wsl/main/registry.yaml"]
 
 [vars]
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
@@ -137,7 +135,7 @@ compile = false
 "~/.config/fish" = { source = "../fish/.config/fish", mode = "symlink-each", manifest = "git" }
 
 # clipboard2path-wsl: fish hook のみ dotfiles 管理（unit / wl-paste wrapper は
-# ツールの `init --no-hook` が生成。binary は aqua ([tools]) で導入）
+# ツールの `init --no-hook` が生成。binary は github backend ([tools]) で導入）
 
 # Yazi: 設定のみ（プラグイン・キャッシュは yazi が自分のディレクトリで管理）
 "~/.config/yazi/yazi.toml" = "../yazi/.config/yazi/yazi.toml"
@@ -173,7 +171,7 @@ compile = false
 "~/.config/nvim" = { source = "../nvim/.config/nvim", mode = "symlink-each", manifest = "git" }
 
 [tools]
-"aqua:ba0918/clipboard2path-wsl" = "latest"
+"github:ba0918/clipboard2path-wsl" = "latest"
 # APM: Microsoft のエージェント設定用パッケージマネージャ（apm.yml / apm.lock）。
 # aqua レジストリ未登録のため pipx バックエンド（pip install apm-cli 相当）で導入
 "pipx:apm-cli" = "latest"

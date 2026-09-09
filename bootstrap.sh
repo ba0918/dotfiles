@@ -88,7 +88,7 @@ mise bootstrap "$@"
 # Clipboard2path service: unit / wl-paste wrapper はツールの init が生成する。
 # fish hook は dotfiles 管理なので --no-hook（冪等 — 再実行しても既存は上書き）。
 if [ "${DRY_RUN}" = false ]; then
-	mise x aqua:ba0918/clipboard2path-wsl -- init --no-hook 2>/dev/null || \
+	mise x github:ba0918/clipboard2path-wsl -- clipboard2path-wsl init --no-hook 2>/dev/null || \
 		clipboard2path-wsl init --no-hook 2>/dev/null || true
 fi
 

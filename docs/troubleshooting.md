@@ -8,8 +8,8 @@
 | `~/.gitconfig` に突然大量の差分 | `gcm configure` などツールが symlink 先に書き込んだ可能性。差分を確認して整理する |
 | dotfiles apply で repo 内ファイルが symlink 化する | `[dotfiles]` がディレクトリ symlink を指す場合に起きる。file-level 宣言でなくディレクトリ単位で宣言する |
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore（`~/.config/git/ignore`）で除外済み |
-| `clipboard2path-wsl` が起動しない / `command not found` | aqua カスタムレジストリは `mise/config.toml` の `[settings] aqua.registries` で設定済み。導入は `mise bootstrap`、手動再起動は `systemctl --user restart clipboard2path` |
-| `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`aqua:ba0918/clipboard2path-wsl` のフル名を指定する。shim 経由では問題ない |
+| `clipboard2path-wsl` が起動しない / `command not found` | `github:ba0918/clipboard2path-wsl` の導入とサービスの再生成を確認する。[導入・移行手順](commands.md#clipboard2path-wsl)を参照 |
+| `mise x clipboard2path-wsl` で "not found in tool registry" | ショート名解決が効かない。`github:ba0918/clipboard2path-wsl` のフル名を指定する。shim 経由では問題ない |
 | `herdr/.config/herdr/config.toml` に意図しない差分 | herdr が実行時に config.toml を書き戻す（write-through）。差分を確認して整理する |
 | herdr plugin の keybinding が効かない | プラグイン未導入。`herdr plugin install smarzban/herdr-file-viewer` で再現する |
 | codex の security hook が効かない | フック未 trust の可能性。`codex /hooks` で trust する。または symlink が未適用（`mise bootstrap dotfiles status` で確認） |

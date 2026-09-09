@@ -76,11 +76,17 @@ bash scripts/test_pre_commit.sh            # git template の pre-commit hook（
 binary は mise の `[tools]` で導入し、systemd unit は `init` で生成する。
 
 ```bash
-mise bootstrap                      # [tools] の aqua:ba0918/clipboard2path-wsl が入る
-clipboard2path-wsl init --no-hook   # unit / wl-paste wrapper を生成（destructive）
+mise install github:ba0918/clipboard2path-wsl
+mise x github:ba0918/clipboard2path-wsl -- clipboard2path-wsl init --no-hook  # unit / wl-paste wrapper を再生成
 clipboard2path-wsl status           # service / hook / wrapper の状態
-systemctl --user restart clipboard2path  # 手動再起動
+systemctl --user restart clipboard2path  # 稼働中のプロセスも新しい導入先へ切り替える
 ```
+
+aqua 版から移行する既存マシンでも、上の `init --no-hook` を実行する。
+サービスの `ExecStart` は導入先を参照するため、設定宣言の変更だけでは切り替わらない。
+`./bootstrap.sh` は導入後にこの初期化を行うが、`mise bootstrap` 単独では行わない。
+再生成後は `systemctl --user cat clipboard2path` で `ExecStart` が github 版の導入先を
+指すことと、`clipboard2path-wsl status` でサービスの状態を確認する。
 
 ## devbox / PHP
 

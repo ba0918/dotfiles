@@ -45,8 +45,8 @@
   `[bootstrap.packages]` ではなく `[tools]` の `fzf` で導入する
 - **clipboard2path-wsl** — 自作ツール（[ba0918/clipboard2path-wsl]）。
   クリップボードの画像をファイル保存してパスを返す daemon。
-  binary は `[settings] aqua.registries` で参照するツール repo 公開の
-  aqua registry 経由で `[tools]` から導入。systemd user service と
+  binary は `[tools]` の `github:ba0918/clipboard2path-wsl` で GitHub Releases から
+  直接導入する。systemd user service と
   wl-paste wrapper は `clipboard2path-wsl init --no-hook` が生成する
   （fish hook のみ `conf.d/clipboard2path.fish` を dotfiles 管理）
 - **Aikido Safe Chain**（[AikidoSec/safe-chain]）— npm / pnpm / bun / pip 等の
