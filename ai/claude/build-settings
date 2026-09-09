@@ -45,9 +45,9 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-# Step 1: Generate 20-deny.json from deny-patterns.yaml
+# Keep generated deny rules in memory so inspection never writes to the checkout.
 if [ -x "$GENERATE_DENY" ]; then
-  "$GENERATE_DENY" claude > "$CONF_DIR/20-deny.json"
+  DENY=$("$GENERATE_DENY" claude)
 else
   echo "error: generate-deny.sh not found or not executable at $GENERATE_DENY" >&2
   exit 1
@@ -57,10 +57,14 @@ fi
 # NOTE: jq's * operator replaces arrays (not appends). Each array key
 # (e.g. permissions.allow) must appear in exactly ONE conf.d file.
 BASE=$(jq -n '{}')
-for f in "$CONF_DIR"/*.json; do
-  [ -f "$f" ] || continue
-  BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
-done
+while IFS= read -r f; do
+  if [ "$f" = "$CONF_DIR/20-deny.json" ]; then
+    BASE=$(echo "$BASE" | jq --argjson deny "$DENY" '. * $deny')
+  else
+    [ -f "$f" ] || continue
+    BASE=$(echo "$BASE" | jq -s '.[0] * .[1]' - "$f")
+  fi
+done < <(printf '%s\n' "$CONF_DIR"/*.json "$CONF_DIR/20-deny.json" | sort -u)
 
 # Keep the unexpanded env.PATH for the order check in Step 5. Step 3 expands the trailing
 # $PATH token in the same pass as the other variables and leaves no unexpanded copy behind.
@@ -173,6 +177,7 @@ fi
 if $DRY_RUN; then
   echo "$RESULT" | jq .
 else
+  printf '%s\n' "$DENY" > "$CONF_DIR/20-deny.json"
   mkdir -p "$(dirname "$TARGET")"
   echo "$RESULT" | jq . > "$TARGET"
   echo "settings.json written to $TARGET"

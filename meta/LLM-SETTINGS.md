@@ -13,8 +13,8 @@ generate-deny.sh（純粋変換器）
    ┌────┴────┐
    ▼         ▼
 Claude     OpenCode
-20-deny    opencode-apply
- .json     (in-place patch)
+deny JSON  opencode-apply
+(メモリ内) (in-place patch)
    │
    ▼
 conf.d/*.json（分割設定）
@@ -124,7 +124,7 @@ mawk で無言に一致しなくなる。
 | ファイル | 内容 | 管理方式 |
 |----------|------|----------|
 | `10-base.json` | model / effort / language / outputStyle 等 | 手動 |
-| `20-deny.json` | permissions.deny | **生成物**（generate-deny.sh が生成、gitignore 済み）|
+| `20-deny.json` | permissions.deny | **生成物**（通常の build 時のみ保存、gitignore 済み。合成には毎回生成した値を使う）|
 | `25-allow.json` | permissions.allow / ask ベースライン | 手動 |
 | `30-hooks.json` | hooks 設定 | 手動 |
 | `40-env.json` | env 設定 | 手動 |
@@ -153,12 +153,12 @@ mawk で無言に一致しなくなる。
 ### 処理フロー
 
 ```
-1. generate-deny.sh claude → conf.d/20-deny.json を生成
-2. conf.d/*.json を番号順に deep merge → base
+1. generate-deny.sh claude → deny JSON をメモリ内に生成
+2. conf.d/*.json を番号順に deep merge → base（20-deny.json はメモリ内の値を使う）
 3. $HOME / $DOTFILES_ROOT / $PATH を展開（//$HOME/ と //$DOTFILES_ROOT/ は
    //home/user/ 形に正しく変換）
 4. 既存 settings.json があれば runtime allow/ask を抽出して base に追加
-5. 結果を ~/.claude/settings.json に書き出し
+5. 通常実行時だけ conf.d/20-deny.json と ~/.claude/settings.json に書き出し
 ```
 
 ### 管理キー vs 非管理キー
@@ -184,18 +184,13 @@ mawk で無言に一致しなくなる。
 | (なし) | build + runtime allow 保持 + 書き込み |
 | `--dry-run` | build + stdout に出力（書き込まない）|
 | `--clean` | runtime allow をリセットしてベースラインのみ |
-| `--status` | managed vs runtime allow の内訳を表示 |
+| `--status` | managed vs runtime allow の内訳を表示（書き込まない）|
 
 ## mise bootstrap との統合
 
-```toml
-[bootstrap.hooks.post-dotfiles]
-run = """
-REPO_ROOT="$(dirname "$(dirname "${MISE_GLOBAL_CONFIG_FILE}")")"
-bash "$REPO_ROOT/ai/claude/build-settings"
-bash "$REPO_ROOT/scripts/generate-deny.sh" opencode-apply
-"""
-```
+実設定は [mise/config.toml](../mise/config.toml) の
+`bootstrap.hooks.pre-dotfiles` / `post-dotfiles` を参照。
+post-dotfiles は `set -e` で合成の失敗を伝播し、失敗後の OpenCode 更新を止める。
 
 `mise bootstrap` の処理順:
 
