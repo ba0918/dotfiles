@@ -7,11 +7,12 @@
 前提: まっさらな WSL。Windows 側の環境構築は対象外。
 
 ```bash
-# 1. mise を入れる (まだ無ければ)
-curl https://mise.run | sh
-
-# 2. repo を clone（場所は自由。repo 内の相対パスで解決される）
+# 1. repo を clone（場所は自由。repo 内の相対パスで解決される）
 git clone https://github.com/ba0918/dotfiles.git ~/develop/dotfiles
+
+# 2. mise を入れる（まだ無ければ）。導入スクリプトの GPG 署名を検証してから実行する
+~/develop/dotfiles/mise/install.sh --dry-run   # 検証だけ試す
+~/develop/dotfiles/mise/install.sh             # 検証して導入
 
 # 3. 変更予定を確認して適用（config の場所解決・trust・apt 設定を含む）
 ~/develop/dotfiles/bootstrap.sh --dry-run
@@ -26,9 +27,15 @@ git clone https://github.com/ba0918/dotfiles.git ~/develop/dotfiles
 ~/develop/dotfiles/ssh/install.sh                # 適用（sudo。Windows 側に ssh-keygen 済みの鍵が要る）
 ```
 
+`mise/install.sh` は、mise が配布する署名済みの導入スクリプト（`install.sh.sig`）を
+`apt/mise.sources` に埋め込んだ鍵で検証してから実行する。鍵が repo にあるので
+keyserver を引く必要がなく、鍵が差し替われば diff に出る。検証に失敗したときは
+復号済みのスクリプトを残さずに終了する。
+
 `bootstrap.sh` は配置場所を自動解決し、必要な apt リポジトリを登録する（sudo が必要）。
-初回適用後は fish から `mise bootstrap` を使える。mise を apt で導入した環境では
-`apt upgrade` で更新する。
+初回適用後は fish から `mise bootstrap` を使える。mise 本体は `auto_update` により
+self-update で最新版へ追従する。apt で導入した環境では self-update が封じられるため、
+その場合だけ `apt upgrade` で更新する。
 clipboard2path / Devbox の補助初期化に失敗した場合は、エラーと警告を表示して続行する。
 警告が出たら原因を解消して `bootstrap.sh` を再実行する。
 

@@ -69,6 +69,7 @@ mise run lint                              # 追跡中の bash スクリプト�
 ```bash
 pytest ai/shared/hooks/tests               # security hooks（[tools] の pipx:pytest。python3 -m pytest は不可）
 bash scripts/test_generate_deny.sh         # deny 生成スクリプト
+bash scripts/test_mise_install.sh          # mise 導入スクリプト（署名検証）
 bash scripts/test_docker_install.sh        # Docker 導入スクリプト
 bash scripts/test_ssh_install.sh           # sshd 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
