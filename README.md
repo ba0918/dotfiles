@@ -11,7 +11,7 @@
 curl https://mise.run | sh
 
 # 2. repo を clone（場所は自由。repo 内の相対パスで解決される）
-git clone <this-repo> ~/develop/dotfiles
+git clone https://github.com/ba0918/dotfiles.git ~/develop/dotfiles
 
 # 3. 変更予定を確認して適用（config の場所解決・trust・apt 設定を含む）
 ~/develop/dotfiles/bootstrap.sh --dry-run
@@ -32,9 +32,18 @@ git clone <this-repo> ~/develop/dotfiles
 
 ## fish プラグイン
 
-tide / fzf.fish は fisher 管理。`fish_plugins` で宣言されているので
-新規マシンでは `fisher install` で再現する（関数・completions 等の生成物は
-repo に含めない）。
+tide / fzf.fish は Fisher 管理。**初回 bootstrap 後に次の手順も実行する**。
+Fisher 本体は bootstrap では導入されない。
+
+まず `fish` を起動し、次を実行する。
+
+```fish
+curl -fsSL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update
+```
+
+[公式の導入方法](https://github.com/jorgebucaran/fisher#installation)で Fisher 関数を読み込み、
+`fisher update` で `fish_plugins` にある Fisher 本体・各プラグインを導入する。
+成功後は `exec fish` で通常の設定を読み込む。関数・completions 等の生成物は repo に含めない。
 
 ディレクトリ移動の `z` / `zi` は mise 管理の zoxide を使う。
 旧 z プラグインを導入済みなら、[履歴の移行手順](meta/MIGRATION.md#z-から-zoxide-への統一)を一度実行する。
