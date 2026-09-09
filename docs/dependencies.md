@@ -139,14 +139,16 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 
 ### process-wrap
 
-`codex` は process-wrap（`~/develop/process-wrap`）の隔離の中で起動する。境界を組み立てる
-のは process-wrap 本体で、dotfiles 側が持つのは起動シム・プロファイル・代替コマンドの 3 つ。
+`codex` は process-wrap（<https://github.com/ba0918/process-wrap>）の隔離の中で起動する。
+境界を組み立てるのは process-wrap 本体で、dotfiles 側が持つのは起動シム・プロファイル・
+代替コマンドの 3 つ。
 
-**導入** — process-wrap はまだ公開していないので mise の `[tools]` では入れない。
-clone した場所から `cargo install --path ~/develop/process-wrap` で `~/.cargo/bin` に入れる
-（`env._.path` が `~/.cargo/bin` を PATH に載せている。fish を通さない Claude Code の
-Bash tool と hook では `ai/claude/conf.d/40-env.json` の `env.PATH` が `~/.cargo/bin` を
-載せる）。mount namespace を組む `bwrap` は
+**導入** — `mise/config.toml` の `[tools]`（`github:ba0918/process-wrap`）で導入する。
+自分がリリースするので `minimum_release_age` は per-tool で 0d。run-if-present と同じく
+github backend なので、aqua registry を通る AI CLI と違い cosign / Attestations 検証は無い。
+公開前は clone から `cargo install --path` で `~/.cargo/bin` に入れていた。その版が残って
+いても PATH は mise の shims が `~/.cargo/bin` より先なので勝たないが、
+`cargo uninstall process-wrap` で消しておく。mount namespace を組む `bwrap` は
 `[bootstrap.packages]` の `apt:bubblewrap` で導入する。入れる前に `codex` を打つと、
 シムは最終行の `exec process-wrap` に届いて `not found` の終了コード 127 で落ちる
 （シムは本体の不在を自分では見ない）。
