@@ -198,6 +198,10 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
 3. **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
    最小リリース年齢を適用。`bootstrap.sh` が sha256 検証付きで導入
 
+この 3 層は mise が適用する側の対策で、mise 本体は対象外。mise 自身は導入時に
+[mise/install.sh](../mise/install.sh) が GPG 署名を、更新時は self-update の zipsign
+署名を検証する。ただし冷却期間は無く、リリース当日の版へ上がりうる。
+
 ## Docker（WSL 内ネイティブ）
 
 `docker/install.sh` が Docker 公式 apt リポジトリ・`docker-ce` 一式・
