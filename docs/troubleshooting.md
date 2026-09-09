@@ -49,7 +49,7 @@ done
 - ファイルが不在の場合: apply のエラーを解消してから再実行する。
 
 これらを実体で配るのは、隔離の中からリンクを別ファイルに差し替える経路を塞ぐため。
-保護の仕組みは [process-wrap の説明](dependencies.md#process-wrap)を参照。
+保護の仕組みは [process-wrap の説明](process-wrap.md)を参照。
 
 <a id="legacy-bash-env"></a>
 
@@ -102,4 +102,4 @@ Claude Code の Bash tool と hook は、生成済み settings.json の `env.PAT
 ただし、先頭が削除済みの一時 worktree を指す場合など、ディレクトリの実在は別途確認が必要。
 そのままでは `codex` が process-wrap の起動シムを飛ばし、隔離なしで動く可能性がある。
 生成元の正本は `MISE_GLOBAL_CONFIG_ROOT` が指す checkout。
-設定の背景は [process-wrap の説明](dependencies.md#process-wrap)を参照。
+設定の背景は [process-wrap の説明](process-wrap.md)を参照。

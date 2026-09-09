@@ -53,19 +53,8 @@
   パッケージマネージャをラップし、マルウェア検知 + 最小リリース年齢（デフォルト 48h）
   を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。`bootstrap.sh` が sha256
   検証付きで導入。config.fish は存在する場合のみ source する。
-  経路は 2 つある。fish（対話・非対話とも）は `mise/config.toml` の `env._.path` が
-  `~/.safe-chain/shims` を mise の shims より前に置き、`init-fish.fish` の関数も効く。
-  Claude Code の Bash tool と hook は fish を通らず、`~/.claude/settings.json` の
-  `env.PATH`（正本 `ai/claude/conf.d/40-env.json`）が PATH を決めるので、そこに
-  `~/.safe-chain/shims` と本体の `~/.safe-chain/bin` を書いてある。順序は
-  process-wrap の shim → Safe Chain の shims → mise の shims → Safe Chain の本体。
-  shims が mise より後ろだと npm / pnpm / bun / pip が mise 側に解決されて素通りし、
-  本体が PATH に無いと shim が警告 1 行で素の npm に落ちる（本体を PATH に載せるのは
-  fish の init スクリプトだけなので、fish を通らない PATH では明示が要る）。本体を mise の
-  shims より後ろに置くのは、前に置く理由が無く、将来そのディレクトリに増えた実行ファイルが
-  mise で固定した版を覆うのを避けるため。この順序は `ai/claude/build-settings` が
-  検査し、崩れていれば settings.json を書かずに止まり、apply も止まる
-  （[docs/spec/safe-chain-path.md](spec/safe-chain-path.md)）。
+  起動経路と順序は [process-wrap の PATH](process-wrap.md#起動経路と-path)、
+  検査条件は [Safe Chain の仕様](spec/safe-chain-path.md)を参照。
   隔離（process-wrap）の中も同じ PATH を継承するので、codex が起動する
   パッケージマネージャも Safe Chain を通る（隔離の中で `npm safe-chain-verify` と実際の
   `npm install` が通ることは実測済み）。`~/.safe-chain` は隔離の中では読み取り専用で、
@@ -139,137 +128,9 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 
 ### process-wrap
 
-`codex` は process-wrap（<https://github.com/ba0918/process-wrap>）の隔離の中で起動する。
-境界を組み立てるのは process-wrap 本体で、dotfiles 側が持つのは起動シム・プロファイル・
-代替コマンドの 3 つ。
-
-**導入** — `mise/config.toml` の `[tools]`（`github:ba0918/process-wrap`）で導入する。
-自分がリリースするので `minimum_release_age` は per-tool で 0d。run-if-present と同じく
-github backend なので、aqua registry を通る AI CLI と違い cosign / Attestations 検証は無い。
-公開前は clone から `cargo install --path` で `~/.cargo/bin` に入れていた。その版が残って
-いると fish では先に当たる（fish の PATH は `~/.cargo/bin` が mise の installs ディレクトリ
-より前。`ai/claude/conf.d/40-env.json` の `env.PATH` は逆で mise の shims が先）。
-`cargo uninstall process-wrap` で消す。mount namespace を組む `bwrap` は
-`[bootstrap.packages]` の `apt:bubblewrap` で導入する。入れる前に `codex` を打つと、
-シムは最終行の `exec process-wrap` に届いて `not found` の終了コード 127 で落ちる
-（シムは本体の不在を自分では見ない）。
-
-**シム** — `codex` コマンドは `ai/process-wrap/shim/codex` を経由して起動する。この shim
-ディレクトリは `mise/config.toml` の `env._.path` で mise 管理の codex 本体より
-前に置く（mise の hook-env が PATH を組み直しても順序が保たれる。config.fish の
-`fish_add_path` は hook-env が走らない非対話シェル向けの保険で、それだけだと
-組み直しの時点で本体に負ける）。この 2 つはどちらも fish 経由の経路なので、fish を
-通さない Claude Code の Bash tool と hook には届かない。そちらは
-`ai/claude/conf.d/40-env.json` の `env.PATH` が `~/.claude/settings.json` 経由で
-shim ディレクトリを先頭に置く（3 つ目の経路）。`which codex` が
-`~/.local/share/mise/installs/codex/...` を返したらシムを経由していない。
-このシムディレクトリはプロファイルの `ro` にも載せてあるので、dotfiles をワークスペースに
-して起動しても隔離の中からその場で書き換えられない（守りは部分的で、祖先ディレクトリの
-改名による差し替えは残る。仕様 5.6 節）。
-ただし dotfiles をワークスペースにすると、ホストが起動のたびに読む `mise/config.toml`
-（シムを PATH の先頭に置く `env._.path` を持つ）と `fish/.config/fish/config.fish`、
-ホストの Claude Code が `~/.claude/rules` / `~/.claude/agents` / `~/.claude/output-styles`
-のリンク越しに読む指示文書（リンク先は `ai/shared/` と `ai/claude/` 配下）も `rw` の中に
-入り、隔離の中から書き換えられる。この checkout の実体までプロファイルの `ro` に
-載せるのは、ホストが人の目を通さず実行するコード（シムと `ai/shared/hooks`）だけで、
-これらを `ro` にするとそれらのファイルを編集する作業ができなくなるので塞いでいない。
-防波堤は、apply や新しいシェルを開く前に `git diff` を見ること。
-シムは process-wrap 同梱の雛形（`examples/shim/codex`）の写し。取り込みは
-`cmp ai/process-wrap/shim/codex ~/develop/process-wrap/examples/shim/codex` が一致する
-1 バイトも違わない写しから始める。それ以後に手を入れてよいのは冒頭のツール節にある
-2 つの一覧（下の「素通しは許可リストだけ」）だけで、本体はいつでも雛形と一致させたまま
-にする。雛形が更新されたら写し直したうえで、その 2 つの一覧を入れ直す。
-
-**素通しは許可リストだけ** — 既定ではすべての呼び出しが隔離に入る。`--help` も `--version`
-も例外ではなく、サブコマンドを見て隔離の要否を決める分岐も無い。外れるのは
-`PROCESS_WRAP_SHIM_OFF=1` を付けたときと、シム冒頭の許可リストに名前を足したときだけで、
-許可リストとフラグ無しの一覧はどちらも空で配っている。`app-server` / `mcp-server`
-（Claude Code の codex plugin 経由の実行）も同じく隔離に入る。壊れたときにどちらの一覧へ
-名前を足すか、あるいはどちらでもなくプロファイルを直すかは、シムのヘッダーにある表に従う。
-
-**プロファイル** — 境界の中身（`rw` / `rw-file` / `ro` / `hide`、`.env` の走査、
-ネットワーク、環境変数、秘密、git の URL 書き換え）はプロファイルが持つ。正本は
-`ai/process-wrap/profile/default.toml` で、`mise bootstrap dotfiles apply` が
-`~/.config/process-wrap/profile/default.toml` に実体として書き出す（template モード）。
-symlink で配らないのは、設定ディレクトリのファイルが `rw` の中を通る symlink だと、
-dotfiles をワークスペースにした起動が仕様 5.6 節の検査で止まるため。直したら apply し直す。
-`process-wrap init` は使わない（配布後は `profile/default.toml` が既にあるので、
-仕様 4.1 節どおり `init` は種類 `path` の診断で止まる）。プロファイルが `ro` に載せる
-`~/.claude/CLAUDE.md`・`~/.claude/statusline.py`・
-`~/.codex/hooks.json` の 3 つも `[dotfiles]` から template で実体を配る（`ro` が効くのは
-symlink を解決した実体なので、`rw` の `~/.claude` / `~/.codex` の直下に残るリンクの名前は
-隔離の中から消して通常ファイルに差し替えられる。仕様 5.6 節・6.2 節）。
-既に apply 済みのマシンでは、この 3 つが旧方式の symlink のまま残っていることがある。
-apply の後に実体へ置き換わったかを確かめる手順と、リンクが残ったときの直し方は
-[docs/troubleshooting.md](troubleshooting.md) を参照。
-
-**GitHub トークン** — `gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +
-workflow + gist に届く OAuth token）はプロファイルが隠す。代わりに
-`~/.config/process-wrap/secrets/gh-token` に置いた **fine-grained PAT** を、プロファイルの
-`[secrets]` の `GH_TOKEN` が隔離の中へ渡す。置き場所は `init` を使えないので手で作る:
-
-```bash
-mise bootstrap dotfiles apply                  # 先にプロファイルを配る
-mkdir -m 700 ~/.config/process-wrap/secrets
-mv ~/.config/codex-jail/gh-token ~/.config/process-wrap/secrets/gh-token
-```
-
-`~/.config/gh` を意図的に un-hide する手段は用意していない。箱の中では環境変数も
-本物の `gh` バイナリも見えるので、中に入った token を中で絞ることはできない。
-境界は **token に GitHub 側が付ける権限**そのもので、Free プランの private
-リポジトリは ruleset を張れないため、main への直 push / force push も通る。
-`gh` / `git` から見える権限の実測は次の通り（2026-08-31 時点、
-個人所有の private リポジトリで確認）:
-
-| 操作 | 結果 | 止めているもの |
-|---|---|---|
-| ブランチ push、`gh pr create` / `view` / `merge`、`gh issue create` / `comment` / `close` | 通る | — |
-| main への force push | 通る | なし（ruleset は Free の private では使えない） |
-| `gh issue delete` | 通る | なし（所有者は admin 扱い） |
-| `.github/workflows/` を含む push | 拒否 | token に Workflows 権限が無い |
-| リポジトリ設定の変更（`gh api -X PATCH repos/...`） | 拒否 | token に Administration 権限が無い |
-| gist 作成 | 拒否 | token に gist 権限が無い |
-| `gh pr checks` | 失敗 | fine-grained PAT には Checks 権限自体が存在しない（`gh run list` / `gh run view --log` で代替） |
-
-token ファイルが無ければ警告が 1 行出るだけで、GitHub の認証情報は一切入らない。
-中身が空なら起動を拒否する。ホストのシェルに `GH_TOKEN` / `GITHUB_TOKEN` が
-設定されていても箱には入らない（プロファイルの `env.unset` が名前で落とし、秘密の
-段が同名の変数を先に消す）。token を入れるときは `~/.ssh` が隠れているため、
-`git@github.com:` / `ssh://git@github.com/` の remote をプロファイルの
-`[git.instead-of]` で HTTPS に読み替える（ホストの `.gitconfig` は触らない）。token は
-`gh auth git-credential`（`.gitconfig` の credential helper）経由で git にも渡る。
-
-推奨する token の権限（All repositories）: Contents / Issues / Pull requests を
-Read and write、Actions / Commit statuses を Read。Workflows と Administration は
-付けない。有効期限が切れたら同じファイルに置き直す。
-
-**WSL の interop** — `.exe` を実行すると binfmt_misc が `/init` を呼び、`/run/WSL` の
-ソケット経由で **Windows 側にプロセスを起動する**。生まれたプロセスは隔離の
-外で動き、`\\wsl$` 経由で distro 全体を読めるので、ドライブを隠すだけでは
-（`.exe` を持ち込めば）抜けられる。そのためプロファイルは `/run/WSL` も隠して
-interop 自体を切っている。
-
-**画像ペースト** — codex の画像ペースト（Ctrl+V）は WSL ではこの interop に依存している。
-codex のプロセス内クリップボード読み出しは WSLg では成功せず（compositor が出すのは
-`image/bmp` で codex は `image/png` を要求する）、`powershell.exe` に
-`Get-Clipboard -Format Image` を実行させて `C:\...` を `/mnt/c/...` に読み替える
-フォールバックへ必ず落ちる。隔離の中ではその要求だけを
-`~/.local/lib/process-wrap/bin/powershell.exe` が肩代わりする。正本は
-`ai/process-wrap/bin/powershell.exe` で、プロファイルと同じく template で実体を配り、
-プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）が隔離の中でだけ
-PATH の先頭に足す。apply したら
-`test -x ~/.local/lib/process-wrap/bin/powershell.exe` で実行ビットを確かめ、
-落ちていれば `chmod +x` する。clipboard2path-wsl のデーモンが
-`$XDG_RUNTIME_DIR/clipboard2path/latest.png` に保存した画像を、`hide` で空の書ける
-ディレクトリに差し替わっている `/mnt/c` 配下へコピーし、codex が期待する `C:\` 形式の
-パスを返す。`/run/user` は隠しているので、読み出し元だけプロファイルの `ro` に
-`/run/user/1000/clipboard2path` として名指しで戻してある。
-`Get-Clipboard -Format Image` 以外の PowerShell 呼び出しは拒否する。
-
-**検証** — 境界の検証は process-wrap 側のテスト（`~/develop/process-wrap` で `cargo test`）。
-dotfiles 側にハーネスは持たない。シムの写しを本物の codex を動かさずに確かめる手順は、
-シムのヘッダーに書いてある（PATH の先頭に stand-in を 2 つ置き、シムが何を決めたかを
-印字させる）。
+`github:ba0918/process-wrap` と `apt:bubblewrap` を mise で導入する。
+この repo が管理するのは `ai/process-wrap/` の起動シム・プロファイル・代替コマンド。
+配布方法、PATH、トークン、隔離の限界は [process-wrap の運用](process-wrap.md)を参照。
 
 ### hook の repo 外依存
 
@@ -279,22 +140,8 @@ dotfiles 側にハーネスは持たない。シムの写しを本物の codex �
 hook が動く PATH で `run-if-present` が解決できる必要があるが、そこに載る経路は
 Claude 側と Codex 側で違う。
 
-- Claude Code 側: `ai/claude/conf.d/40-env.json` の `env.PATH` が process-wrap の shim
-  ディレクトリ（`ai/process-wrap/shim`）を先頭に、Safe Chain の shims
-  （`~/.safe-chain/shims`）を 2 番目、mise の shims ディレクトリ
-  （`~/.local/share/mise/shims`）を 3 番目、Safe Chain の本体（`~/.safe-chain/bin`）を
-  4 番目に置き、`ai/claude/build-settings` がそれを `~/.claude/settings.json` に展開する。
-  起動したシェルの PATH に関わらず、hook と `statusLine` には settings.json 経由で届く
-  （この `env.PATH` は Bash tool の PATH でもあるので、shim ディレクトリが mise の shims
-  より前でなければ `codex` が隔離を素通りし、Safe Chain の shims が mise より後ろなら
-  パッケージマネージャが Safe Chain を素通りする。順序に意味があり、`build-settings` が
-  先頭 4 要素を検査する）
-- Codex 側: hook は process-wrap の隔離の中で動く。process-wrap は起動したシェルの PATH を
-  引き継ぎ、プロファイルの `env.path-prepend`（`~/.local/lib/process-wrap/bin`）を先頭に
-  足すだけで、mise のディレクトリは足さない。条件は `codex` を起動するシェルの PATH で
-  `run-if-present` が解決できること。fish は `config.fish` の mise activate で満たしている。
-  対話シェルは `mise activate fish` が tool の installs ディレクトリを直接 PATH に置き、
-  非対話シェルは `mise activate fish --shims` が shims ディレクトリを置く
+起動経路ごとの設定は [process-wrap の PATH](process-wrap.md#起動経路と-path)を参照。
+Claude Code は生成済み settings.json、Codex は起動元から継承した PATH を使う。
 
 `run-if-present` は `mise/config.toml` の `[tools]` table
 （`github:ba0918/run-if-present`）で導入する。
