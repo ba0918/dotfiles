@@ -77,3 +77,20 @@ mise bootstrap dotfiles apply --force     # 置換が必要なときだけ明示
 
 注意: ディレクトリが既に symlink の場合、file-level の宣言を追加すると repo 内ファイルが
 symlink 化される事故がある。ディレクトリ単位で宣言すること（secretlint の例）。
+
+## 空の Neovim keymaps.lua の撤去
+
+初期案内コメントだけだった `lua/config/keymaps.lua` は配布対象から外した。
+LazyVim はこのファイルがなくても既定のキーマップを読み込む。
+
+`symlink-each` で記録済みのリンクは次回 apply で回収される。
+旧方式の個別リンクを配った後、一度も `symlink-each` を適用していないマシンでは
+未管理のリンクとして残る場合がある。次で確認する。
+
+```bash
+readlink ~/.config/nvim/lua/config/keymaps.lua
+```
+
+削除した repo 内の `nvim/.config/nvim/lua/config/keymaps.lua` を指すリンクなら、
+`unlink ~/.config/nvim/lua/config/keymaps.lua` でリンクだけを撤去する。
+通常ファイルや別の参照先なら、独自設定の可能性があるので残す。
