@@ -13,7 +13,8 @@ curl https://mise.run | sh
 # 2. repo を clone（場所は自由。repo 内の相対パスで解決される）
 git clone <this-repo> ~/develop/dotfiles
 
-# 3. 一括適用（wrapper が config の場所解決・trust まで行う）
+# 3. 変更予定を確認して適用（config の場所解決・trust・apt 設定を含む）
+~/develop/dotfiles/bootstrap.sh --dry-run
 ~/develop/dotfiles/bootstrap.sh
 
 # 4. (opt-in) Docker Desktop を使わない機械だけ: WSL 内に dockerd を直接入れる
@@ -25,15 +26,9 @@ git clone <this-repo> ~/develop/dotfiles
 ~/develop/dotfiles/ssh/install.sh                # 適用（sudo。Windows 側に ssh-keygen 済みの鍵が要る）
 ```
 
-mise は `curl https://mise.run | sh` でも `apt install mise`（`apt/mise.sources` を
-bootstrap.sh が登録する）でもよい。apt 経由なら `apt upgrade` で追従する。
-
-初回実行後、対話シェルでは fish の config.fish が `MISE_GLOBAL_CONFIG_FILE` を
-設定するので、以後は `mise bootstrap` を直接叩ける。
-repo を別の場所に置いた場合は bootstrap.sh を使えば場所非依存で適用できる。
-
-`./bootstrap.sh` は `apt/*.sources`（fish PPA 等）を `/etc/apt/sources.list.d/` に
-未設定なら導入し、`apt-get update` する（sudo を要求）。
+`bootstrap.sh` は配置場所を自動解決し、必要な apt リポジトリを登録する（sudo が必要）。
+初回適用後は fish から `mise bootstrap` を使える。mise を apt で導入した環境では
+`apt upgrade` で更新する。
 
 ## fish プラグイン
 
@@ -41,47 +36,13 @@ tide / fzf.fish / z は fisher 管理。`fish_plugins` で宣言されている�
 新規マシンでは `fisher install` で再現する（関数・completions 等の生成物は
 repo に含めない）。
 
-## レイアウト
-
-トップレベルは「パッケージ」で、`mise/config.toml` の `[dotfiles]` 宣言を通じて
-`$HOME` の下に symlink 展開される。
-
-| パッケージ | 展開先 | 概要 |
-|---|---|---|
-| `git/` | `~/.gitconfig` + `~/.config/git/*` | git 設定、global ignore / attributes |
-| `fish/` | `~/.config/fish/*` | config.fish、fish_plugins、関数 |
-| `nvim/` | `~/.config/nvim/*` | LazyVim ベース |
-| `ai/` | `~/.claude/*` `~/.codex/*` `~/.opencode/*` | LLM 設定の集約（secret 混入厳禁） |
-| `yazi/` | `~/.config/yazi/*` | TUI ファイルマネージャ |
-| `glow/` | `~/.config/glow/*` | Markdown レンダラ |
-| `herdr/` | `~/.config/herdr/*` | ターミナルマルチプレクサ |
-| `npm/` `pnpm/` `bun/` | `~/.npmrc` 等 | サプライチェーン対策（リリース年齢制限） |
-| `apt/` | `/etc/apt/sources.list.d/` | 同梱 apt リポジトリ（bootstrap.sh が配布） |
-| `devbox/` | `~/.local/share/devbox/...` | PHP ツールチェーン（nix ベース） |
-| `docker/` | `/etc/docker/daemon.json` | WSL 内ネイティブ dockerd（opt-in） |
-| `ssh/` | `/etc/ssh/sshd_config.d/`, `/etc/systemd/system/ssh.socket.d/` | Windows ホストから接続する sshd（opt-in） |
-| `mise/` | `MISE_GLOBAL_CONFIG_FILE` | グローバル config 実体 |
-
-詳細な構成は [docs/layout.md](docs/layout.md) を参照。
-
-## サプライチェーン対策
-
-パッケージ導入のリスクを 3 層で軽減する:
-
-- **mise `minimum_release_age = "7d"`** — ツールバイナリの導入をリリースから
-  7 日以上経過したものに制限。per-tool の例外は
-  [docs/dependencies.md](docs/dependencies.md) の「サプライチェーン対策」を参照
-- **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
-  （`min-release-age` / `minimumReleaseAge`。単位はエコシステムごとに異なる）
-- **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
-  最小リリース年齢（デフォルト 48h）を適用。`bootstrap.sh` が sha256 検証付きで導入
-
 ## よく使うコマンド
 
 ```bash
 ./bootstrap.sh                   # 新規マシンで一括適用
-mise bootstrap                   # 2回目以降
-mise bootstrap --dry-run         # 確認
+mise bootstrap --dry-run         # 変更予定を確認
+mise bootstrap dotfiles diff     # 配布内容の差分
+mise bootstrap                   # 適用（2回目以降）
 mise bootstrap dotfiles status   # 適用状態
 mise run test                    # 全テスト（CI と同じ入口）
 gh auth setup-git                # GitHub の credential helper 登録
@@ -89,18 +50,16 @@ gh auth setup-git                # GitHub の credential helper 登録
 
 全コマンドは [docs/commands.md](docs/commands.md) を参照。
 
-## パッケージの追加手順
+## 設定を変更するとき
 
-[docs/layout.md](docs/layout.md) の「パッケージの追加手順」を参照。
-既存の `~/.config/...` を取り込む手順は [meta/MIGRATION.md](meta/MIGRATION.md) を参照。
+編集先は [リポジトリ構成](docs/layout.md)、既存設定の取り込みは
+[取り込み手順](meta/MIGRATION.md)を参照。symlink 経由の編集は repo の実体も変更する。
+template 配布の設定は、編集後に再適用が必要。
 
-## 安全設計
-
-- `mise bootstrap --dry-run` で衝突を確認してから実適用する
-- 既存の実ファイルがある対象は mise が refuse する（`--force` は明示的に渡す）
-- `.gitignore` で credentials / session / sqlite / history を絶対ブロック
-- `mise bootstrap dotfiles unapply --dry-run` で剥がす前に確認できる
-- サプライチェーン対策は上記 3 層構成
+適用前に dry-run と差分を確認する。symlink の競合置換には `--force` が必要だが、
+template は実ファイルを上書きするため、同じ挙動ではない。
+認証情報・履歴・キャッシュは取り込まない。
+パッケージ導入時の保護は [サプライチェーン対策](docs/dependencies.md#サプライチェーン対策)を参照。
 
 ## 詳細リファレンス
 
