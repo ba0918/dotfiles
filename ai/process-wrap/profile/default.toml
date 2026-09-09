@@ -106,6 +106,10 @@ ro = [
 ]
 
 hide = [
+    # Private writable CA storage. Keep host certificates and keys out of the
+    # isolation while allowing Safe Chain to renew its short-lived certificates.
+    # The executable and shims remain read-only through the root mount.
+    "~/.safe-chain/certs",
     # /tmp holds the host's X11 and ssh-agent sockets under random names, so it cannot
     # be hidden by name: it is replaced by an empty directory, and /tmp/process-wrap
     # above is the shared place. /run/user holds the session's sockets (D-Bus, gpg-agent,
