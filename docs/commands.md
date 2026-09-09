@@ -15,6 +15,8 @@ mise bootstrap --skip packages      # 一部スキップ
 ## dotfiles の管理
 
 ```bash
+mise bootstrap dotfiles diff        # 配布時に変わる内容を確認
+mise bootstrap plan                 # 宣言したリソースの変更予定（hook・task 全体は dry-run で確認）
 mise bootstrap dotfiles status      # 適用状態（applied/missing/differs）
 mise bootstrap dotfiles status --missing
 mise bootstrap packages status --missing
@@ -38,7 +40,7 @@ settings.json は `ai/claude/conf.d/` で分割管理し、`build-settings` で�
 ai/claude/build-settings            # conf.d/ を合成して ~/.claude/settings.json に書き込み
 ai/claude/build-settings --dry-run  # 書き込まず stdout に出力
 ai/claude/build-settings --clean    # runtime allow をリセットしてベースラインに戻す
-ai/claude/build-settings --status   # managed vs runtime allow の内訳を表示
+ai/claude/build-settings --status   # managed vs runtime allow の内訳を表示（書き込まない）
 scripts/generate-deny.sh claude     # deny-patterns.yaml → Claude Code 形式で stdout
 scripts/generate-deny.sh opencode   # deny-patterns.yaml → OpenCode 形式で stdout
 scripts/generate-deny.sh opencode-apply  # ~/.opencode/opencode.json の deny を上書き

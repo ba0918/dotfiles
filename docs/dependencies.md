@@ -344,12 +344,9 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
 3 層構成でパッケージの導入リスクを軽減する:
 
 1. **mise `minimum_release_age = "7d"`** — ツールバイナリの導入をリリースから
-   7 日以上経過したものに制限。per-tool で待たない（0d）例外は次の 2 種:
-   - **claude / codex / opencode** — AI CLI の最新追従を優先。aqua 経由なので
-     cosign / GitHub Artifact Attestations 検証はそのまま効く
-   - **run-if-present**（`github:ba0918/run-if-present`）— 自作 CLI で、自分が
-     リリースしたものをすぐ入れたい。github backend は aqua registry を通らないため
-     署名検証は無く、信頼の根拠はリリース年齢ではなく自分のリポジトリであること
+   7 日以上経過したものに制限。ツール単位で待たない（0d）例外がある。
+   例外の対象と理由は [mise/config.toml](../mise/config.toml) の `[tools]` を参照。
+   aqua と github backend では検証方式が異なるため、同じ 0d でも導入元を確認する。
 2. **npm / pnpm / bun のネイティブ設定** — 依存パッケージのリリース年齢を 7 日以上に制限
 3. **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
    最小リリース年齢を適用。`bootstrap.sh` が sha256 検証付きで導入

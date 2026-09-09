@@ -1,8 +1,9 @@
 # 棚卸し 2026-08-23: この WSL に入っているが dotfiles が宣言していなかったもの
 
-自宅 WSL（Ubuntu 24.04）の実機を読み取り専用で走査し、`mise/config.toml`・`bootstrap.sh`・
-`apt/*.sources`・`[dotfiles]` と突き合わせた差分と、その処置。処置が全部終わったら
-このファイルは消してよい。
+これは 2026-08-23 時点の判断記録で、現在の削除手順ではない。
+削除の実行完了は未確認。再利用前に現状の用途・導入元を確認し、全項目の処置が
+完了していればこの記録を削除する。現在の構成は [依存一覧](../docs/dependencies.md) と
+[mise の宣言](../mise/config.toml) を参照。
 
 ## 処置済み（dotfiles に取り込んだ）
 
@@ -20,45 +21,24 @@
 | `rustup` | **二重ではなかった**。mise の `rust` は内部で rustup を使う（`mise which cargo` → `~/.cargo/bin/rustup`）。残す。古い toolchain 1.95 は mise の旧 latest、nightly は手動追加 |
 | apt リポジトリ docker / gierens / mise、Docker ネイティブ導入 | 同日の別コミット |
 
-## 削除と決めたもの（実行は手動。sudo が要る）
+## 当時の削除候補（実行完了は未確認）
 
-```bash
-# Tauri（今後は使わない）
-sudo apt remove --purge webkit2gtk-driver libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
-  xorg-dev xvfb gcc-mingw-w64-x86-64 nasm
-cargo uninstall tauri-driver
+一括削除コマンドは掲載しない。各候補について、現在も不要か、mise 管理の実体と
+重ならないかを確認してから処置する。過去のコマンドは Git 履歴に残っている。
 
-# PHP のソースビルド依存（PHP は devbox/nix に寄せた）
-sudo apt remove --purge libbz2-dev libgd-dev libonig-dev libreadline-dev libyaml-dev libzip-dev \
-  autoconf bison re2c
-mise uninstall php
+| 候補 | 当時の理由・再確認する点 |
+|---|---|
+| Tauri の依存 | `webkit2gtk-driver`、`libwebkit2gtk-4.1-dev`、`libayatana-appindicator3-dev`、`xorg-dev`、`xvfb`、`gcc-mingw-w64-x86-64`、`nasm`、`tauri-driver`。他の開発用途がないか確認 |
+| PHP の手動ビルド環境 | mise の PHP と `libbz2-dev`、`libgd-dev`、`libonig-dev`、`libreadline-dev`、`libyaml-dev`、`libzip-dev`、`autoconf`、`bison`、`re2c`。PHP は Devbox/Nix へ移行したが、共有ライブラリの他用途は再確認 |
+| git-credential-manager | `gcm` と `/usr/local/bin/git-credential-manager`。当時は gh へ移行 |
+| ollama の公式 installer 版 | `/usr/local/bin/ollama`、systemd unit、専用ユーザー。mise 管理版と区別する |
+| 手動導入した CLI | `/usr/local/bin/apm`、`~/.local/bin/` の `tea`、`uv`、`uvx`、`dotenvx`、`pytest`、`py.test`、`agentskills`、`bat`。現在のコマンド解決先を確認 |
+| uv / cargo の手動導入 | uv tools の `pytest`・`skills-ref`、cargo の `similarity-rs`・`similarity-ts`。mise 管理版と区別する |
+| 古い Rust toolchain | `1.95.0-x86_64-unknown-linux-gnu`、`nightly-x86_64-unknown-linux-gnu`。プロジェクトごとの利用を確認 |
+| その他の旧バージョン・apt の未使用依存 | 現在の依存関係を確認して個別に判断 |
 
-# git-credential-manager（credential helper は gh）
-sudo apt remove --purge gcm
-sudo rm -f /usr/local/bin/git-credential-manager
-
-# openssh-server（入れた記憶なし。Store 配布イメージの同梱品と推定。service は一度も enable されていない）
-sudo apt remove --purge openssh-server
-
-# ollama の公式 installer 版（mise 管理へ移行）
-sudo systemctl disable --now ollama 2>/dev/null
-sudo rm -f /etc/systemd/system/ollama.service /usr/local/bin/ollama
-sudo userdel ollama 2>/dev/null
-
-# 重複・残骸
-sudo rm -f /usr/local/bin/apm      # [tools] の pipx:apm-cli と二重
-rm -f ~/.local/bin/tea             # [tools] の go:gitea.dev/tea と二重
-rm -f ~/.local/bin/uv ~/.local/bin/uvx ~/.local/bin/dotenvx   # [tools] の uv / dotenvx と二重
-uv tool uninstall pytest skills-ref                            # [tools] の pipx:pytest / pipx:skills-ref と二重
-rm -f ~/.local/bin/pytest ~/.local/bin/py.test ~/.local/bin/agentskills
-cargo uninstall similarity-rs similarity-ts                   # [tools] の cargo:similarity-* と二重
-rustup toolchain uninstall 1.95.0-x86_64-unknown-linux-gnu    # mise の旧 latest（1.97.1 が現行）
-rustup toolchain uninstall nightly-x86_64-unknown-linux-gnu   # mise の rust を正とするなら不要
-rm -f ~/.local/bin/bat             # apt の batcat と二重
-
-sudo apt autoremove --purge
-mise prune                          # 旧版の deno / node / cargo-* 等
-```
+`openssh-server` の削除判断は撤回。現在は Windows ホストから WSL に接続する用途があり、
+[SSH の導入手順](../ssh/install.sh)で任意導入する。利用中の環境からは削除しない。
 
 残す判断にした dev ライブラリ: `libpq-dev` `libsqlite3-dev` `libcurl4-openssl-dev` `libssl-dev`
 `libxml2-dev` `zlib1g-dev`（PHP 以外の Rust / Node ネイティブ依存も使い得る。消すならリンク
@@ -74,7 +54,7 @@ mise prune                          # 旧版の deno / node / cargo-* 等
 
 ## 未決
 
-なし（2026-08-23 時点で全件判断済み）。
+2026-08-23 時点では全件判断済み。ただし、上の削除候補の実行完了はこの記録から確認できない。
 
 ## 走査に使った観点
 
