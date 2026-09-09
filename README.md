@@ -29,6 +29,8 @@ git clone https://github.com/ba0918/dotfiles.git ~/develop/dotfiles
 `bootstrap.sh` は配置場所を自動解決し、必要な apt リポジトリを登録する（sudo が必要）。
 初回適用後は fish から `mise bootstrap` を使える。mise を apt で導入した環境では
 `apt upgrade` で更新する。
+clipboard2path / Devbox の補助初期化に失敗した場合は、エラーと警告を表示して続行する。
+警告が出たら原因を解消して `bootstrap.sh` を再実行する。
 
 ## fish プラグイン
 

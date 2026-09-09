@@ -88,15 +88,17 @@ mise bootstrap "$@"
 # Clipboard2path service: unit / wl-paste wrapper はツールの init が生成する。
 # fish hook は dotfiles 管理なので --no-hook（冪等 — 再実行しても既存は上書き）。
 if [ "${DRY_RUN}" = false ]; then
-	mise x github:ba0918/clipboard2path-wsl -- clipboard2path-wsl init --no-hook 2>/dev/null || \
-		clipboard2path-wsl init --no-hook 2>/dev/null || true
+	mise x github:ba0918/clipboard2path-wsl -- clipboard2path-wsl init --no-hook || \
+		clipboard2path-wsl init --no-hook || \
+		echo "bootstrap: warning: clipboard2path initialization failed (continuing)" >&2
 fi
 
 # Devbox global: .devbox/（生成物）が無い新規マシンでは config.fish の
 # `devbox global shellenv --init-hook | source` が .hooks.sh 不在で失敗する。
 # ここで事前に環境を再生成しておく（冪等 — 最新なら何もしない）。
 if [ "${DRY_RUN}" = false ]; then
-	mise x aqua:jetify-com/devbox -- devbox global shellenv --init-hook -r >/dev/null 2>&1 || true
+	mise x aqua:jetify-com/devbox -- devbox global shellenv --init-hook -r >/dev/null || \
+		echo "bootstrap: warning: devbox initialization failed (continuing)" >&2
 fi
 
 # Aikido Safe Chain: npm/yarn/pnpm/bun/pip 等のパッケージマネージャをラップし、
