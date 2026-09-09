@@ -209,7 +209,8 @@ uv = "latest"
 "cargo:similarity-rs" = "latest"
 "cargo:similarity-ts" = "latest"
 "cargo:similarity-php" = "latest"
-shellcheck = "latest"
+# CI reads this version too; update its archive checksum when changing it.
+shellcheck = "0.11.0"
 # usage: mise の補完が要求する（mise completion fish が usage CLI をチェックする）
 usage = "latest"
 yazi = "latest"
