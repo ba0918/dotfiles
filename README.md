@@ -32,9 +32,12 @@ git clone <this-repo> ~/develop/dotfiles
 
 ## fish プラグイン
 
-tide / fzf.fish / z は fisher 管理。`fish_plugins` で宣言されているので
+tide / fzf.fish は fisher 管理。`fish_plugins` で宣言されているので
 新規マシンでは `fisher install` で再現する（関数・completions 等の生成物は
 repo に含めない）。
+
+ディレクトリ移動の `z` / `zi` は mise 管理の zoxide を使う。
+旧 z プラグインを導入済みなら、[履歴の移行手順](meta/MIGRATION.md#z-から-zoxide-への統一)を一度実行する。
 
 ## よく使うコマンド
 

@@ -9,7 +9,7 @@
 
 ## 例: fish config を取り込む
 
-fish は tide/fzf/z などプラグイン由来のファイルが大量に生成されるため、
+fish は tide/fzf などプラグイン由来のファイルが大量に生成されるため、
 **手動管理ファイルだけを取り込む**（ディレクトリ丸ごと symlink にすると
 プラグイン生成物が repo に混入する）。
 
@@ -30,6 +30,29 @@ git -C ~/develop/dotfiles add fish/.config/fish/functions/up.fish fish/.config/f
 mise bootstrap dotfiles apply --dry-run   # 衝突確認
 mise bootstrap dotfiles apply             # 適用（実ファイルは移動済みなので置換不要）
 ```
+
+## z から zoxide への統一
+
+`fish_plugins` から `jethrokuan/z` を外しても、既存環境のプラグインは残る。
+旧 z が読み込まれている fish で、履歴を統合してから削除する。
+履歴の保存先を変更している場合、バックアップ先の指定も合わせる。
+
+```fish
+cp -a ~/.local/share/zoxide ~/.local/share/zoxide.bak.(date +%Y%m%d%H%M%S)
+env _Z_DATA="$Z_DATA" zoxide import --merge z
+```
+
+取り込みが成功したら、次を実行する。旧 z の履歴ファイルは削除しない。
+
+```fish
+fisher remove jethrokuan/z
+exec fish
+```
+
+zoxide の import は既定で `~/.z` を読むため、fish プラグインの履歴パスを
+`_Z_DATA` に明示する（[実装](https://github.com/ajeetdsouza/zoxide/blob/main/src/import/z.rs)）。
+再起動後は `z` / `zi` で移動できることを確認する。
+旧 z の `zo` や固有オプションは引き継がれない。
 
 ## 例: Claude Code の設定を取り込む
 
