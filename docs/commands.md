@@ -53,6 +53,12 @@ GitHub Actions（`.github/workflows/ci.yml`）が main への push で全テス�
 secret スキャン（gitleaks + secretlint）を回す。PR 運用ではないので CI は入った後の
 検知器であり、push 前に手元で回すのが基本。
 
+このリポジトリでは、clone 後に `lefthook install` を一度実行する。
+コミット前に ShellCheck と既存の secretlint 検査、push 前に全テストが走る。
+secretlint の依存は `npm ci --prefix git/.config/secretlint --ignore-scripts --no-fund --no-audit` で導入する。
+ShellCheck の版は CI・Lefthook とも `mise/config.toml` を参照する。
+更新時は CI の配布アーカイブの SHA-256 も合わせて更新する。
+
 ```bash
 mise run test                              # 全テスト（scripts/run-tests.sh。CI と同じ入口）
 mise run lint                              # 追跡中の bash スクリプト全部に shellcheck（scripts/lint.sh）

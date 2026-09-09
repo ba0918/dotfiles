@@ -1,0 +1,11 @@
+pre-commit:
+  commands:
+    lint:
+      run: MISE_GLOBAL_CONFIG_FILE="$PWD/mise/config.toml" mise x shellcheck -- bash scripts/lint.sh
+    secrets:
+      run: XDG_CONFIG_HOME="$PWD/git/.config" bash git/.config/git/template/hooks/pre-commit
+
+pre-push:
+  commands:
+    tests:
+      run: bash scripts/run-tests.sh
