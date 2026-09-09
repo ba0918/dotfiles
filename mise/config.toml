@@ -133,18 +133,8 @@ compile = false
 "~/.codex/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
 "~/.codex/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
 
-# Fish: 手動管理ファイルのみ（プラグイン tide/fzf/z は fish_plugins + fisher で再現）
-"~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
-"~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
-"~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
-"~/.config/fish/functions/__auto_ls.fish" = "../fish/.config/fish/functions/__auto_ls.fish"
-"~/.config/fish/functions/fe.fish" = "../fish/.config/fish/functions/fe.fish"
-"~/.config/fish/functions/gc.fish" = "../fish/.config/fish/functions/gc.fish"
-"~/.config/fish/functions/gr.fish" = "../fish/.config/fish/functions/gr.fish"
-"~/.config/fish/functions/gwt.fish" = "../fish/.config/fish/functions/gwt.fish"
-"~/.config/fish/functions/myfuncs.fish" = "../fish/.config/fish/functions/myfuncs.fish"
-"~/.config/fish/functions/ya.fish" = "../fish/.config/fish/functions/ya.fish"
-"~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
+# Fish: Git 管理中の設定だけを個別リンクで配布し、fisher の生成物は残す。
+"~/.config/fish" = { source = "../fish/.config/fish", mode = "symlink-each", manifest = "git" }
 
 # clipboard2path-wsl: fish hook のみ dotfiles 管理（unit / wl-paste wrapper は
 # ツールの `init --no-hook` が生成。binary は aqua ([tools]) で導入）
@@ -179,17 +169,8 @@ compile = false
 # npm: グローバル設定（min-release-age によるサプライチェーン対策）
 "~/.npmrc" = "../npm/.npmrc"
 
-# Neovim (LazyVim): 設定のみ。lazy-lock.json 等の runtime artifact は除外
-"~/.config/nvim/init.lua" = "../nvim/.config/nvim/init.lua"
-"~/.config/nvim/lazyvim.json" = "../nvim/.config/nvim/lazyvim.json"
-"~/.config/nvim/stylua.toml" = "../nvim/.config/nvim/stylua.toml"
-"~/.config/nvim/.neoconf.json" = "../nvim/.config/nvim/.neoconf.json"
-"~/.config/nvim/lua/config/autocmds.lua" = "../nvim/.config/nvim/lua/config/autocmds.lua"
-"~/.config/nvim/lua/config/keymaps.lua" = "../nvim/.config/nvim/lua/config/keymaps.lua"
-"~/.config/nvim/lua/config/lazy.lua" = "../nvim/.config/nvim/lua/config/lazy.lua"
-"~/.config/nvim/lua/config/options.lua" = "../nvim/.config/nvim/lua/config/options.lua"
-"~/.config/nvim/lua/plugins/lsp.lua" = "../nvim/.config/nvim/lua/plugins/lsp.lua"
-"~/.config/nvim/lua/plugins/ui.lua" = "../nvim/.config/nvim/lua/plugins/ui.lua"
+# Neovim: Git 管理中の設定だけを配布し、lazy-lock.json 等の生成物は残す。
+"~/.config/nvim" = { source = "../nvim/.config/nvim", mode = "symlink-each", manifest = "git" }
 
 [tools]
 "aqua:ba0918/clipboard2path-wsl" = "latest"

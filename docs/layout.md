@@ -12,11 +12,16 @@
 直接使える。`./bootstrap.sh` は config の場所解決・trust・apt リポジトリ
 設定まで含むラッパーで、新マシンの初回適用に使う。
 
-配布方式は 2 種類ある:
+配布方式は次の3種類。宣言は [mise/config.toml](../mise/config.toml) が正本。
 
 - **symlink 配布** — repo 内のファイルが `$HOME` からシンボリックリンクされる。
   `~/.gitconfig` のように外部ツールが書き込むファイルは、
   symlink 経由で repo ファイルそのものが変更される点に注意
+- **symlink-each 配布** — fish / Neovim はディレクトリを実体のまま残し、
+  Git 管理中のファイルだけを個別リンクにする（`manifest = "git"`）。
+  プラグイン生成物や未追跡ファイルは配布しない。新しい設定は `git add <ファイル>` で
+  Git の index に登録してから適用する。管理したリンクの記録は mise の state
+  ディレクトリに保存されるため、削除しない。
 - **template 配布** — `mise/config.toml` で `mode = "template"` を指定すると、
   `{{ config_root }}` などのプレースホルダを展開した実ファイルが生成される。
   `opencode.json` のように repo ルートの絶対パスが必要な場合と、
@@ -30,107 +35,45 @@
 
 ## パッケージ一覧
 
-```
-dotfiles/
-├── git/                       # → ~/.gitconfig + ~/.config/git/*
-│   ├── .gitconfig
-│   └── .config/
-│       ├── git/
-│       │   ├── ignore         # global gitignore（XDG 自動検出）
-│       │   ├── attributes     # global gitattributes（XDG 自動検出）
-│       │   └── template/      # git init テンプレート
-│       └── secretlint/        # pre-commit hook 用の secretlint 一式（→ ~/.config/secretlint）
-│           ├── .secretlintrc.json
-│           ├── package.json   # secretlint + preset を lockfile で固定
-│           └── node_modules/  # `mise run bootstrap` の npm ci で生成（gitignore）
-├── fish/                      # → ~/.config/fish/*（プラグインは fish_plugins + fisher）
-│   └── .config/fish/
-│       ├── config.fish
-│       ├── fish_plugins
-│       ├── functions/up.fish
-│       └── conf.d/clipboard2path.fish
-├── nvim/                      # → ~/.config/nvim/*（LazyVim ベース）
-│   └── .config/nvim/
-├── ai/                        # LLM 設定の集約（secret 混入厳禁）
-│   ├── claude/                # → ~/.claude/*
-│   │   ├── CLAUDE.md          # template 配布（規範をスキル名で指すルーティング表）
-│   │   ├── build-settings     # conf.d/ → settings.json 合成スクリプト
-│   │   ├── conf.d/            # settings.json の分割管理（10-base〜60-plugins）
-│   │   ├── rules/             # → ~/.claude/rules/*（Claude 専用ルール。model-routing）
-│   │   └── agents/            # → ~/.claude/agents/*（judge / scout の agent 定義）
-│   ├── codex/                 # → ~/.codex/*
-│   │   ├── AGENTS.md          # template 配布
-│   │   └── hooks.json         # template 配布
-│   ├── process-wrap/          # codex を隔離して起動する仕組み
-│   │   ├── shim/codex         # PATH の先頭に来る起動シム（_.path で本体より前）
-│   │   ├── profile/           # プロファイルの正本（default.toml。template 配布）
-│   │   └── bin/powershell.exe # 隔離の中でだけ PATH 先頭に来る代替コマンド（template 配布）
-│   ├── opencode/              # → ~/.opencode/opencode.json（template 配布）
-│   │   └── opencode.json
-│   └── shared/                # Claude / Codex 共通
-│       ├── hooks/             # security hook スクリプト（両ツールに配布）
-│       │   └── tests/         # pytest テスト
-│       ├── deny-patterns.yaml # LLM の deny 設定の正本
-│       └── persona/gal.md     # output-style（~/.claude/output-styles/ から symlink）
-├── yazi/                      # → ~/.config/yazi/*（TUI ファイルマネージャ）
-│   └── .config/yazi/
-├── glow/                      # → ~/.config/glow/*（Markdown レンダラ）
-│   └── .config/glow/
-├── herdr/                     # → ~/.config/herdr/*（ターミナルマルチプレクサ）
-│   └── .config/herdr/
-├── npm/                       # → ~/.npmrc
-│   └── .npmrc                 # サプライチェーン対策（min-release-age=7）
-├── pnpm/                      # → ~/.config/pnpm/*
-│   └── .config/pnpm/          # サプライチェーン対策（minimumReleaseAge 分単位）
-├── bun/                       # → ~/.bunfig.toml
-│   └── .bunfig.toml           # サプライチェーン対策（minimumReleaseAge 秒単位）
-├── apt/                       # 同梱 apt リポジトリ（bootstrap.sh が導入）
-│   ├── fish-shell-ubuntu-release-4-noble.sources
-│   ├── gierens.sources        # eza 配布元
-│   └── mise.sources
-├── devbox/                    # PHP ツールチェーン（nix ベース）
-│   ├── global/                # → ~/.local/share/devbox/global/default/
-│   │   ├── devbox.json
-│   │   └── devbox.lock
-│   └── flake/                 # timecop 付き php のビルド定義（レガシー向け）
-├── docker/                    # WSL 内ネイティブ dockerd（opt-in）
-│   ├── install.sh             # 導入スクリプト（Desktop 検出で拒否、--dry-run あり）
-│   ├── docker.sources         # Docker 公式 apt リポジトリ
-│   └── daemon.json            # → /etc/docker/daemon.json
-├── ssh/                       # Windows ホストから WSL へ ssh する sshd（opt-in）
-│   ├── install.sh             # 導入スクリプト（--dry-run あり）
-│   ├── sshd_config.d/         # → /etc/ssh/sshd_config.d/（鍵認証のみ・root 禁止）
-│   └── ssh.socket.d/          # → /etc/systemd/system/ssh.socket.d/（loopback のみ待受）
-├── mise/
-│   └── config.toml            # グローバル config 実体（MISE_GLOBAL_CONFIG_FILE）
-├── meta/                      # 仕様書・手順書
-│   ├── LLM-SETTINGS.md        # LLM 設定パイプライン仕様書
-│   ├── MIGRATION.md           # 既存設定の取り込み手順
-│   └── INVENTORY-*.md         # 棚卸し記録
-├── docs/                      # 人間向け詳細リファレンス
-├── scripts/
-│   ├── generate-deny.sh       # deny-patterns.yaml → 各ツール形式に変換
-│   ├── run-tests.sh           # 全テストの入口（mise run test / CI）
-│   ├── lint.sh                # 追跡中の bash スクリプトに shellcheck（mise run lint / CI）
-│   └── test_*.sh              # bash テストハーネス
-├── .github/workflows/ci.yml   # GitHub Actions（テスト / shellcheck / secret スキャン）
-├── .shellcheckrc              # shellcheck の repo 全体の除外
-├── .gitleaks.toml             # gitleaks の allowlist（secret 検出テストの fixture）
-├── bootstrap.sh               # 新マシン用 wrapper
-├── CLAUDE.md                  # Claude Code エントリ（→ AGENTS.md）
-├── AGENTS.md                  # エージェント向け変更契約
-└── .gitignore
-```
+| 編集する内容 | 正本・編集先 | 配布先・用途 |
+|---|---|---|
+| Git | `git/.gitconfig`、`git/.config/git/` | `~/.gitconfig`、`~/.config/git/` |
+| コミット時の secret 検出 | `git/.config/secretlint/` | `~/.config/secretlint/`。依存は `mise run bootstrap` で生成 |
+| fish | `fish/.config/fish/` | `~/.config/fish/`。プラグインは `fish_plugins` と fisher で管理 |
+| Neovim | `nvim/.config/nvim/` | `~/.config/nvim/`（LazyVim） |
+| Claude Code | `ai/claude/` | `~/.claude/`。settings.json は `conf.d/` から合成 |
+| Codex | `ai/codex/` | `~/.codex/`。AGENTS.md と hooks.json は template |
+| OpenCode | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（template） |
+| AI 共通設定 | `ai/shared/` | deny の正本、共通 hook、対話契約、persona |
+| 規範スキルの配布 | `ai/apm/apm.yml` | `~/.apm/apm.yml`。APM が各ツールへ配布 |
+| 隔離起動 | `ai/process-wrap/` | 起動シム、プロファイル、代替コマンド。[詳細](dependencies.md#process-wrap) |
+| Yazi / Glow / Herdr | `yazi/`、`glow/`、`herdr/` の `.config/` 配下 | `~/.config/` の各ツールディレクトリ |
+| パッケージ導入時の保護 | `npm/`、`pnpm/`、`bun/` | 各パッケージマネージャの設定。[方針](dependencies.md#サプライチェーン対策) |
+| apt の導入元 | `apt/*.sources` | `bootstrap.sh` が `/etc/apt/sources.list.d/` に配布 |
+| PHP | `devbox/global/`、`devbox/flake/` | グローバル環境と timecop 付き PHP のビルド定義 |
+| Docker / SSH | `docker/`、`ssh/` | 各 `install.sh` で任意導入。[依存と制約](dependencies.md) |
+| ツール・配布宣言 | `mise/config.toml` | グローバル mise 設定 |
+| テスト・生成処理 | `scripts/`、`ai/shared/hooks/tests/`、`ai/claude/tests/` | [実行方法](commands.md#テスト) |
+| CI | `.github/workflows/ci.yml` | テスト・shellcheck・secret 検出 |
+| エージェント指示 | `AGENTS.md`（`CLAUDE.md` から参照） | このリポジトリの変更ルール |
+
+仕様・移行記録は `meta/`、利用手順は `docs/` に置く。
 
 ## パッケージの追加手順
 
 1. `mkdir -p <pkg>/<$HOME からの相対パス>` でツリーを作る
 2. 設定ファイルを配置する
 3. `.gitignore` に runtime / secret パターンを追記する
-4. `mise/config.toml` の `[dotfiles]` に source を追記して適用する
+4. `mise/config.toml` の `[dotfiles]` に source を追記する。
+   fish / Neovim の既存ディレクトリ内なら宣言追加は不要。配布するファイルを個別に `git add` する
+5. `mise bootstrap dotfiles diff` と `mise bootstrap dotfiles apply --dry-run` で確認して適用する
 
 ## 配布ファイルの撤去手順
 
+fish / Neovim の `symlink-each` では、ファイルを Git の index から外して適用すると、
+mise が記録済みのリンクを回収する。未管理のファイルは残る。
+
+個別宣言やディレクトリ全体の宣言を撤去する場合は、以下の手順を使う。
 `[dotfiles]` の行を消しても、適用済みマシンの symlink は残ってリンク切れになる
 （`mise bootstrap` は宣言から消えた対象を回収せず、`dotfiles status` にも出ない）。
 

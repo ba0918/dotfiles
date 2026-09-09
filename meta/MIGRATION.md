@@ -10,7 +10,7 @@
 ## 例: fish config を取り込む
 
 fish は tide/fzf/z などプラグイン由来のファイルが大量に生成されるため、
-**手動管理ファイルだけを file-level で取り込む**（ディレクトリ丸ごと symlink にすると
+**手動管理ファイルだけを取り込む**（ディレクトリ丸ごと symlink にすると
 プラグイン生成物が repo に混入する）。
 
 ```fish
@@ -23,11 +23,10 @@ mv ~/.config/fish/fish_plugins                 ~/develop/dotfiles/fish/.config/f
 mv ~/.config/fish/functions/up.fish            ~/develop/dotfiles/fish/.config/fish/functions/
 mv ~/.config/fish/conf.d/clipboard2path.fish   ~/develop/dotfiles/fish/.config/fish/conf.d/
 
-# mise/config.toml の [dotfiles] に file-level 宣言
-#   "~/.config/fish/config.fish" = "../fish/.config/fish/config.fish"
-#   "~/.config/fish/fish_plugins" = "../fish/.config/fish/fish_plugins"
-#   "~/.config/fish/functions/up.fish" = "../fish/.config/fish/functions/up.fish"
-#   "~/.config/fish/conf.d/clipboard2path.fish" = "../fish/.config/fish/conf.d/clipboard2path.fish"
+# fish は symlink-each + manifest = "git" で配布する。
+# 取り込んだファイルだけを index に登録する（未追跡ファイルは配布されない）。
+git -C ~/develop/dotfiles add fish/.config/fish/config.fish fish/.config/fish/fish_plugins
+git -C ~/develop/dotfiles add fish/.config/fish/functions/up.fish fish/.config/fish/conf.d/clipboard2path.fish
 mise bootstrap dotfiles apply --dry-run   # 衝突確認
 mise bootstrap dotfiles apply             # 適用（実ファイルは移動済みなので置換不要）
 ```
@@ -36,9 +35,13 @@ mise bootstrap dotfiles apply             # 適用（実ファイルは移動済
 
 `~/.claude/` は secret と runtime artifact が混在してるので、**取り込む対象を厳選**する:
 
+`~/.claude/settings.json` は生成物なので、そのまま取り込まない。
+残したい設定だけを `ai/claude/conf.d/` の対応するファイルへ移す。
+対話中に追加された allow/ask は通常の build で保持される。
+設定の分類は [LLM 設定の管理](LLM-SETTINGS.md)を参照。
+
 取り込んでOK:
 - `~/.claude/CLAUDE.md`
-- `~/.claude/settings.json`（secret を含まない方）
 - `~/.claude/keybindings.json`
 - `~/.claude/commands/`
 - `~/.claude/hooks/`（ただし secret が埋め込まれてないか確認）
