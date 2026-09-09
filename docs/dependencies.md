@@ -147,8 +147,9 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 自分がリリースするので `minimum_release_age` は per-tool で 0d。run-if-present と同じく
 github backend なので、aqua registry を通る AI CLI と違い cosign / Attestations 検証は無い。
 公開前は clone から `cargo install --path` で `~/.cargo/bin` に入れていた。その版が残って
-いても PATH は mise の shims が `~/.cargo/bin` より先なので勝たないが、
-`cargo uninstall process-wrap` で消しておく。mount namespace を組む `bwrap` は
+いると fish では先に当たる（fish の PATH は `~/.cargo/bin` が mise の installs ディレクトリ
+より前。`ai/claude/conf.d/40-env.json` の `env.PATH` は逆で mise の shims が先）。
+`cargo uninstall process-wrap` で消す。mount namespace を組む `bwrap` は
 `[bootstrap.packages]` の `apt:bubblewrap` で導入する。入れる前に `codex` を打つと、
 シムは最終行の `exec process-wrap` に届いて `not found` の終了コード 127 で落ちる
 （シムは本体の不在を自分では見ない）。
