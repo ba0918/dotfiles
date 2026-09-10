@@ -53,9 +53,9 @@
   パッケージマネージャをラップし、マルウェア検知 + 最小リリース年齢（デフォルト 48h）
   を適用。実体は `~/.safe-chain/`（dotfiles 管轄外）。`bootstrap.sh` が sha256
   検証付きで導入。config.fish は存在する場合のみ source する。
-  起動経路と順序は [process-wrap の PATH](process-wrap.md#起動経路と-path)、
+  起動経路と順序は [kakoi の PATH](kakoi.md#起動経路と-path)、
   検査条件は [Safe Chain の仕様](spec/safe-chain-path.md)を参照。
-  隔離（process-wrap）の中も同じ PATH を継承するので、codex が起動する
+  隔離（kakoi）の中も同じ PATH を継承するので、codex が起動する
   パッケージマネージャも Safe Chain を通る（隔離の中で `npm safe-chain-verify` と実際の
   `npm install` が通ることは実測済み）。`~/.safe-chain` は隔離の中では読み取り専用で、
   マルウェア DB の更新はホスト側の実行に任せる（隔離の中で更新が要る状態になったときの
@@ -126,11 +126,11 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 以前は Claude 用と Codex 用に同じ検出ロジックを 2 部持っていたが、
 イベント形式の差は `hook_input.edited_files` が吸収するので統合した。
 
-### process-wrap
+### kakoi
 
-`github:ba0918/process-wrap` と `apt:bubblewrap` を mise で導入する。
-この repo が管理するのは `ai/process-wrap/` の起動シム・プロファイル・代替コマンド。
-配布方法、PATH、トークン、隔離の限界は [process-wrap の運用](process-wrap.md)を参照。
+`github:ba0918/kakoi` と `apt:bubblewrap` を mise で導入する。
+この repo が管理するのは `ai/kakoi/` の起動シム・プロファイル・代替コマンド。
+配布方法、PATH、トークン、隔離の限界は [kakoi の運用](kakoi.md)を参照。
 
 ### hook の repo 外依存
 
@@ -140,7 +140,7 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 hook が動く PATH で `run-if-present` が解決できる必要があるが、そこに載る経路は
 Claude 側と Codex 側で違う。
 
-起動経路ごとの設定は [process-wrap の PATH](process-wrap.md#起動経路と-path)を参照。
+起動経路ごとの設定は [kakoi の PATH](kakoi.md#起動経路と-path)を参照。
 Claude Code は生成済み settings.json、Codex は起動元から継承した PATH を使う。
 
 `run-if-present` は `mise/config.toml` の `[tools]` table

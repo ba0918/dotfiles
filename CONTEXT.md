@@ -9,7 +9,7 @@
 `safe-chain <コマンド>` を exec し、Safe Chain が PATH の次の本体を実行する。典拠:
 `docs/spec/safe-chain-path.md` 2 章。
 
-使わない言い方: 単に「シム」（process-wrap のシム `ai/process-wrap/shim/codex` と区別が
+使わない言い方: 単に「シム」（kakoi のシム `ai/kakoi/shim/codex` と区別が
 つかない）。
 
 ## Safe Chain の本体

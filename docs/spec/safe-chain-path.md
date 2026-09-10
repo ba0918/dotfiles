@@ -49,8 +49,8 @@ pip pip3 pipx pnpm pnpx poetry python python3 rush rushx uv uvx yarn）。各シ
 `~/.safe-chain/bin/safe-chain`。シムが exec する先。PATH に無いとシムは警告を出して素の
 コマンドに落ちる。2026-09-08 時点でこのディレクトリにある実行ファイルは `safe-chain` だけ。
 
-「シム」と言うときは process-wrap のシム（`ai/process-wrap/shim/codex`）と区別する。本仕様では
-前者を「Safe Chain のシム」、後者を「process-wrap のシム」と書く。
+「シム」と言うときは kakoi のシム（`ai/kakoi/shim/codex`）と区別する。本仕様では
+前者を「Safe Chain のシム」、後者を「kakoi のシム」と書く。
 
 ### 直書きの要素
 
@@ -66,7 +66,7 @@ pip pip3 pipx pnpm pnpx poetry python python3 rush rushx uv uvx yarn）。各シ
 
 `40-env.json` の `env.PATH` の直書きの要素は、先頭から次の順序で始まる。
 
-1. process-wrap のシムのディレクトリ（`$DOTFILES_ROOT/ai/process-wrap/shim`）
+1. kakoi のシムのディレクトリ（`$DOTFILES_ROOT/ai/kakoi/shim`）
 2. Safe Chain のシムのディレクトリ（`$HOME/.safe-chain/shims`）
 3. mise の shims（`$HOME/.local/share/mise/shims`）
 4. Safe Chain の本体のディレクトリ（`$HOME/.safe-chain/bin`）
@@ -75,7 +75,7 @@ pip pip3 pipx pnpm pnpx poetry python python3 rush rushx uv uvx yarn）。各シ
 
 順序の理由（`docs/dependencies.md` にも書く。3.4）:
 
-- process-wrap のシムが先頭: 「ホストが直接実行するシムは PATH の先頭」という既存の原則を
+- kakoi のシムが先頭: 「ホストが直接実行するシムは PATH の先頭」という既存の原則を
   崩さない。codex は Safe Chain の対象ではないので、1 と 2 の順序は動作に影響しない。
 - Safe Chain のシムが mise の shims より前: 後ろだと素通りする（実測）。
 - 本体のディレクトリが mise の shims より後ろ: 本体は `command -v safe-chain` で見つかりさえ
@@ -153,7 +153,7 @@ PATH 経由で shim が渡る」は Claude Code の Bash ツールとフック�
   （正本 `ai/claude/conf.d/40-env.json`）が PATH を決める。そこに Safe Chain のシムと本体を
   置いている。順序は `build-settings` が検査し、崩れていれば apply が止まる。
 - 順序の理由（3.1 の 3 つ）。
-- 隔離（process-wrap）の中でも同じ PATH を継承するので、codex が起動するパッケージマネージャも
+- 隔離（kakoi）の中でも同じ PATH を継承するので、codex が起動するパッケージマネージャも
   Safe Chain を通る（隔離の中で `npm safe-chain-verify` と実際の `npm install` が通ることは
   実測済み）。`~/.safe-chain` は隔離の中では読み取り専用で、マルウェア DB の更新はホスト側の
   実行に任せる（隔離の中で DB の更新が要る状態になったときの振る舞いは未検証）。
@@ -165,7 +165,7 @@ PATH 経由で shim が渡る」は Claude Code の Bash ツールとフック�
 2 番目に置き」は 3.1 の順序で偽になる（mise の shims は 3 番目）ので、3.1 の順序に合わせて直す。
 
 `docs/troubleshooting.md` の「Claude Code の hook のたびに `run-if-present: command not found`」の
-行にある判定「`jq -r .env.PATH` が process-wrap の shim ディレクトリで始まり、次に
+行にある判定「`jq -r .env.PATH` が kakoi の shim ディレクトリで始まり、次に
 `~/.local/share/mise/shims` が来ていなければ `build-settings` を実行し直す」は、3.1 の順序では
 常に「来ていない」になり、`build-settings` を何度実行しても解消しない誤診になる。判定を
 3.1 の順序（先頭 4 要素）に合わせて直す。
@@ -211,7 +211,7 @@ Safe Chain が未導入のマシンでは、`env.PATH` に存在しないディ�
    「Bypassing safe-chain for non-pip invocation: python3 …」が残り、終了コード 0。
    フックの PATH が Bash ツールと同じであることは 1 章の推論に依る。
 4. 隔離の中でも通ることを、**Bash ツールから**確かめる（fish から起動すると変更前でも通るので
-   判別にならない）。`process-wrap --workspace <任意のリポジトリ> -- npm safe-chain-verify` が
+   判別にならない）。`kakoi --workspace <任意のリポジトリ> -- npm safe-chain-verify` が
    `OK: Safe-chain works!` を返す（`--policy-file` 無し、配布済みのプロファイルで）。
 5. 3.2 の観測条件 5 つと 3.3 の観測条件を 1 回ずつ手で試す。
 
@@ -248,7 +248,7 @@ statusline の更新ごとに 1 本、通知（permission_prompt / idle_prompt�
 - `python` / `python3` を除いた選別版のシムのディレクトリ。`python3 -m pip install` が素通りに
   なり、bypass 不可の方針と矛盾する。
 - cron や `sh` 系の非対話シェルへの対応。今の dotfiles に使い道が無い。
-- process-wrap のプロファイルで `~/.safe-chain` を書けるようにすること。隔離の中の LLM が
+- kakoi のプロファイルで `~/.safe-chain` を書けるようにすること。隔離の中の LLM が
   シムや本体を書き換えて無効化できるようになる。
 - `build-settings` 用のテストハーネス。不変条件検査（3.2）で足りる。
 

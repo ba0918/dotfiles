@@ -76,7 +76,7 @@ RAW_ENV_PATH=$(echo "$BASE" | jq -r '.env.PATH // ""')
 # turning into ///home/...
 # env.PATH is the PATH that Claude Code's Bash tool and hooks run with, so it has to be
 # a complete list: $PATH carries the inherited entries, and $DOTFILES_ROOT lets the
-# process-wrap shim directory be placed ahead of the mise shims directory.
+# kakoi shim directory be placed ahead of the mise shims directory.
 HOME_NO_SLASH="${HOME#/}"
 DOTFILES_ROOT_NO_SLASH="${DOTFILES_ROOT#/}"
 BASE=$(echo "$BASE" | jq \
@@ -115,7 +115,7 @@ fi
 #
 # This PATH is what Claude Code's Bash tool and hooks run with, so the first four entries are
 # fixed, in this order:
-#   1. the process-wrap shim directory: the host runs codex from there, and it has to beat the
+#   1. the kakoi shim directory: the host runs codex from there, and it has to beat the
 #      mise shims or codex runs outside the isolation;
 #   2. the Safe Chain shims: after the mise shims, npm / pnpm / bun / pip resolve to mise and
 #      skip Safe Chain;
@@ -131,7 +131,7 @@ CHECKED_PATH="${CHECKED_PATH//\$HOME/$HOME}"
 CHECKED_PATH="${CHECKED_PATH//\$DOTFILES_ROOT/$DOTFILES_ROOT}"
 IFS=: read -r -a PATH_ENTRIES <<< "$CHECKED_PATH"
 EXPECTED_PATH_HEAD=(
-  "$DOTFILES_ROOT/ai/process-wrap/shim"
+  "$DOTFILES_ROOT/ai/kakoi/shim"
   "$HOME/.safe-chain/shims"
   "$HOME/.local/share/mise/shims"
   "$HOME/.safe-chain/bin"

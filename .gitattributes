@@ -1,3 +1,3 @@
-# ai/process-wrap/bin/powershell.exe is a shell script named after the Windows
+# ai/kakoi/bin/powershell.exe is a shell script named after the Windows
 # command it stands in for; the global "*.exe binary" rule must not hide its diff.
-ai/process-wrap/bin/*.exe text diff merge
+ai/kakoi/bin/*.exe text diff merge

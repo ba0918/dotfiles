@@ -97,7 +97,7 @@ hook 設定で repo 外の対象（通知スクリプト、外部ツールの状
 |---|---|
 | [docs/layout.md](docs/layout.md) | 構成・パッケージ一覧・追加手順 |
 | [docs/commands.md](docs/commands.md) | コマンドリファレンス |
-| [docs/dependencies.md](docs/dependencies.md) | 外部ツール依存・サプライチェーン対策・process-wrap |
+| [docs/dependencies.md](docs/dependencies.md) | 外部ツール依存・サプライチェーン対策・kakoi |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | トラブルシューティング |
 | [meta/LLM-SETTINGS.md](meta/LLM-SETTINGS.md) | LLM 設定の conf.d / deny-patterns パイプライン |
 | [meta/MIGRATION.md](meta/MIGRATION.md) | 既存設定の取り込み手順 |

@@ -22,8 +22,8 @@
 | `devbox global shellenv` が "environment may be out of date" 警告 | 新規マシンでは `bootstrap.sh` が自動で再生成する。手動変更後は `devbox global shellenv --init-hook -r \| source` で環境を再生成 |
 | statusline が空 / 通知が飛ばない（hook のエラー出力は無い） | 参照先が未導入。`run-if-present` が無音でスキップしている。導入すればそのまま有効になる |
 | Claude Code の hook のたびに `run-if-present: command not found`（exit 127）が出る / statusline が空 | [確認と復旧手順](#claude-path) |
-| `codex` が `exec: process-wrap: not found`（exit 127）で落ちる | process-wrap 未導入。シムは最終行で `exec process-wrap` するだけで本体の不在を自分では見ないので、PATH に無ければここで落ちる。`mise install`（`mise bootstrap` でも可）で `[tools]` の `github:ba0918/process-wrap` を入れる。急ぐときは `PROCESS_WRAP_SHIM_OFF=1 codex ...` で隔離を素通しできる |
-| codex の hook のたびに `run-if-present: command not found`（exit 127）が出る | process-wrap のシムは起動したシェルの PATH をそのまま渡すので、そのシェルで `command -v run-if-present` を確認する。無ければ `mise install` で入れ、`config.fish` の `mise activate`（対話シェルは installs ディレクトリ、非対話シェルは `--shims` で shims ディレクトリを PATH に置く）が効いているか確認する。ただし Claude Code の Bash tool と hook は fish を通らないので、そこから起動した `codex` の PATH は `config.fish` ではなく `~/.claude/settings.json` の `env.PATH`（`ai/claude/conf.d/40-env.json` が正本）が決める |
+| `codex` が `exec: kakoi: not found`（exit 127）で落ちる | kakoi 未導入。シムは最終行で `exec kakoi` するだけで本体の不在を自分では見ないので、PATH に無ければここで落ちる。`mise install`（`mise bootstrap` でも可）で `[tools]` の `github:ba0918/kakoi` を入れる。急ぐときは `KAKOI_SHIM_OFF=1 codex ...` で隔離を素通しできる |
+| codex の hook のたびに `run-if-present: command not found`（exit 127）が出る | kakoi のシムは起動したシェルの PATH をそのまま渡すので、そのシェルで `command -v run-if-present` を確認する。無ければ `mise install` で入れ、`config.fish` の `mise activate`（対話シェルは installs ディレクトリ、非対話シェルは `--shims` で shims ディレクトリを PATH に置く）が効いているか確認する。ただし Claude Code の Bash tool と hook は fish を通らないので、そこから起動した `codex` の PATH は `config.fish` ではなく `~/.claude/settings.json` の `env.PATH`（`ai/claude/conf.d/40-env.json` が正本）が決める |
 
 <a id="regular-files"></a>
 
@@ -49,7 +49,7 @@ done
 - ファイルが不在の場合: apply のエラーを解消してから再実行する。
 
 これらを実体で配るのは、隔離の中からリンクを別ファイルに差し替える経路を塞ぐため。
-保護の仕組みは [process-wrap の説明](process-wrap.md)を参照。
+保護の仕組みは [kakoi の説明](kakoi.md)を参照。
 
 <a id="legacy-bash-env"></a>
 
@@ -89,7 +89,7 @@ Claude Code の Bash tool と hook は、生成済み settings.json の `env.PAT
    `$HOME` と `$DOTFILES_ROOT` は、出力では絶対パスに展開されている。
 
    ```text
-   $DOTFILES_ROOT/ai/process-wrap/shim
+   $DOTFILES_ROOT/ai/kakoi/shim
    $HOME/.safe-chain/shims
    $HOME/.local/share/mise/shims
    $HOME/.safe-chain/bin
@@ -100,6 +100,6 @@ Claude Code の Bash tool と hook は、生成済み settings.json の `env.PAT
 
 `build-settings` は順序の不一致を検出すると、書き込まずに失敗する。
 ただし、先頭が削除済みの一時 worktree を指す場合など、ディレクトリの実在は別途確認が必要。
-そのままでは `codex` が process-wrap の起動シムを飛ばし、隔離なしで動く可能性がある。
+そのままでは `codex` が kakoi の起動シムを飛ばし、隔離なしで動く可能性がある。
 生成元の正本は `MISE_GLOBAL_CONFIG_ROOT` が指す checkout。
-設定の背景は [process-wrap の説明](process-wrap.md)を参照。
+設定の背景は [kakoi の説明](kakoi.md)を参照。

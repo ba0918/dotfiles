@@ -26,7 +26,7 @@
   `{{ config_root }}` などのプレースホルダを展開した実ファイルが生成される。
   `opencode.json` のように repo ルートの絶対パスが必要な場合と、
   `~/.claude/CLAUDE.md` のようにリンクではなく実体が置かれていること自体が
-  必要な場合（[process-wrap の保護範囲](process-wrap.md)）に使う。
+  必要な場合（[kakoi の保護範囲](kakoi.md)）に使う。
   `{{ config_root }}` は `MISE_GLOBAL_CONFIG_ROOT`（bootstrap.sh と config.fish
   が設定する）で repo ルートに解決される
 
@@ -46,7 +46,7 @@
 | OpenCode | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（template） |
 | AI 共通設定 | `ai/shared/` | deny の正本、共通 hook、対話契約、persona |
 | 規範スキルの配布 | `ai/apm/apm.yml` | `~/.apm/apm.yml`。APM が各ツールへ配布 |
-| 隔離起動 | `ai/process-wrap/` | 起動シム、プロファイル、代替コマンド。[詳細](process-wrap.md) |
+| 隔離起動 | `ai/kakoi/` | 起動シム、プロファイル、代替コマンド。[詳細](kakoi.md) |
 | Yazi / Glow / Herdr | `yazi/`、`glow/`、`herdr/` の `.config/` 配下 | `~/.config/` の各ツールディレクトリ |
 | パッケージ導入時の保護 | `npm/`、`pnpm/`、`bun/` | 各パッケージマネージャの設定。[方針](dependencies.md#サプライチェーン対策) |
 | apt の導入元 | `apt/*.sources` | `bootstrap.sh` が `/etc/apt/sources.list.d/` に配布 |

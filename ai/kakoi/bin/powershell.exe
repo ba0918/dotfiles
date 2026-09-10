@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# powershell.exe stand-in for process-wrap (the profile's env.path-prepend puts
+# powershell.exe stand-in for kakoi (the profile's env.path-prepend puts
 # this directory first on PATH inside the isolation, and nowhere else).
 #
 # On WSL, codex pastes an image (Ctrl+V) by running
@@ -14,21 +14,21 @@
 #
 # This script answers that one request from the PNG that clipboard2path-wsl
 # already keeps under $XDG_RUNTIME_DIR, copying it below /mnt/c, which
-# process-wrap replaces with an empty writable directory (the profile hides the
+# kakoi replaces with an empty writable directory (the profile hides the
 # Windows drives under /mnt), so the C:\ path codex computes resolves inside
 # the isolation. Any other PowerShell invocation is refused.
 set -euo pipefail
 
 die() {
-	printf 'powershell.exe (process-wrap stand-in): %s\n' "$*" >&2
+	printf 'powershell.exe (kakoi stand-in): %s\n' "$*" >&2
 	exit 1
 }
 
-[ "${PROCESS_WRAP:-0}" = 1 ] || die "only meant to run inside process-wrap"
+[ "${KAKOI:-0}" = 1 ] || die "only meant to run inside kakoi"
 
 case "$*" in
 	*"Get-Clipboard -Format Image"*) ;;
-	*) die "Windows PowerShell is not available inside process-wrap" ;;
+	*) die "Windows PowerShell is not available inside kakoi" ;;
 esac
 
 # clipboard2path-wsl keeps latest.png only while the clipboard holds an image;
@@ -37,8 +37,8 @@ runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 src="${runtime}/clipboard2path/latest.png"
 [ -f "${src}" ] || exit 1
 
-dest_dir=/mnt/c/process-wrap/clipboard
-mkdir -p "${dest_dir}" 2>/dev/null || die "cannot write under /mnt/c (expected the empty writable directory process-wrap puts over the hidden drive)"
+dest_dir=/mnt/c/kakoi/clipboard
+mkdir -p "${dest_dir}" 2>/dev/null || die "cannot write under /mnt/c (expected the empty writable directory kakoi puts over the hidden drive)"
 name="clipboard-$(date +%s%N).png"
 cp -L "${src}" "${dest_dir}/${name}"
-printf 'C:\\process-wrap\\clipboard\\%s\n' "${name}"
+printf 'C:\\kakoi\\clipboard\\%s\n' "${name}"

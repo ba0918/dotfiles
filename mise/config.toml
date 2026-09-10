@@ -1,9 +1,9 @@
 [env]
 # bun global installs (e.g. agent-browser) are not in mise-managed paths.
 # 起動シムを mise 管理の本体より前に保つ。fish_add_path だけでは再構築時に後ろへ回る。
-# 起動経路ごとの設定: docs/process-wrap.md「起動経路と PATH」。
+# 起動経路ごとの設定: docs/kakoi.md「起動経路と PATH」。
 _.path = [
-  "{{config_root}}/ai/process-wrap/shim",
+  "{{config_root}}/ai/kakoi/shim",
   "~/.bun/bin",
   "~/.cargo/bin",
   "~/.safe-chain/shims",
@@ -29,7 +29,7 @@ compile = false
 "apt:fd-find" = "latest"
 "apt:eza" = "latest"
 "apt:jq" = "latest"
-# process-wrap の隔離に使う（mount namespace の構築）
+# kakoi の隔離に使う（mount namespace の構築）
 "apt:bubblewrap" = "latest"
 # 汎用アーカイブ
 "apt:zip" = "latest"
@@ -62,7 +62,7 @@ compile = false
 
 # Claude Code: tests / pyc を配らないため個別宣言する。
 # CLAUDE.md / statusline.py はリンクの差し替えを防ぐため実体配布（変更後に再 apply）。
-# hooks は配布先の親とリンク先を ro で保護する。制約と限界: docs/process-wrap.md。
+# hooks は配布先の親とリンク先を ro で保護する。制約と限界: docs/kakoi.md。
 "~/.claude/.gitkeep" = "../ai/claude/.gitkeep"
 "~/.claude/CLAUDE.md" = { source = "../ai/claude/CLAUDE.md", mode = "template" }
 "~/.claude/statusline.py" = { source = "../ai/claude/statusline.py", mode = "template" }
@@ -84,9 +84,9 @@ compile = false
 # symlink ではなく template で配布する（rendered 実ファイルになる）
 "~/.codex/AGENTS.md" = { source = "../ai/codex/AGENTS.md", mode = "template" }
 
-# rw 配下の symlink を経由させないため実体配布する。適用後の確認: docs/process-wrap.md。
-"~/.config/process-wrap/profile/default.toml" = { source = "../ai/process-wrap/profile/default.toml", mode = "template" }
-"~/.local/lib/process-wrap/bin/powershell.exe" = { source = "../ai/process-wrap/bin/powershell.exe", mode = "template" }
+# rw 配下の symlink を経由させないため実体配布する。適用後の確認: docs/kakoi.md。
+"~/.config/kakoi/profile/default.toml" = { source = "../ai/kakoi/profile/default.toml", mode = "template" }
+"~/.local/lib/kakoi/bin/powershell.exe" = { source = "../ai/kakoi/bin/powershell.exe", mode = "template" }
 
 # APM: ユーザースコープの manifest。規範スキル（agentic-rules 等）を各エージェント CLI に
 # 配る宣言で、実体は bootstrap ステップの `apm update -g --yes` が ~/.claude/skills と
@@ -94,7 +94,7 @@ compile = false
 "~/.apm/apm.yml" = "../ai/apm/apm.yml"
 
 # Codex: hooks.json はリンク差し替え防止のため実体配布。スクリプトは Claude と共有。
-# tests / pyc を配らないため個別宣言する。ro の範囲: docs/process-wrap.md。
+# tests / pyc を配らないため個別宣言する。ro の範囲: docs/kakoi.md。
 "~/.codex/hooks.json" = { source = "../ai/codex/hooks.json", mode = "template" }
 "~/.codex/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
 "~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
@@ -225,11 +225,11 @@ npm = "12.0.2"
 "npm:hunkdiff" = "latest"
 gcloud = "latest"
 # run-if-present: hook の repo 外依存を存在チェック付きで起動する自作 CLI。
-# process-wrap: codex を隔離して起動する自作 CLI（docs/process-wrap.md）。
+# kakoi: codex を隔離して起動する自作 CLI（docs/kakoi.md）。
 # どちらも自分がリリースするので minimum_release_age で待たない（0d）。github backend は
 # aqua registry を通らないため、上の AI CLI と違い cosign / Attestations 検証は無い
 "github:ba0918/run-if-present" = { version = "latest", minimum_release_age = "0d" }
-"github:ba0918/process-wrap" = { version = "latest", minimum_release_age = "0d" }
+"github:ba0918/kakoi" = { version = "latest", minimum_release_age = "0d" }
 
 # bootstrap ステップ 15（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。
