@@ -61,8 +61,5 @@
     },
     "webfetch": "ask",
     "doom_loop": "ask"
-  },
-  "plugin": [
-    "ba0918/claude-skills"
-  ]
+  }
 }
