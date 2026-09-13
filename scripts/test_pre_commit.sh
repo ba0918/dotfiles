@@ -91,6 +91,12 @@ new_repo() {
 	git -c init.defaultBranch=main init -q "${dir}"
 }
 
+# Commit what is staged without running any hook (the fixture repos may carry
+# the real template hook, which would read the real term list).
+commit_fixture() {
+	git -C "$1" -c user.name=test -c user.email=test@example.invalid commit -q --no-verify -m fixture
+}
+
 # Run the hook inside a repo with the given XDG_CONFIG_HOME.
 run() {
 	local repo="$1"
@@ -156,6 +162,19 @@ printf 'aws_key = "%s"\n' "${FAKE_TOKEN}" > "${R}/config.txt"
 git -C "${R}" add .secretlintrc.json config.txt
 run "${R}" "${CONFIG_HOME}"
 check "a project-local config (no rules) takes precedence" '[ "${RC}" -eq 0 ]'
+
+# --- renamed and non-ASCII paths reach secretlint -----------------------------
+
+R="${TMP}/renamed-token"; new_repo "${R}"
+printf 'aws_key = "%s"\n' "${FAKE_TOKEN}" > "${R}/config.txt"; git -C "${R}" add config.txt; commit_fixture "${R}"
+git -C "${R}" mv config.txt moved.txt
+run "${R}" "${CONFIG_HOME}"
+check "a renamed file is scanned by secretlint" '[ "${RC}" -ne 0 ] && grep -qi "secretlint detected" <<<"${OUT}"'
+
+R="${TMP}/non-ascii-clean"; new_repo "${R}"
+echo "hello" > "${R}/メモ.txt"; git -C "${R}" add .
+run "${R}" "${CONFIG_HOME}"
+check "a clean staged file with a non-ASCII name passes" '[ "${RC}" -eq 0 ]'
 
 # --- summary -----------------------------------------------------------------
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"

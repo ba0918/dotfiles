@@ -20,8 +20,11 @@
 
 set -euo pipefail
 
-# Gather staged added / modified file paths (skip deletions).
-mapfile -t STAGED < <(git diff --cached --name-only --diff-filter=AM)
+# Gather staged added / modified file paths (skip deletions). With rename
+# detection (git's default) a moved file is neither A nor M and would skip
+# every check, so renames are listed as the path they are added under. The
+# paths are passed on as file arguments, so non-ASCII ones must not be quoted.
+mapfile -t STAGED < <(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=AM)
 if [[ ${#STAGED[@]} -eq 0 ]]; then
     exit 0
 fi
