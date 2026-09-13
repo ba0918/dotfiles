@@ -70,7 +70,7 @@ check "nothing is planned when refused" '! grep -q "^plan:" <<<"${OUT}"'
 # --- fresh machine: every step is planned ----------------------------------------
 
 S="${TMP}/fresh"; fresh "${S}"
-INSTALLED="" GROUPS_="mizumi sudo" run "${S}" --dry-run
+INSTALLED="" GROUPS_="someone sudo" run "${S}" --dry-run
 check "dry-run exits 0 on a fresh machine" '[ "${RC}" -eq 0 ]'
 check "plans the apt source" 'grep -q "^plan: apt source" <<<"${OUT}"'
 check "plans the package install" 'grep -q "^plan: install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin" <<<"${OUT}"'
@@ -85,7 +85,7 @@ S="${TMP}/done"; fresh "${S}"
 cp "${ROOT}/docker/docker.sources" "${S}/sources.list.d/"
 cp "${ROOT}/docker/daemon.json" "${S}/docker/daemon.json"
 printf '[boot]\nsystemd=true\n' > "${S}/wsl.conf"
-INSTALLED="docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin" GROUPS_="mizumi docker" run "${S}" --dry-run
+INSTALLED="docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin" GROUPS_="someone docker" run "${S}" --dry-run
 check "a configured machine plans nothing" '[ "${RC}" -eq 0 ] && ! grep -q "^plan:" <<<"${OUT}"'
 
 # --- partial state: only the missing pieces are planned ----------------------------
@@ -93,7 +93,7 @@ check "a configured machine plans nothing" '[ "${RC}" -eq 0 ] && ! grep -q "^pla
 S="${TMP}/partial"; fresh "${S}"
 cp "${ROOT}/docker/docker.sources" "${S}/sources.list.d/"
 printf '[boot]\nsystemd=true\n' > "${S}/wsl.conf"
-INSTALLED="docker-ce docker-ce-cli containerd.io" GROUPS_="mizumi docker" run "${S}" --dry-run
+INSTALLED="docker-ce docker-ce-cli containerd.io" GROUPS_="someone docker" run "${S}" --dry-run
 check "only missing packages are planned" 'grep -q "^plan: install docker-buildx-plugin docker-compose-plugin$" <<<"${OUT}"'
 check "present apt source is not re-planned" '! grep -q "^plan: apt source" <<<"${OUT}"'
 check "present group membership is not re-planned" '! grep -q "^plan: group" <<<"${OUT}"'

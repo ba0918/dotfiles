@@ -2,9 +2,9 @@
 # CLI are declared here once; `apm install -g` (run by `mise run bootstrap`)
 # deploys them under ~/.claude/skills and ~/.agents/skills.
 # apm.lock.yaml next to this file is generated and stays local.
-name: mizumi
+name: dotfiles
 version: 1.0.0
-description: APM project for mizumi
+description: User-scope rule skills distributed by dotfiles
 author: ba0918
 # Which agent platforms to deploy to.
 # Resolution order: --target flag > this field > auto-detect from filesystem.

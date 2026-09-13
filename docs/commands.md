@@ -115,9 +115,9 @@ devbox services start|stop php-fpm            # php-fpm サービス（ポート
 
 ```bash
 devbox init
-# devbox.json の packages に追加:
-#   "path:/home/mizumi/develop/dotfiles/devbox/flake"
-#   "path:/home/mizumi/develop/dotfiles/devbox/flake#composer"
+# devbox.json の packages に追加（<dotfiles> は clone 先の絶対パス）:
+#   "path:<dotfiles>/devbox/flake"
+#   "path:<dotfiles>/devbox/flake#composer"
 devbox generate direnv                        # .envrc を生成
 direnv allow                                  # cd した瞬間に timecop 付き php が有効
 ```
@@ -150,7 +150,7 @@ Windows 側の IDE / エージェントから WSL を ssh で操作するため�
 ```bash
 ~/develop/dotfiles/ssh/install.sh --dry-run   # 計画を確認
 ~/develop/dotfiles/ssh/install.sh             # 適用（sudo。systemd 未有効なら wsl --shutdown が必要）
-ssh mizumi@localhost                          # Windows 側から接続確認
+ssh <ユーザー名>@localhost                    # Windows 側から接続確認（WSL のユーザー名）
 ```
 
 ## サプライチェーン対策の確認
