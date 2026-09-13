@@ -30,6 +30,11 @@
   git config --file ~/.config/git/config.local user.name "<名前>"
   git config --file ~/.config/git/config.local user.email "<メール>"
   ```
+- **環境固有語の一覧** — pre-commit hook は、staged のファイルパスと追加行に
+  `${XDG_STATE_HOME:-~/.local/state}/leak-terms.txt` の語（利用者名・ホスト名など）が
+  含まれるとコミットを拒否する。1 行 1 語の固定文字列で、大文字小文字は区別しない。
+  語そのものを repo に書かないため、一覧は repo に持たず各マシンで作る。
+  一覧が無い・空のときも hook は fail-secure でコミットを拒否する
 
 ## fish
 

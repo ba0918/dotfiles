@@ -54,7 +54,9 @@ secret スキャン（gitleaks + secretlint）を回す。PR 運用ではない�
 検知器であり、push 前に手元で回すのが基本。
 
 このリポジトリでは、clone 後に `lefthook install` を一度実行する。
-コミット前に ShellCheck と既存の secretlint 検査、push 前に全テストが走る。
+コミット前に ShellCheck と git template の pre-commit hook（環境固有語と secretlint の検査）、
+push 前に全テストが走る。hook は環境固有語の一覧が無いとコミットを拒否する
+（[依存](dependencies.md)の「環境固有語の一覧」）。
 secretlint の依存は `npm ci --prefix git/.config/secretlint --ignore-scripts --no-fund --no-audit` で導入する。
 ShellCheck の版は CI・Lefthook とも `mise/config.toml` を参照する。
 更新時は CI の配布アーカイブの SHA-256 も合わせて更新する。
@@ -74,7 +76,7 @@ bash scripts/test_docker_install.sh        # Docker 導入スクリプト
 bash scripts/test_ssh_install.sh           # sshd 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
 bash scripts/test_lint.sh                  # lint 入口（lint.sh）自身
-bash scripts/test_pre_commit.sh            # git template の pre-commit hook（secretlint。要 mise run bootstrap）
+bash scripts/test_pre_commit.sh            # git template の pre-commit hook（環境固有語と secretlint。要 mise run bootstrap）
 ```
 
 ## clipboard2path-wsl
