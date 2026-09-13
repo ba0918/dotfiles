@@ -2,8 +2,10 @@ pre-commit:
   commands:
     lint:
       run: MISE_GLOBAL_CONFIG_FILE="$PWD/mise/config.toml" mise x shellcheck -- bash scripts/lint.sh
+    # The template hook hands over to this repo's lefthook after its checks;
+    # LEFTHOOK=0 turns that nested run into a no-op instead of a loop.
     secrets:
-      run: XDG_CONFIG_HOME="$PWD/git/.config" bash git/.config/git/template/hooks/pre-commit
+      run: LEFTHOOK=0 XDG_CONFIG_HOME="$PWD/git/.config" bash git/.config/git/template/hooks/pre-commit
 
 pre-push:
   commands:

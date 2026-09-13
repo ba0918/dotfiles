@@ -76,7 +76,7 @@ bash scripts/test_docker_install.sh        # Docker 導入スクリプト
 bash scripts/test_ssh_install.sh           # sshd 導入スクリプト
 bash scripts/test_run_tests.sh             # テスト入口（run-tests.sh）自身
 bash scripts/test_lint.sh                  # lint 入口（lint.sh）自身
-bash scripts/test_pre_commit.sh            # git template の pre-commit hook（環境固有語と secretlint。要 mise run bootstrap）
+bash scripts/test_pre_commit.sh            # git template の pre-commit hook（環境固有語・secretlint・プロジェクトの hook への中継。要 mise run bootstrap）
 ```
 
 ## clipboard2path-wsl

@@ -35,6 +35,16 @@
   含まれるとコミットを拒否する。1 行 1 語の固定文字列で、大文字小文字は区別しない。
   語そのものを repo に書かないため、一覧は repo に持たず各マシンで作る。
   一覧が無い・空のときも hook は fail-secure でコミットを拒否する
+- **プロジェクトの hook への中継** — pre-commit hook は自分の検査が通ったあと、
+  repo のルートに `lefthook.yml` か `.lefthook.yml` があれば
+  `lefthook run pre-commit --no-auto-install` を、hooks ディレクトリに実行可能な
+  `pre-commit.local` があればそれを、この順で呼ぶ。プロジェクトは `lefthook.yml` だけを
+  持てばよく、このマシンでは `lefthook install` を打たない（打つと lefthook が
+  この hook を `pre-commit.old` に退避して自分の hook に置き換え、検査が止まる）。
+  lefthook は `[tools]` の `lefthook` で入り、PATH に無ければ mise の shims から探す。
+  見つからなければコミットを拒否する。dotfiles 自身は `lefthook install` した上で
+  `lefthook.yml` からこの hook を呼ぶので、そこでは `LEFTHOOK=0` を付けて
+  入れ子の lefthook を止めている
 
 ## fish
 

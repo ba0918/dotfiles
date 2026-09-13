@@ -14,6 +14,12 @@
 # term: staged added lines and staged paths containing it are rejected,
 # removed lines are not, and a missing or blank list rejects the commit.
 #
+# After its own checks pass, the hook hands over to the project's hooks (a
+# lefthook config, then .git/hooks/pre-commit.local). lefthook is replaced by
+# a recording stand-in: CI does not install lefthook, and the stand-in can exit
+# with a code real lefthook never uses (it maps any failure to 1), which proves
+# the code is passed through unchanged. Real lefthook is exercised by hand.
+#
 # Needs the repo-local install present (`npm ci` in git/.config/secretlint,
 # done by `mise run bootstrap`).
 #
@@ -265,6 +271,122 @@ R="${TMP}/term-padded"; new_repo "${R}"
 printf 'dir: %s\n' "${FAKE_TERM}" > "${R}/notes.txt"; git -C "${R}" add notes.txt
 run "${R}" "${CONFIG_HOME}" "${PADDED_STATE}"
 check "a term padded with spaces in the list still matches" '[ "${RC}" -ne 0 ] && grep -q "contain a term listed" <<<"${OUT}"'
+
+# --- relay to the project's hooks ---------------------------------------------
+
+# Every project hook the stand-ins run appends its name to this log.
+RELAY_LOG="${TMP}/relay.log"
+
+# lefthook stand-in: records its arguments, exits with FAKE_LEFTHOOK_RC.
+FAKE_LEFTHOOK="${TMP}/fake-lefthook"
+cat > "${FAKE_LEFTHOOK}" <<EOF
+#!/usr/bin/env bash
+printf 'lefthook %s\n' "\$*" >> "${RELAY_LOG}"
+exit "\${FAKE_LEFTHOOK_RC:-0}"
+EOF
+chmod +x "${FAKE_LEFTHOOK}"
+
+RELAY_PATH="${TMP}/bin-relay"
+mkdir -p "${RELAY_PATH}"
+for tool in git bash sed awk; do
+	ln -sf "$(command -v "${tool}")" "${RELAY_PATH}/${tool}"
+done
+ln -sf "${NODE_BIN}" "${RELAY_PATH}/node"
+ln -sf "${FAKE_LEFTHOOK}" "${RELAY_PATH}/lefthook"
+
+# A hook script under .git/hooks that logs its name and exits with a code.
+write_project_hook() {
+	local path="$1" name="$2" code="$3"
+	printf '#!/usr/bin/env bash\necho %s >> "%s"\nexit %s\n' "${name}" "${RELAY_LOG}" "${code}" > "${path}"
+	chmod +x "${path}"
+}
+
+# A repo with an initial commit and one clean staged change.
+relay_repo() {
+	local dir="$1"
+	new_repo "${dir}"
+	echo "base" > "${dir}/base.txt"; git -C "${dir}" add base.txt; commit_fixture "${dir}"
+	echo "hello" > "${dir}/notes.txt"; git -C "${dir}" add notes.txt
+}
+
+# Run the hook with the given PATH and extra environment assignments.
+run_relay() {
+	local repo="$1" path="$2"
+	shift 2
+	: > "${RELAY_LOG}"
+	set +e
+	OUT="$(cd "${repo}" && env -i HOME="${TMP}" PATH="${path}" XDG_CONFIG_HOME="${CONFIG_HOME}" XDG_STATE_HOME="${STATE_HOME}" "$@" bash "${HOOK}" 2>&1)"
+	RC=$?
+	set -e
+	LOG="$(cat "${RELAY_LOG}")"
+}
+
+R="${TMP}/relay-lefthook"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/lefthook.yml"
+run_relay "${R}" "${RELAY_PATH}"
+check "a repo with lefthook.yml runs its pre-commit hook through lefthook" 'grep -q "^lefthook run pre-commit" <<<"${LOG}"'
+check "lefthook is told not to reinstall its own hooks over this one" 'grep -q -- "--no-auto-install" <<<"${LOG}"'
+check "a passing project hook lets the commit through" '[ "${RC}" -eq 0 ]'
+run_relay "${R}" "${RELAY_PATH}" FAKE_LEFTHOOK_RC=3
+check "the project hook exit code becomes the hook exit code" '[ "${RC}" -eq 3 ]'
+
+R="${TMP}/relay-dot-lefthook"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/.lefthook.yml"
+run_relay "${R}" "${RELAY_PATH}"
+check "a repo with .lefthook.yml runs its pre-commit hook through lefthook" 'grep -q "^lefthook run pre-commit" <<<"${LOG}"'
+
+R="${TMP}/relay-rejected"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/lefthook.yml"
+printf 'owner: %s\n' "${FAKE_TERM}" > "${R}/notes.txt"; git -C "${R}" add notes.txt
+write_project_hook "${R}/.git/hooks/pre-commit.local" local 0
+run_relay "${R}" "${RELAY_PATH}"
+check "a commit rejected by the checks never reaches the project hooks" '[ "${RC}" -ne 0 ] && [ -z "${LOG}" ]'
+
+R="${TMP}/relay-none"; relay_repo "${R}"
+run_relay "${R}" "${RELAY_PATH}"
+check "a repo without project hooks passes as before without calling lefthook" '[ "${RC}" -eq 0 ] && [ -z "${LOG}" ]'
+
+R="${TMP}/relay-local"; relay_repo "${R}"
+write_project_hook "${R}/.git/hooks/pre-commit.local" local 5
+run_relay "${R}" "${RELAY_PATH}"
+check "an executable pre-commit.local runs and its exit code is returned" '[ "${RC}" -eq 5 ] && [ "${LOG}" = "local" ]'
+
+R="${TMP}/relay-local-noexec"; relay_repo "${R}"
+write_project_hook "${R}/.git/hooks/pre-commit.local" local 5
+chmod -x "${R}/.git/hooks/pre-commit.local"
+run_relay "${R}" "${RELAY_PATH}"
+check "a pre-commit.local that is not executable is ignored" '[ "${RC}" -eq 0 ] && [ -z "${LOG}" ]'
+
+R="${TMP}/relay-both"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/lefthook.yml"
+write_project_hook "${R}/.git/hooks/pre-commit.local" local 0
+run_relay "${R}" "${RELAY_PATH}"
+check "with both, lefthook runs first and pre-commit.local second" '[ "${RC}" -eq 0 ] && [ "$(cut -d" " -f1 <<<"${LOG}" | tr "\n" " ")" = "lefthook local " ]'
+run_relay "${R}" "${RELAY_PATH}" FAKE_LEFTHOOK_RC=3
+check "a failing lefthook stops the relay before pre-commit.local" '[ "${RC}" -eq 3 ] && ! grep -q "^local" <<<"${LOG}"'
+
+# lefthook install moves the hook it replaces to pre-commit.old, and that can
+# be this very hook.
+R="${TMP}/relay-old"; relay_repo "${R}"
+write_project_hook "${R}/.git/hooks/pre-commit.old" old 5
+run_relay "${R}" "${RELAY_PATH}"
+check "pre-commit.old is never run" '[ "${RC}" -eq 0 ] && [ -z "${LOG}" ]'
+
+R="${TMP}/relay-deletion"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/lefthook.yml"
+git -C "${R}" add lefthook.yml notes.txt; commit_fixture "${R}"
+git -C "${R}" rm -q notes.txt
+run_relay "${R}" "${RELAY_PATH}"
+check "a commit that only deletes files still runs the project hook" '[ "${RC}" -eq 0 ] && grep -q "^lefthook run pre-commit" <<<"${LOG}"'
+
+R="${TMP}/relay-no-lefthook"; relay_repo "${R}"
+printf 'pre-commit: {}\n' > "${R}/lefthook.yml"
+run_relay "${R}" "${CLEAN_PATH}"
+check "a lefthook config without lefthook installed rejects the commit" '[ "${RC}" -ne 0 ] && grep -q "lefthook is not installed" <<<"${OUT}"'
+
+ln -sf "${FAKE_LEFTHOOK}" "${FAKE_MISE}/shims/lefthook"
+run_relay "${R}" "${CLEAN_PATH}" MISE_DATA_DIR="${FAKE_MISE}"
+check "lefthook is found through the mise shims when absent from PATH" '[ "${RC}" -eq 0 ] && grep -q "^lefthook run pre-commit" <<<"${LOG}"'
 
 # --- summary -----------------------------------------------------------------
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Global pre-commit hook: reject environment-specific terms in staged changes,
-# then run secretlint on staged files.
+# run secretlint on staged files, then hand over to the project's own hooks.
 #
 # Installed into new repositories via `git init` / `git clone` template dir
 # (see [init] templateDir in ~/.gitconfig). Existing repositories are not
@@ -23,8 +23,48 @@
 #   - honors a project-local .secretlintrc* if present; otherwise uses the
 #     global config shipped with dotfiles. A project that ships its own
 #     secretlint (node_modules/.bin/secretlint) is scanned with that one
+#   - once those checks pass, runs the project's own hooks: `lefthook run
+#     pre-commit` when lefthook.yml or .lefthook.yml sits at the repository
+#     root (rejects the commit if lefthook is missing), then an executable
+#     pre-commit.local in the hooks directory. The first failure decides the
+#     exit code. A project keeps its lefthook.yml for everyone else; on this
+#     machine `lefthook install` is not needed and would replace this hook
 
 set -euo pipefail
+
+# A GUI client or editor integration may invoke the hook without the shell that
+# activates mise, so a tool missing from PATH is looked up in its shims.
+add_mise_shims_if_missing() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        local shims="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
+        if [[ -d "$shims" ]]; then
+            PATH="$shims:$PATH"
+        fi
+    fi
+}
+
+# pre-commit.old is never run: `lefthook install` moves the hook it replaces
+# there, and that may be this very hook.
+relay_to_project_hooks() {
+    local top local_hook
+    top="$(git rev-parse --show-toplevel)"
+    if [[ -f "$top/lefthook.yml" || -f "$top/.lefthook.yml" ]]; then
+        add_mise_shims_if_missing lefthook
+        if ! command -v lefthook >/dev/null 2>&1; then
+            echo "[pre-commit] this repository has a lefthook config but lefthook is not installed — rejecting commit for safety." >&2
+            echo "[pre-commit] override (risky):    git commit --no-verify" >&2
+            exit 1
+        fi
+        # Without --no-auto-install, lefthook installs its own hook in place of
+        # this one (moving this one to pre-commit.old), silently dropping the
+        # checks above from every later commit.
+        lefthook run pre-commit --no-auto-install "$@" || exit $?
+    fi
+    local_hook="$(git rev-parse --git-path hooks)/pre-commit.local"
+    if [[ -f "$local_hook" && -x "$local_hook" ]]; then
+        "$local_hook" "$@" || exit $?
+    fi
+}
 
 # Gather staged added / modified file paths (skip deletions). With rename
 # detection (git's default) a moved file is neither A nor M and would skip
@@ -32,6 +72,8 @@ set -euo pipefail
 # paths are passed on as file arguments, so non-ASCII ones must not be quoted.
 mapfile -t STAGED < <(git -c core.quotePath=false diff --cached --name-only --no-renames --diff-filter=AM)
 if [[ ${#STAGED[@]} -eq 0 ]]; then
+    # Nothing to scan here, but a deletion is still the project's to judge.
+    relay_to_project_hooks "$@"
     exit 0
 fi
 
@@ -92,14 +134,8 @@ GLOBAL_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/secretlint"
 GLOBAL_CONFIG="$GLOBAL_DIR/.secretlintrc.json"
 GLOBAL_BIN="$GLOBAL_DIR/node_modules/.bin/secretlint"
 
-# The binary is a node script. A GUI client or editor integration may invoke
-# the hook without the shell that activates mise, so fall back to its shims.
-if ! command -v node >/dev/null 2>&1; then
-    MISE_SHIMS="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims"
-    if [[ -d "$MISE_SHIMS" ]]; then
-        PATH="$MISE_SHIMS:$PATH"
-    fi
-fi
+# The binary is a node script.
+add_mise_shims_if_missing node
 
 # Let project-level config win; otherwise use the global dotfiles config.
 PROJECT_CONFIG=""
@@ -137,3 +173,5 @@ if ! "${CMD[@]}"; then
     echo "[pre-commit] fix the findings, or (only if you are sure) bypass with: git commit --no-verify" >&2
     exit 1
 fi
+
+relay_to_project_hooks "$@"

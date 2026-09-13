@@ -7,6 +7,8 @@
 | `git commit` が `[pre-commit] secretlint is not installed` で拒否される | `git/.config/secretlint/node_modules` が無い。`mise run bootstrap`（または `npm ci --prefix ~/.config/secretlint`）で入れる |
 | `git commit` が `[pre-commit] no terms in .../leak-terms.txt` で拒否される | 環境固有語の一覧が無いか空。表示された場所に 1 行 1 語で作る（[依存](dependencies.md)の「環境固有語の一覧」） |
 | `git commit` が `[pre-commit] staged changes contain a term listed in ...` で拒否される | 表示されたパスか追加行に一覧の語が入っている。その語を消してからコミットし直す |
+| `git commit` が `[pre-commit] this repository has a lefthook config but lefthook is not installed` で拒否される | repo に `lefthook.yml` があり、hook がそこへ中継しようとしたが lefthook が見つからない。`mise install`（`[tools]` の `lefthook`）で入れる |
+| 自分の検査（語検査・secretlint）がいつの間にか走らなくなった | その repo で `lefthook install` か、`--no-auto-install` なしの `lefthook run` を実行して、hook が lefthook のものに置き換わった可能性がある。`.git/hooks/pre-commit.old` があれば、それを `pre-commit` に戻す（または `~/.config/git/template/hooks/pre-commit` への symlink にする）|
 | `~/.gitconfig` に突然大量の差分 | `gcm configure` などツールが symlink 先に書き込んだ可能性。差分を確認して整理する |
 | dotfiles apply で repo 内ファイルが symlink 化する | `[dotfiles]` がディレクトリ symlink を指す場合に起きる。file-level 宣言でなくディレクトリ単位で宣言する |
 | Windows 側でコピーしたファイルに `:Zone.Identifier` が付く | global ignore（`~/.config/git/ignore`）で除外済み |
