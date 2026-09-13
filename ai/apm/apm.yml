@@ -20,6 +20,7 @@ dependencies:
     - ba0918/agentic-workflow
     - ba0918/agentic-meta
     - ba0918/skills/skills/ba0918-handoff
+    - ba0918/skills/skills/ba0918-teacher
   mcp: []
 includes: auto
 scripts: {}
