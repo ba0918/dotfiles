@@ -21,6 +21,7 @@ dependencies:
     - ba0918/agentic-meta
     - ba0918/skills/skills/ba0918-handoff
     - ba0918/skills/skills/ba0918-teacher
+    - ba0918/kemi/skills/kemi
   mcp: []
 includes: auto
 scripts: {}

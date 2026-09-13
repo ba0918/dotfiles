@@ -184,6 +184,10 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
   main を追従する。`apm install -g` は
   `apm.lock.yaml` の commit に留まるため、追従させたいときは update を使う。
   プロジェクト単位の `apm.yml` はそれぞれのリポジトリで管理する
+- **kemi** — 変更を人のレビューに出すローカルの diff ビューア。本体は `[tools]` の
+  `github:ba0918/kemi`（自分がリリースするので `minimum_release_age` は per-tool で 0d）、
+  エージェント向けの使い方は apm の `ba0918/kemi/skills/kemi` で配る。
+  `ai/claude/CLAUDE.md` と `ai/codex/AGENTS.md` が、diff-review の提示手段としてこのスキルを指定する
 - **ripgrep** — `[tools]` の `ripgrep`。旧 apt 版から mise 管理へ移行済み
 - **ollama** — `[tools]` の `ollama`（aqua）。公式 installer は使わず
   `ollama serve` で手動起動

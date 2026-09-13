@@ -226,10 +226,12 @@ npm = "12.0.2"
 gcloud = "latest"
 # run-if-present: hook の repo 外依存を存在チェック付きで起動する自作 CLI。
 # kakoi: codex を隔離して起動する自作 CLI（docs/kakoi.md）。
-# どちらも自分がリリースするので minimum_release_age で待たない（0d）。github backend は
+# kemi: 変更を人のレビューに出すローカルの diff ビューア（diff-review の提示手段）。
+# どれも自分がリリースするので minimum_release_age で待たない（0d）。github backend は
 # aqua registry を通らないため、上の AI CLI と違い cosign / Attestations 検証は無い
 "github:ba0918/run-if-present" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kakoi" = { version = "latest", minimum_release_age = "0d" }
+"github:ba0918/kemi" = { version = "latest", minimum_release_age = "0d" }
 
 # bootstrap ステップ 15（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。

@@ -33,7 +33,7 @@ Always 行は作業種別に関わらず読む。複数の行に該当する場�
 スキルをすべて読む。読んでいない状態で、そのスキルが規定する作業を
 開始しない。
 
-この環境では、diff-review の提示手段は `diff-review-viewer` スキルが担う。
+この環境では、diff-review の提示手段は `kemi` スキルが担う。
 
 ## Local Instructions
 
