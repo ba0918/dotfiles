@@ -1,17 +1,21 @@
 # Agent Instructions
 
-## 重要
-
-- 最初に `ba0918-using-workflow` を必ず読み込むこと（新しい依頼の入口を決める）
-
 ## Core
 
-- 日本語で応答すること
-- ユーザーの目的を優先し、依頼された範囲を不必要に拡大しない。
-- 事実・推測・未確認事項を区別する。
-- 変更後は、その変更に適した方法で実際に検証する。
-- 不可逆・破壊的・外部公開を伴う操作は、必要な承認なしに実行しない。
-- プロジェクト固有の指示がある場合は、それを適用する。
+* 日本語で応答する。
+* ユーザーの目的と依頼範囲を優先し、不必要に作業を拡大しない。
+* 事実・推測・未確認事項を区別する。
+* プロジェクト固有の指示がある場合は、それを優先して適用する。
+
+## Workflow Routing
+
+`ba0918-using-workflow` は、依頼が複数工程の開発作業であり、
+brainstorm / plan / implement / review などの進め方を選ぶ必要がある場合に読む。
+
+単純な質問、調査、説明、軽微な修正、明示された単一作業では、
+workflow を適用する必要はない。
+
+ユーザーが特定の workflow や skill を明示した場合は、それに従う。
 
 ## Human Interaction
 
@@ -26,35 +30,48 @@
 
 ## Rule Routing
 
-規範はスキル（`ba0918-*`、agentic-rules から導入）として入っている。
-該当する作業を始める前に、対応するスキルを名前で読む。
+規範は `ba0918-*` skill として提供される。
+現在の作業に該当する skill のみ読む。
 
-| When | Read |
-|---|---|
-| Always | ba0918-design, ba0918-placement, ba0918-readability, ba0918-secrets |
-| commit | ba0918-commit |
-| delegate | ba0918-delegation |
-| design | ba0918-reuse |
-| diff-review | ba0918-diff-review |
-| implement | ba0918-tdd |
-| release | ba0918-release |
-| review | ba0918-verification |
+| When                                     | Read                        |
+| ---------------------------------------- | --------------------------- |
+| architecture / design decision           | ba0918-design, ba0918-reuse |
+| implementation                           | ba0918-tdd                  |
+| code readability concern                 | ba0918-readability          |
+| information placement decision           | ba0918-placement            |
+| secrets / credentials / sensitive config | ba0918-secrets              |
+| commit                                   | ba0918-commit               |
+| delegate to subagent                     | ba0918-delegation           |
+| diff review                              | ba0918-diff-review          |
+| release                                  | ba0918-release              |
+| verification / review                    | ba0918-verification         |
 
-Always 行は作業種別に関わらず読む。複数の行に該当する場合は、対応する
-スキルをすべて読む。読んでいない状態で、そのスキルが規定する作業を
-開始しない。
+複数に該当する場合は必要なものを組み合わせる。
+関連しない skill は予防的に読み込まない。
 
-この環境では、diff-review の提示手段は `kemi` スキルが担う。
+diff-review の提示には `kemi` skill を使う。
 
 ## Tool Guide
 
-開発ツール（ast-grep / fd / rg / jq）の使い分けは
-`{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` を読む。
+開発ツールの選択に迷った場合は
+`{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` を参照する。
+
+既に適切なツールが明らかな場合は、事前に読む必要はない。
 
 ## Local Instructions
 
 より具体的な `AGENTS.md` やプロジェクト固有の契約が存在する場合は、
 この共通契約をそのプロジェクトへ具体化するものとして扱う。
+
+## Verification
+
+変更内容に応じた妥当な検証を行う。
+
+影響範囲が限定されている場合は、その範囲に対応する検証を優先し、
+無関係な広範囲の検証を必要なく実行しない。
+
+安全なローカル検証は、途中で逐次承認を求めず、
+失敗が今回の変更に起因する場合は修正して再実行してよい。
 
 ## Subagent operation rules
 
