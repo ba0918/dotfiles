@@ -180,6 +180,7 @@ Claude Code は生成済み settings.json、Codex は起動元から継承した
 |--------|----------|------|
 | `$HOME/develop/claude-notify` | `30-hooks.json` の Notification / Stop | 別 repo。手動 clone |
 | `~/.claude/hooks/herdr-agent-state.sh`、`~/.codex/herdr-agent-state.sh` | 両者の SessionStart | herdr 管轄。dotfiles 配布外 |
+| `~/.orca/agent-hooks/claude-hook.sh` | `30-hooks.json` の Orca 行（13 イベント） | Orca（エージェント向け IDE）管轄。dotfiles 配布外 |
 
 `run-if-present` の呼び出し方:
 
@@ -187,6 +188,12 @@ Claude Code は生成済み settings.json、Codex は起動元から継承した
 run-if-present path <存在チェックするパス> -- <実行するコマンド>
 run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド>
 ```
+
+Orca の hook だけは `run-if-present` を通さず、Orca が settings.json に書き込む
+コマンド文字列をそのまま `30-hooks.json` に写している。コマンド自体がスクリプトの
+有無を確かめて、無ければ `{}` を返して終わるので、新マシンでも無音で素通しになる。
+文字列を変えると、Orca が自分の hook を見つけられずに二重に登録するおそれがある
+（Orca の判定方法は未確認）。Orca の更新でコマンドが変わったら写し直す。
 
 `statusLine` の `~/.claude/statusline.py` は repo 管理（`ai/claude/statusline.py` を
 `[dotfiles]` が template で実体として書き出す）だが、同じく `run-if-present` で包む。
