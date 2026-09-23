@@ -190,6 +190,14 @@ node = "26.8.2"
 # バイナリだけを mise で持つ。サーバは使うときに `ollama serve` で手動起動
 ollama = "latest"
 opencode = { version = "latest", minimum_release_age = "0d" }
+# opencode v2: v1 と共存させるためのお試し導入。v2 のバイナリは GitHub Release ではなく
+# vendor CDN 配布で、aqua / github backend から取れないため http backend を使う。
+# 同梱バイナリ名が v1 と同じ opencode なので rename_exe で opencode2 に変える。
+# aqua を通らず cosign / Attestations 検証が無いうえ、http backend には
+# minimum_release_age も効かないため、版と sha256 を固定する（sha256 の出典は
+# anomalyco/homebrew-tap の opencode-v2.rb）。上げるときは両方を手で更新する。
+# latest 追従にする場合の宣言は docs/dependencies.md に控えてある
+"http:opencode2" = { version = "2.0.14", url = "https://opencode.ai/files/bin/{{version}}/opencode-linux-x64-baseline.tar.gz", checksum = "sha256:0da3246c6d22f393739bb85d788055c16e381635cf0c1ceed393c28fd13ea964", rename_exe = "opencode2" }
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"

@@ -127,6 +127,21 @@ ext の再ビルドが手動になるのが理由。
   グローバル config は `ai/opencode/opencode.json` で template 配布。
   **claude-skills** プラグインは `opencode plugin ba0918/claude-skills --force --global`
   で導入（スキル本体は opencode のキャッシュに配置されるため repo 外）
+- **opencode v2（opencode2）** — `[tools]` の `http:opencode2` で v1 と共存させる。
+  v2 のバイナリは GitHub Release ではなく vendor CDN（`opencode.ai/files/bin/`）配布で、
+  aqua / github backend から取れないため http backend を使う。アーカイブ同梱の
+  バイナリ名が v1 と同じ `opencode` なので `rename_exe` で `opencode2` に変える。
+  aqua を通らず cosign / Attestations 検証が無く、http backend には
+  `minimum_release_age` も効かないため、版と sha256 を固定する（sha256 の出典は
+  `anomalyco/homebrew-tap` の `opencode-v2.rb`）。上げるときは両方を手で更新する。
+  latest 追従にしたい場合は、版一覧のエンドポイントが無いので v2 install script と同じ
+  update API から regex で解決する（checksum の固定は外れる）:
+  `version = "latest"` / `version_list_url = "https://opencode.ai/update/api/latest/cli/npm"` /
+  `version_regex = '"version":"([^"]+)"'`。
+  v2 が読むグローバル config は `~/.config/opencode/`（v1 の `~/.opencode/` ではない）ため、
+  `scripts/generate-deny.sh opencode-apply` の deny は v2 に効かない。
+  npm の `@opencode/cli` は `opencode2` bin を同梱するが、mise の npm backend が
+  パッケージ名の初出 30 日ガード（初出 2026-09-02）で拒否するため現状は使えない
 
 `ai/shared/` の共通契約（`interaction.md` / `human-readable.md`）は
 `~/.claude/rules/` にシンボリックリンクして常時適用する。Claude 専用の
