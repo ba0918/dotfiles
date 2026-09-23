@@ -37,7 +37,7 @@ fi
 #   file         → claude `Read(**/p)`, opencode `**/p`          (global)
 #   directory    → claude `Read(~/$p)` + `Read(//$HOME/$p)`, opencode `~/p` (home-scoped)
 #   read         → claude `Read(p)` (Claude only, already-prefixed / short-form)
-#   write        → claude `Write(p)` (Claude only)
+#   write        → claude `Edit(p)` (Claude only; Edit rules cover every file-editing tool)
 #   bash         → claude `Bash(p)` (Claude only)
 #
 # A category added to deny-patterns.yaml MUST be added here (with an emitter).
@@ -81,7 +81,7 @@ emit_claude() {
         extract_category "$cat" | while IFS= read -r p; do echo "Read($p)"; done
         ;;
       write)
-        extract_category "$cat" | while IFS= read -r p; do echo "Write($p)"; done
+        extract_category "$cat" | while IFS= read -r p; do echo "Edit($p)"; done
         ;;
       bash)
         extract_category "$cat" | while IFS= read -r p; do echo "Bash($p)"; done

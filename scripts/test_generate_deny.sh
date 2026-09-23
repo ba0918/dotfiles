@@ -93,10 +93,14 @@ check "opencode emit count is exact (file + directory categories only)" \
 
 # --- 2. known-secret patterns actually survive the conversion ----------------
 claude_json="$("${SCRIPT}" claude)"
-for want in 'Read(**/.env)' 'Read(**/id_rsa)' 'Read(**/*.pem)' 'Write(.env*)' 'Bash(sudo:*)'; do
+for want in 'Read(**/.env)' 'Read(**/id_rsa)' 'Read(**/*.pem)' 'Edit(.env*)' 'Bash(sudo:*)'; do
 	check "claude deny contains ${want}" \
 		'[ "$(echo "${claude_json}" | jq --arg w "${want}" ".permissions.deny | index(\$w) != null")" = "true" ]'
 done
+# Claude Code ignores Write(...) in file permission checks; only Edit(...) rules
+# cover the file-editing tools, so a Write form would be a deny that blocks nothing.
+check "claude deny emits no Write(...) rules" \
+	'[ "$(echo "${claude_json}" | jq "[.permissions.deny[] | select(startswith(\"Write(\"))] | length")" = "0" ]'
 
 # --- 3. indentation variants parse (POSIX regex, not GNU \s) ----------------
 # Two spaces, four spaces, and a leading tab must all be recognized. Under the

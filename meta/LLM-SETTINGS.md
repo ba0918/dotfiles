@@ -106,7 +106,7 @@ mawk で無言に一致しなくなる。
 **Claude Code 形式:**
 - ファイルパターン → `Read(**/pattern)`
 - ディレクトリ → `Read(~/.dir/**)` + `Read(//$HOME/.dir/**)`
-- Write deny → `Write(pattern)`
+- 書き込み禁止 → `Edit(pattern)`（Claude Code は `Write(...)` を file permission の判定に使わず、`Edit(...)` が書き込み系ツール全体を覆う）
 - Bash deny → `Bash(command)`
 
 **OpenCode 形式:**
