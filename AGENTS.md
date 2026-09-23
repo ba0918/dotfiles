@@ -1,8 +1,7 @@
 # AGENTS.md
 
-このリポジトリ用の AI エージェント向け指示書（実体）。
-Codex / Cursor / Aider などで読み込まれる標準ファイル。Claude Code では
-`CLAUDE.md` が本ファイルを参照する。
+このリポジトリ用の AI エージェント向け指示書。
+Claude Code / Codex / Cursor / Aider などが直接読み込む。
 
 ## プロジェクト概要
 

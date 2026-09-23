@@ -55,7 +55,7 @@
 | ツール・配布宣言 | `mise/config.toml` | グローバル mise 設定 |
 | テスト・生成処理 | `scripts/`、`ai/shared/hooks/tests/`、`ai/claude/tests/` | [実行方法](commands.md#テスト) |
 | CI | `.github/workflows/ci.yml` | テスト・shellcheck・secret 検出 |
-| エージェント指示 | `AGENTS.md`（`CLAUDE.md` から参照） | このリポジトリの変更ルール |
+| エージェント指示 | `AGENTS.md` | このリポジトリの変更ルール |
 
 仕様・移行記録は `meta/`、利用手順は `docs/` に置く。
 
