@@ -1,7 +1,7 @@
 ---
 name: scout
 description: read-only 調査専用エージェント。原因調査・影響範囲の特定・コードベース走査・仕様とコードの突き合わせ・レビュー指摘の裏取りに使う。ファイルの編集・作成・コマンド実行は一切できない。成果は出典付きの構造化データで返り、人間向けの文書化・issue 登録・報告文の作成はオーケストレータ側で行う。
-model: claude-opus-5
+model: opus
 tools: Read, Grep, Glob
 ---
 
