@@ -202,8 +202,11 @@ force push（`--force` 系のフラグ、`--mirror`、`+` で始まる refspec�
 `delete-asset`、`gh api -X DELETE`）、commit / push の hook の飛ばし（`--no-verify`、
 commit の `-n`、`LEFTHOOK` / `LEFTHOOK_BIN` / `LEFTHOOK_EXCLUDE` の環境変数、
 `core.hooksPath` の書き換え）。hook は secretlint と lint とテストを回すので、
-飛ばすと秘密や壊れた変更が履歴やリモートへ届く。これは事故防止の柵で境界ではなく、
-`/usr/bin/git` のような絶対パスでの起動や、`.git/hooks` のファイルを直接消す操作は通る。上の段から規則を消せないので、
+飛ばすと秘密や壊れた変更が履歴やリモートへ届く。規則は `guard-absolute-path` で
+`/usr/bin/git` のような絶対パスでの起動も見張り、見張りの外にある Debian の2つ目の
+git（`/usr/lib/git-core/git` とそこへリンクする `git-commit` 等）は `hide` で起動できなくする。
+それでも事故防止の柵で境界ではなく、置き直された本物を書ける場所へ複製して起動する操作や、
+`.git/hooks` のファイルを直接消す操作は通る。上の段から規則を消せないので、
 このプロファイルで動くすべての起動に効く。各規則の `examples` は読み込みのたびに
 検査され、規則が例と食い違うと起動が 125 で止まる。
 

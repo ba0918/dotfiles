@@ -136,6 +136,12 @@ hide = [
     # outside the isolation. It is under the rw ~/.claude above, and it is hidden rather
     # than read-only for the same reason as shell-snapshots above.
     "~/.claude/session-env",
+    # A second copy of the git binary outside the command guards below, reachable by
+    # absolute path (/usr/lib/git-core/git and the git-* builtins linked to it). git
+    # itself runs builtins in process; hooks and git's own scripts find `git` through
+    # PATH and fall through to the guarded one (measured: commit hooks, https fetch,
+    # worktree and submodule still work).
+    "/usr/lib/git-core/git",
     # WSL interop: binfmt_misc hands every MZ file to /init, which launches it as a
     # Windows process through the socket in /run/WSL, outside every hide above, with the
     # whole distro readable via \\wsl$. Hiding the drives below only removes the obvious
@@ -201,10 +207,18 @@ GH_TOKEN = "${config_dir}/secrets/gh-token"
 # under this profile. `examples` is checked on every load; a rule that stops matching
 # them fails the start instead of going quiet.
 #
+# `guard-absolute-path` puts the guard over the real binary too, so `/usr/bin/git` does
+# not walk past it; kakoi applies it per program, and every rule repeats it so that none
+# reads as PATH-only. Debian also ships a second copy of git at /usr/lib/git-core/git
+# (the dashed builtins such as git-commit link to it), which no guard covers; it is
+# hidden in [mounts] above. Copying the relocated binary into a writable place still
+# gets past all of this: it stops accidents, not intent.
+#
 # Global git options that take a value, declared so that `git -C dir push --force` is
 # still read from `push`.
 [[commands.guard]]
 program = "git"
+guard-absolute-path = true
 reason = "force pushing rewrites published history; ask the person to do it"
 options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
 for = [["push"]]
@@ -233,6 +247,7 @@ examples.allow = [
 # GIT_CONFIG_* is not denied: [git.instead-of] above puts it in the environment itself.
 [[commands.guard]]
 program = "git"
+guard-absolute-path = true
 reason = "git aliases can run a guarded command under another name; call the command directly"
 options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
 deny = [
@@ -258,6 +273,7 @@ examples.allow = [
 # The LEFTHOOK* variables turn lefthook off or swap its binary from the environment.
 [[commands.guard]]
 program = "git"
+guard-absolute-path = true
 reason = "commit and push hooks run the secret scan and the tests; do not skip them, fix what they report"
 options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
 for = [["commit"], ["push"], ["merge"], ["rebase"], ["am"], ["cherry-pick"], ["revert"]]
@@ -280,6 +296,7 @@ examples.allow = [
 
 [[commands.guard]]
 program = "git"
+guard-absolute-path = true
 reason = "commit hooks run the secret scan and the tests; do not skip them, fix what they report"
 options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
 for = [["commit"]]
@@ -296,6 +313,7 @@ examples.allow = [
 # Pointing core.hooksPath elsewhere skips every hook at once.
 [[commands.guard]]
 program = "git"
+guard-absolute-path = true
 reason = "changing core.hooksPath skips the commit and push hooks; do not skip them"
 options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
 # A value after the key sets it; the key alone only reads it and stays allowed.
@@ -319,6 +337,7 @@ examples.allow = [
 
 [[commands.guard]]
 program = "gh"
+guard-absolute-path = true
 reason = "deleting or archiving on GitHub cannot be undone; ask the person to do it"
 deny = [
     ["issue", "delete"],
@@ -342,6 +361,7 @@ examples.allow = [
 # The REST API reaches the same deletions.
 [[commands.guard]]
 program = "gh"
+guard-absolute-path = true
 reason = "DELETE requests through gh api cannot be undone; ask the person to do it"
 options-with-value = ["-R", "--repo"]
 for = [["api"]]
