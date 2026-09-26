@@ -20,6 +20,8 @@
 #   - The home directories named in ai/shared/deny-patterns.yaml (directories) that
 #     default.toml does not hide are hidden here too.
 #   - ORCA_* is unset (the IDE's hook endpoint and pane identity).
+#   - The network is filtered down to the model provider (see [network]). Another
+#     provider needs its own allow items.
 #   - rw for caches is narrowed to what opencode uses.
 #
 # What stays exposed: ~/.local/share/opencode holds opencode's auth.json with the key of
@@ -87,8 +89,27 @@ prune   = [".git", "node_modules"]
 under  = "/mnt"
 fstype = ["9p", "drvfs"]
 
+# Only the model provider is reachable, so what the model reads can leave only through
+# the channel it already has. Measured 2026-09-27 with opencode2 2.0.17 and
+# openai/gpt-6-sol on the ChatGPT sign-in: chatgpt.com alone completes a run;
+# api.openai.com alone hangs until timed out, and models.dev / opencode.ai are not needed.
+# A blocked destination shows up as a hang, not as an error.
 [network]
-mode = "host"
+mode = "filtered"
+
+# the ChatGPT backend the OpenAI provider talks to under the ChatGPT sign-in
+[[network.allow]]
+destination = { dns = "chatgpt.com" }
+protocol = "tcp"
+ports = ["443"]
+
+# Refreshing the ChatGPT sign-in token. Not exercised in the measurement above (the
+# stored token was still valid); allowed so the seat does not start hanging when it
+# expires.
+[[network.allow]]
+destination = { dns = "auth.openai.com" }
+protocol = "tcp"
+ports = ["443"]
 
 [env]
 mode = "inherit"

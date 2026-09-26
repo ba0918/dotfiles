@@ -143,7 +143,13 @@ kakoi には下の段の項目を消す手段が無く、policy ファイルを�
 
 default.toml との違いは、`~/.claude`・`~/.claude.json`・`~/.codex`・`~/.config` を
 隠す（`~/.config/opencode` だけ読み取り専用で戻す）、`[secrets]` を持たない、
-`ai/shared/deny-patterns.yaml` の directories にある場所を残らず隠す、`ORCA_*` を消す、の 4 点。
+`ai/shared/deny-patterns.yaml` の directories にある場所を残らず隠す、`ORCA_*` を消す、
+ネットワークを `filtered` にしてモデルの提供元だけへ絞る、の 5 点。
+許可しているのは ChatGPT のサインインで使う `chatgpt.com` と、トークン更新の
+`auth.openai.com` の TCP 443 番だけ（`filtered` には pasta と nft が要る）。
+許可の外の名前は中から名前解決できない。許可が足りないと opencode は
+エラーにならず止まったままになるので、別のプロバイダを使うときや席が固まったときは
+まず許可を疑う。
 作業場所を書かせないときは `ai/kakoi/policy/readonly-workspace.toml` を重ねる:
 
 ```bash
