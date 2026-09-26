@@ -131,6 +131,29 @@ rules / agents / output-styles のリンク先は `ro` に含めず、上の保�
 apply の後に実体へ置き換わったかを確かめる手順と、リンクが残ったときの直し方は
 [トラブル対応](troubleshooting.md#regular-files) を参照。
 
+### 外部モデル用のプロファイル
+
+他社のモデルに opencode2 経由で作業を渡すときは、`--profile external-review`
+（正本 `ai/kakoi/profile/external-review.toml`、配り方は default.toml と同じ）を使う。
+default.toml は claude / codex を中で動かす前提なので、`~/.claude` と `~/.codex` が
+読み書きでき、`GH_TOKEN` も入る。`opencode2 run --auto` はシェルの実行も自動で許可するため、
+その上では会話履歴や認証情報を読んでモデルの提供元へ送れてしまう。
+kakoi には下の段の項目を消す手段が無く、policy ファイルを重ねても `GH_TOKEN` や
+`rw` を取り除けないので、差分ではなく独立したプロファイルとして持つ。
+
+default.toml との違いは、`~/.claude`・`~/.claude.json`・`~/.codex`・`~/.config` を
+隠す（`~/.config/opencode` だけ読み取り専用で戻す）、`[secrets]` を持たない、
+`ai/shared/deny-patterns.yaml` の directories にある場所を残らず隠す、`ORCA_*` を消す、の 4 点。
+作業場所を書かせないときは `ai/kakoi/policy/readonly-workspace.toml` を重ねる:
+
+```bash
+kakoi --profile external-review --policy-file ai/kakoi/policy/readonly-workspace.toml -- opencode2 run --standalone --auto ...
+```
+
+残る露出: opencode は `~/.local/share/opencode/auth.json`（opencode に設定した全プロバイダの
+キー）を読まないと動かないので、これは中から読める。隠した場所以外のホームは読み取り専用で見える。
+名前付きのプロファイルは組み込みの既定へ落ちないので、apply 前に使うと終了コード 125 で止まる。
+
 ## GitHub トークン
 
 `gh auth login` の認証情報（`~/.config/gh`、全リポジトリ +

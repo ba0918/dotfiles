@@ -1,0 +1,109 @@
+# The kakoi profile for handing work to a model from another provider (an external
+# reviewer run through `opencode2 run`). Distributed like default.toml: the canonical copy
+# is this file, and `mise bootstrap dotfiles apply` writes it out to
+# ~/.config/kakoi/profile/external-review.toml as a real file. Select it with
+# `kakoi --profile external-review`; combine it with policy/readonly-workspace.toml when
+# the run must not change the repository.
+#
+# It is a whole profile, not a layer on default.toml: a named profile replaces the
+# default one, and kakoi has no operator that removes a lower layer's item, so the
+# GH_TOKEN secret and the rw agent directories of default.toml could not be taken away by
+# a policy file on top of it. Everything not changed below is the same as default.toml.
+#
+# Differences from default.toml, all so that nothing belonging to another agent or to the
+# host's accounts reaches the external model:
+#   - ~/.claude, ~/.claude.json and ~/.codex are hidden, not rw: their session
+#     transcripts and credentials would otherwise be readable through the shell tool,
+#     which `--auto` approves.
+#   - ~/.config is hidden; only ~/.config/opencode comes back, read-only.
+#   - No [secrets]: no GitHub token enters, so [git.instead-of] is dropped as well.
+#   - The home directories named in ai/shared/deny-patterns.yaml (directories) that
+#     default.toml does not hide are hidden here too.
+#   - ORCA_* is unset (the IDE's hook endpoint and pane identity).
+#   - rw for caches is narrowed to what opencode uses.
+#
+# What stays exposed: ~/.local/share/opencode holds opencode's auth.json with the key of
+# every provider configured there, and opencode must read it to run. The rest of the home
+# directory outside the hidden items stays readable (07-mounts: unlisted paths are
+# read-only, not hidden).
+
+[mounts]
+# The work place, as in default.toml.
+rw = [
+    "${workspace}",
+    "${worktree}",
+    "${git_common_dir}",
+    "/tmp/kakoi",
+    # opencode's own runtime state and cache
+    "~/.local/share/opencode",
+    "~/.local/state/opencode",
+    "~/.cache/opencode",
+]
+
+ro = [
+    # opencode's configuration, including the deny set injected by generate-deny.sh. It
+    # sits under the hidden ~/.config below and is named back in, read-only.
+    "~/.config/opencode",
+    # Host code under this repository's checkout, as in default.toml.
+    "{{ vars.dotfiles_root }}/ai/kakoi/shim",
+    "{{ vars.dotfiles_root }}/ai/shared/hooks",
+]
+
+hide = [
+    "~/.safe-chain/certs",
+    "/tmp",
+    "/run/user",
+    "/run/WSL",
+    # other agents: session transcripts, credentials, settings
+    "~/.claude",
+    "~/.claude.json",
+    "~/.codex",
+    # every tool's configuration and the credentials some of them keep there (gh, gcloud)
+    "~/.config",
+    # credentials, as in default.toml
+    "~/.ssh",
+    "~/.aws",
+    "~/.gnupg",
+    "~/.docker",
+    "~/.kube",
+    # the rest of the directories category of ai/shared/deny-patterns.yaml
+    "~/.aws-sam",
+    "~/.gcloud",
+    "~/.local/share/keyrings",
+    "~/.local/share/secret-service",
+    "~/.password-store",
+    "~/.mozilla",
+]
+
+# Environment files anywhere in the worktree read as empty inside the isolation.
+[[mounts.scan]]
+root    = "${worktree}"
+names   = [".env", ".env.*"]
+exclude = ["*.example", "*.sample", "*.dist", "*.template"]
+prune   = [".git", "node_modules"]
+
+# The Windows drives mounted under /mnt are hidden, except the one the work place is on.
+[[mounts.hide-mounts]]
+under  = "/mnt"
+fstype = ["9p", "drvfs"]
+
+[network]
+mode = "host"
+
+[env]
+mode = "inherit"
+unset = [
+    "SSH_AUTH_SOCK",
+    "DISPLAY",
+    "WAYLAND_DISPLAY",
+    "XAUTHORITY",
+    "*_TOKEN",
+    "*_API_KEY",
+    "*_SECRET*",
+    "*_PASSWORD",
+    "AWS_*",
+    "GH_*",
+    "GITHUB_*",
+    "ORCA_*",
+]
+path-prepend = ["~/.local/lib/kakoi/bin"]
