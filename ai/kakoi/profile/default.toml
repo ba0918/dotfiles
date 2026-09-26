@@ -100,6 +100,14 @@ ro = [
     # way: the directory sits three levels under the workspace, so renaming `ai` or
     # `ai/shared` is still a route to another tree at the same path.
     "{{ vars.dotfiles_root }}/ai/shared/hooks",
+    # The package managers' user configuration: ~/.npmrc, ~/.bunfig.toml and
+    # ~/.config/pnpm/config.yaml are links into this repository's checkout, so whenever
+    # dotfiles is the work place the isolation could drop minimumReleaseAge or change the
+    # registry for the host's next install. The same partial protection as the two items
+    # above applies (renaming the parent is still a route).
+    "{{ vars.dotfiles_root }}/npm",
+    "{{ vars.dotfiles_root }}/bun",
+    "{{ vars.dotfiles_root }}/pnpm",
     # The image-paste stand-in reads the PNG clipboard2path-wsl keeps here. It sits
     # under the hidden /run/user below, so it has to be named back in.
     "/run/user/1000/clipboard2path",
