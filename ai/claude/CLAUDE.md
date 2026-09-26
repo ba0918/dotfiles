@@ -54,3 +54,15 @@ diff-review の提示には `kemi` skill を使う。
 
 安全なローカル検証は、途中で逐次承認を求めず、
 失敗が今回の変更に起因する場合は修正して再実行してよい。
+
+## kotowari-review の任意の席
+
+kotowari-review の full review で、quality のレビュー役に加えて立てる別モデルの席。数だけ指定されたときは上から順に使う。
+
+- gpt: `ba0918-opencode-exec` で実行する。渡す値は次のとおり。
+  - モデル: `openai/gpt-6-sol`
+  - コマンド名: `opencode2`
+  - 前置コマンド: `kakoi` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
+  - 変更なし: 指定する
+  - プロンプト: レビュー依頼をファイルに書いて渡す
+  - 結果の読み方: stdout ファイルの最後のメッセージを finding の JSON として読む。stderr ファイルには opencode のログと kakoi の警告が入る
