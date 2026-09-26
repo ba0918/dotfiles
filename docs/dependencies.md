@@ -191,11 +191,10 @@ run-if-present path <存在チェックするパス> -- <実行するコマン�
 run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド>
 ```
 
-Orca の hook だけは `run-if-present` を通さず、Orca が settings.json に書き込む
-コマンド文字列をそのまま `30-hooks.json` に写している。コマンド自体がスクリプトの
-有無を確かめて、無ければ `{}` を返して終わるので、新マシンでも無音で素通しになる。
-文字列を変えると、Orca が自分の hook を見つけられずに二重に登録するおそれがある
-（Orca の判定方法は未確認）。Orca の更新でコマンドが変わったら写し直す。
+Orca は、Windows 向けの分岐を含む長いワンライナーで同じスクリプトを呼ぶ
+hook を settings.json へ書き込む。`30-hooks.json` ではそれを `run-if-present` 経由の
+短い形に置き換えている。Orca が短い形を自分の hook と認めず、長い形を再び追記して
+二重登録になった場合は、Orca が書く文字列をそのまま写す形に戻す。
 
 `statusLine` の `~/.claude/statusline.py` は repo 管理（`ai/claude/statusline.py` を
 `[dotfiles]` が template で実体として書き出す）だが、同じく `run-if-present` で包む。
