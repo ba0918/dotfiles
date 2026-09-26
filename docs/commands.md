@@ -43,7 +43,7 @@ ai/claude/build-settings --clean    # runtime allow をリセットしてベー�
 ai/claude/build-settings --status   # managed vs runtime allow の内訳を表示（書き込まない）
 scripts/generate-deny.sh claude     # deny-patterns.yaml → Claude Code 形式で stdout
 scripts/generate-deny.sh opencode   # deny-patterns.yaml → OpenCode 形式で stdout
-scripts/generate-deny.sh opencode-apply  # ~/.opencode/opencode.json の deny を上書き
+scripts/generate-deny.sh opencode-apply  # ~/.opencode/ と ~/.config/opencode/ の opencode.json の deny を上書き
 apm update -g --yes                 # ~/.apm/apm.yml の規範スキルを最新に更新（bootstrap でも実行。install は lock に留まる）
 ```
 

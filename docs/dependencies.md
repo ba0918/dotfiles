@@ -139,7 +139,9 @@ ext の再ビルドが手動になるのが理由。
   `version = "latest"` / `version_list_url = "https://opencode.ai/update/api/latest/cli/npm"` /
   `version_regex = '"version":"([^"]+)"'`。
   v2 が読むグローバル config は `~/.config/opencode/`（v1 の `~/.opencode/` ではない）ため、
-  `scripts/generate-deny.sh opencode-apply` の deny は v2 に効かない。
+  `[dotfiles]` で同じ `opencode.json` をそこにも配り、`scripts/generate-deny.sh opencode-apply`
+  が両方に deny を注入する。v2 はバックグラウンドのサービスが設定を保持するので、
+  適用後は `opencode2 reload` で読み直させる（自動で読み直すかは未確認）。
   npm の `@opencode/cli` は `opencode2` bin を同梱するが、mise の npm backend が
   パッケージ名の初出 30 日ガード（初出 2026-09-02）で拒否するため現状は使えない
 

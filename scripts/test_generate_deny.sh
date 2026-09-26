@@ -86,10 +86,12 @@ check "claude emit count is exact (patterns + one per directory pattern)" \
 	'[ "${claude_count}" -eq "$((yaml_total + dir_count))" ]'
 # opencode emits file + directory categories only; the Claude-only categories
 # (personal_directories / read_shortform / write_deny / bash_destructive) are
-# deliberately excluded, so its count is yaml_total minus those.
+# deliberately excluded. Every file pattern emits two keys (`**/p` and bare `p`,
+# see section 10), every directory pattern one.
 claude_only_count="$(( $(category_pattern_count personal_directories) + $(category_pattern_count read_shortform) + $(category_pattern_count write_deny) + $(category_pattern_count bash_destructive) ))"
-check "opencode emit count is exact (file + directory categories only)" \
-	'[ "${opencode_count}" -eq "$((yaml_total - claude_only_count))" ]'
+file_count="$((yaml_total - claude_only_count - dir_count))"
+check "opencode emit count is exact (two per file pattern, one per directory pattern)" \
+	'[ "${opencode_count}" -eq "$((file_count * 2 + dir_count))" ]'
 
 # --- 2. known-secret patterns actually survive the conversion ----------------
 claude_json="$("${SCRIPT}" claude)"
@@ -129,9 +131,15 @@ check_fails "missing yaml fails" \
 	env DENY_PATTERNS_FILE="${TMP}/does-not-exist.yaml" "${SCRIPT}" claude
 
 # --- 7. opencode-apply injects deny and preserves non-deny entries ----------
+# Both config locations get the same deny set: v1 reads ~/.opencode/, v2
+# (opencode2) reads ~/.config/opencode/. A target left unpatched is an agent
+# running with no read denials at all.
 FAKE_HOME="${TMP}/home"
-mkdir -p "${FAKE_HOME}/.opencode"
-cat > "${FAKE_HOME}/.opencode/opencode.json" <<'JSON'
+OC_V1="${FAKE_HOME}/.opencode/opencode.json"
+OC_V2="${FAKE_HOME}/.config/opencode/opencode.json"
+mkdir -p "$(dirname "${OC_V1}")" "$(dirname "${OC_V2}")"
+for target in "${OC_V1}" "${OC_V2}"; do
+	cat > "${target}" <<'JSON'
 {
   "permission": {
     "read": { "*": "allow", "*.env.example": "allow", "**/stale-leftover": "deny" },
@@ -140,27 +148,47 @@ cat > "${FAKE_HOME}/.opencode/opencode.json" <<'JSON'
   }
 }
 JSON
+done
 
 if HOME="${FAKE_HOME}" "${SCRIPT}" opencode-apply >/dev/null 2>&1; then
-	applied="${FAKE_HOME}/.opencode/opencode.json"
-	check "apply keeps non-deny read entries" \
-		'[ "$(jq -r ".permission.read[\"*.env.example\"]" "${applied}")" = "allow" ]'
-	check "apply drops stale deny entries not in the yaml" \
-		'[ "$(jq -r ".permission.read | has(\"**/stale-leftover\")" "${applied}")" = "false" ]'
-	check "apply injects the generated deny set into read" \
-		'[ "$(jq -r ".permission.read[\"**/.netrc\"]" "${applied}")" = "deny" ]'
-	check "apply injects the generated deny set into external_directory" \
-		'[ "$(jq -r ".permission.external_directory[\"**/.netrc\"]" "${applied}")" = "deny" ]'
-	check "apply leaves unrelated keys untouched" \
-		'[ "$(jq -r ".permission.edit" "${applied}")" = "allow" ]'
+	for applied in "${OC_V1}" "${OC_V2}"; do
+		label="${applied#"${FAKE_HOME}"/}"
+		check "apply keeps non-deny read entries (${label})" \
+			'[ "$(jq -r ".permission.read[\"*.env.example\"]" "${applied}")" = "allow" ]'
+		check "apply drops stale deny entries not in the yaml (${label})" \
+			'[ "$(jq -r ".permission.read | has(\"**/stale-leftover\")" "${applied}")" = "false" ]'
+		check "apply injects the generated deny set into read (${label})" \
+			'[ "$(jq -r ".permission.read[\"**/.netrc\"]" "${applied}")" = "deny" ]'
+		check "apply injects the generated deny set into external_directory (${label})" \
+			'[ "$(jq -r ".permission.external_directory[\"**/.netrc\"]" "${applied}")" = "deny" ]'
+		check "apply leaves unrelated keys untouched (${label})" \
+			'[ "$(jq -r ".permission.edit" "${applied}")" = "allow" ]'
+	done
 else
 	fail=$((fail + 1))
 	printf 'FAIL: opencode-apply failed\n' >&2
 fi
 
-# --- 8. opencode-apply refuses to run without a target ----------------------
-check_fails "opencode-apply fails when opencode.json is absent" \
+# --- 8. opencode-apply refuses to run unless every target exists ------------
+check_fails "opencode-apply fails when no opencode.json exists" \
 	env HOME="${TMP}/no-such-home" "${SCRIPT}" opencode-apply
+
+# With only one of the two targets present, apply must fail without touching
+# the one that exists: a half-applied deny set that exits 0 is the failure
+# mode AGENTS.md rule 7 forbids.
+ONLY_V1_HOME="${TMP}/only-v1"
+mkdir -p "${ONLY_V1_HOME}/.opencode"
+printf '{"permission":{"read":{"*":"allow"},"external_directory":{"*":"ask"}}}\n' > "${ONLY_V1_HOME}/.opencode/opencode.json"
+check_fails "opencode-apply fails when the v2 opencode.json is absent" \
+	env HOME="${ONLY_V1_HOME}" "${SCRIPT}" opencode-apply
+check "opencode-apply leaves the v1 file unpatched when the v2 one is absent" \
+	'[ "$(jq -r ".permission.read | has(\"**/.netrc\")" "${ONLY_V1_HOME}/.opencode/opencode.json")" = "false" ]'
+
+ONLY_V2_HOME="${TMP}/only-v2"
+mkdir -p "${ONLY_V2_HOME}/.config/opencode"
+printf '{"permission":{"read":{"*":"allow"},"external_directory":{"*":"ask"}}}\n' > "${ONLY_V2_HOME}/.config/opencode/opencode.json"
+check_fails "opencode-apply fails when the v1 opencode.json is absent" \
+	env HOME="${ONLY_V2_HOME}" "${SCRIPT}" opencode-apply
 
 # --- 9. the shipped opencode.json holds no literal read deny entries --------
 # deny-patterns.yaml is the single source of truth for file-read denials, and
@@ -195,6 +223,14 @@ check "opencode emits no unscoped directory deny (**/.config/** absent)" \
 	'[ "$("${SCRIPT}" opencode | jq -r "has(\"**/.config/**\")")" = "false" ]'
 check "opencode keeps file denies global (**/.env still present)" \
 	'[ "$("${SCRIPT}" opencode | jq -r "has(\"**/.env\")")" = "true" ]'
+# opencode v2 matches read rules against the project-relative path, and
+# `**/.env` does not match a top-level `.env` there (observed with opencode2
+# 2.0.17: sub/.env denied, ./.env read). The bare form closes that gap; v1
+# already denied both, so the extra key only adds coverage.
+check "opencode also emits the bare file pattern (.env present)" \
+	'[ "$("${SCRIPT}" opencode | jq -r "has(\".env\")")" = "true" ]'
+check "opencode bare file pattern is a deny (*.pem)" \
+	'[ "$("${SCRIPT}" opencode | jq -r ".[\"*.pem\"]")" = "deny" ]'
 
 # --- summary -----------------------------------------------------------------
 printf '\n%d passed, %d failed\n' "${pass}" "${fail}"

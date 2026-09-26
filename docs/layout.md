@@ -43,7 +43,7 @@
 | Neovim | `nvim/.config/nvim/` | `~/.config/nvim/`（LazyVim） |
 | Claude Code | `ai/claude/` | `~/.claude/`。settings.json は `conf.d/` から合成 |
 | Codex | `ai/codex/` | `~/.codex/`。AGENTS.md と hooks.json は template |
-| OpenCode | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（template） |
+| OpenCode | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（v1）と `~/.config/opencode/opencode.json`（v2）（template） |
 | AI 共通設定 | `ai/shared/` | deny の正本、共通 hook、対話契約、persona |
 | 規範スキルの配布 | `ai/apm/apm.yml` | `~/.apm/apm.yml`。APM が各ツールへ配布 |
 | 隔離起動 | `ai/kakoi/` | 起動シム、プロファイル、代替コマンド。[詳細](kakoi.md) |

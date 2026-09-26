@@ -126,7 +126,10 @@ compile = false
 # instructions が repo ルート相対パス（{{ vars.dotfiles_root }}）を指すため symlink ではなく
 # template で配布する（rendered 実ファイルになる）。MISE_GLOBAL_CONFIG_ROOT が
 # config_root を repo ルートに解決する（bootstrap.sh / fish config.fish で設定）
+# v1 は ~/.opencode/、v2（opencode2）は ~/.config/opencode/ を読むので両方に同じものを配る。
+# deny はどちらも post-dotfiles の generate-deny.sh opencode-apply が注入する
 "~/.opencode/opencode.json" = { source = "../ai/opencode/opencode.json", mode = "template" }
+"~/.config/opencode/opencode.json" = { source = "../ai/opencode/opencode.json", mode = "template" }
 
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"

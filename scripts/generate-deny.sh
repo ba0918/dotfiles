@@ -7,7 +7,8 @@
 # Usage:
 #   generate-deny.sh claude         # Output Claude Code deny JSON fragment
 #   generate-deny.sh opencode       # Output OpenCode deny JSON fragment
-#   generate-deny.sh opencode-apply # Patch ~/.opencode/opencode.json in place
+#   generate-deny.sh opencode-apply # Patch ~/.opencode/opencode.json (v1) and
+#                                   # ~/.config/opencode/opencode.json (v2) in place
 #
 # Overrides (testing):
 #   DENY_PATTERNS_FILE   YAML source in place of ai/shared/deny-patterns.yaml
@@ -34,7 +35,7 @@ fi
 # in an emitter branch — the two can no longer drift apart.
 #
 # Emitters:
-#   file         → claude `Read(**/p)`, opencode `**/p`          (global)
+#   file         → claude `Read(**/p)`, opencode `**/p` + `p`    (global)
 #   directory    → claude `Read(~/$p)` + `Read(//$HOME/$p)`, opencode `~/p` (home-scoped)
 #   read         → claude `Read(p)` (Claude only, already-prefixed / short-form)
 #   write        → claude `Edit(p)` (Claude only; Edit rules cover every file-editing tool)
@@ -189,39 +190,51 @@ case "${1:-}" in
     # `**/.config/**` would also match the repo's own fish/.config, git/.config,
     # etc., blocking the agent from reading the files it maintains. opencode
     # expands a leading ~ in patterns (permission docs), so prefix with ~/.
+    # File patterns are emitted both as `**/p` and bare `p`: opencode v2 matches
+    # read rules against the project-relative path, where `**/.env` misses a
+    # top-level `.env`.
     {
       emit_opencode
     } | jq -R -s '
       split("\n") | map(select(length > 0)) |
-      map(if startswith("~/") then { (.): "deny" } else { ("**/" + .): "deny" } end) | add
+      map(if startswith("~/") then { (.): "deny" } else { ("**/" + .): "deny", (.): "deny" } end) | add
     '
     ;;
   opencode-apply)
-    # Patch ~/.opencode/opencode.json in place with deny patterns from yaml.
+    # Patch every opencode global config in place with deny patterns from yaml.
     # Runs after mise template rendering to inject the canonical deny set.
-    OC_TARGET="$HOME/.opencode/opencode.json"
-    if [ ! -f "$OC_TARGET" ]; then
-      echo "error: $OC_TARGET not found (run mise bootstrap dotfiles apply first)" >&2
-      exit 1
-    fi
+    # v1 reads ~/.opencode/, v2 (opencode2) reads ~/.config/opencode/. Only the
+    # .json is patched; v2 also loads its own opencode.jsonc, which jq cannot parse.
+    OC_TARGETS=("$HOME/.opencode/opencode.json" "$HOME/.config/opencode/opencode.json")
+
+    # Check every target before writing any, so a missing one cannot leave a
+    # half-applied deny set behind.
+    for target in "${OC_TARGETS[@]}"; do
+      if [ ! -f "$target" ]; then
+        echo "error: $target not found (run mise bootstrap dotfiles apply first)" >&2
+        exit 1
+      fi
+    done
 
     DENY_OBJ=$("$0" opencode)
 
     # Merge deny patterns into permission.read (preserve existing allows)
     # and permission.external_directory (preserve existing non-deny entries)
-    jq --argjson deny "$DENY_OBJ" '
-      .permission.read = (
-        (.permission.read | to_entries | map(select(.value != "deny"))) +
-        ($deny | to_entries)
-        | from_entries
-      ) |
-      .permission.external_directory = (
-        (.permission.external_directory | to_entries | map(select(.value != "deny"))) +
-        ($deny | to_entries)
-        | from_entries
-      )
-    ' "$OC_TARGET" > "${OC_TARGET}.tmp" && mv "${OC_TARGET}.tmp" "$OC_TARGET"
-    echo "opencode deny patterns updated in $OC_TARGET"
+    for target in "${OC_TARGETS[@]}"; do
+      jq --argjson deny "$DENY_OBJ" '
+        .permission.read = (
+          (.permission.read | to_entries | map(select(.value != "deny"))) +
+          ($deny | to_entries)
+          | from_entries
+        ) |
+        .permission.external_directory = (
+          (.permission.external_directory | to_entries | map(select(.value != "deny"))) +
+          ($deny | to_entries)
+          | from_entries
+        )
+      ' "$target" > "${target}.tmp" && mv "${target}.tmp" "$target"
+      echo "opencode deny patterns updated in $target"
+    done
     ;;
   *)
     echo "usage: generate-deny.sh {claude|opencode|opencode-apply}" >&2
