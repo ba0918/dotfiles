@@ -1,5 +1,6 @@
 {
   "env": {
+    "CLAUDE_CODE_ENABLE_FUNCTION_HOOKS": 1,
     "PATH": "$DOTFILES_ROOT/ai/kakoi/shim:$HOME/.safe-chain/shims:$HOME/.local/share/mise/shims:$HOME/.safe-chain/bin:$HOME/.local/share/pnpm:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.local/bin:$PATH",
     "PNPM_HOME": "$HOME/.local/share/pnpm"
   }
