@@ -191,3 +191,102 @@ GH_TOKEN = "${config_dir}/secrets/gh-token"
 [git.instead-of]
 "git@github.com:" = "https://github.com/"
 "ssh://git@github.com/" = "https://github.com/"
+
+# Guardrails for operations the GH_TOKEN above can still do and nobody can undo: the
+# fine-grained PAT cannot be narrowed further (docs/kakoi.md, GitHub token), so a
+# force push to main or an issue deletion goes through on GitHub's side. These rules are
+# accident prevention, not a boundary: they only catch a program found through PATH, and
+# an absolute path (/usr/bin/git) or a program other than git or gh walks past them.
+# Rules cannot be removed by an upper layer, so everything here applies to every run
+# under this profile. `examples` is checked on every load; a rule that stops matching
+# them fails the start instead of going quiet.
+#
+# Global git options that take a value, declared so that `git -C dir push --force` is
+# still read from `push`.
+[[commands.guard]]
+program = "git"
+reason = "force pushing rewrites published history; ask the person to do it"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["push"]]
+deny-flags = ["--force", "-f", "--force-with-lease", "--force-if-includes", "--mirror"]
+# A refspec starting with `+` forces that one ref. Only caught right after the remote;
+# an option between `push` and the remote is not skipped (13-command-guard.md).
+deny = [["push", "/.*/", "/[+].*/"]]
+examples.deny = [
+    "git push --force",
+    "git push -f origin main",
+    "git push -uf origin topic",
+    "git -C repo push --force-with-lease",
+    "git push --force=yes",
+    "git push --mirror origin",
+    "git push origin +main",
+]
+examples.allow = [
+    "git push",
+    "git push -u origin topic",
+    "git push origin topic -- --force",
+    "git checkout -f main",
+    "git commit -m 'force push fix'",
+]
+
+# An alias would run `push --force` under another name, past the rule above.
+# GIT_CONFIG_* is not denied: [git.instead-of] above puts it in the environment itself.
+[[commands.guard]]
+program = "git"
+reason = "git aliases can run a guarded command under another name; call the command directly"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+deny = [
+    ["config", "/(?i)alias[.].*/"],
+    ["config", ["--local", "--worktree", "--global", "--system", "--add", "--replace-all"], "/(?i)alias[.].*/"],
+]
+deny-option-values = { "-c" = ["/(?i)alias[.].*/"], "--config-env" = ["/(?i)alias[.].*/"] }
+examples.deny = [
+    "git -c alias.p=push p",
+    "git --config-env=alias.p=ENV p",
+    "git config alias.p 'push --force'",
+    "git config --local alias.p push",
+]
+examples.allow = [
+    "git -c color.ui=false log",
+    "git config user.name",
+    "git status",
+]
+
+[[commands.guard]]
+program = "gh"
+reason = "deleting or archiving on GitHub cannot be undone; ask the person to do it"
+deny = [
+    ["issue", "delete"],
+    ["repo", ["delete", "archive"]],
+    ["release", ["delete", "delete-asset"]],
+]
+examples.deny = [
+    "gh issue delete 12 --yes",
+    "gh repo delete owner/repo --yes",
+    "gh repo archive owner/repo",
+    "gh release delete v1.0.0",
+    "gh release delete-asset v1.0.0 file.tar.gz",
+]
+examples.allow = [
+    "gh issue close 12",
+    "gh repo view",
+    "gh release list",
+    "gh pr merge 3",
+]
+
+# The REST API reaches the same deletions.
+[[commands.guard]]
+program = "gh"
+reason = "DELETE requests through gh api cannot be undone; ask the person to do it"
+options-with-value = ["-R", "--repo"]
+for = [["api"]]
+deny-option-values = { "-X" = ["/(?i)delete/"], "--method" = ["/(?i)delete/"] }
+examples.deny = [
+    "gh api -X DELETE repos/owner/repo/issues/1",
+    "gh api --method=delete repos/owner/repo",
+    "gh api repos/owner/repo --method DELETE",
+]
+examples.allow = [
+    "gh api repos/owner/repo",
+    "gh api -X PATCH repos/owner/repo/issues/1 -f state=closed",
+]

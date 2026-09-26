@@ -193,6 +193,17 @@ token ファイルが無ければ警告が 1 行出るだけで、GitHub の認�
 `[git.instead-of]` で HTTPS に読み替える（ホストの `.gitconfig` は触らない）。token は
 `gh auth git-credential`（`.gitconfig` の credential helper）経由で git にも渡る。
 
+上の表で「なし」になっている操作（main への force push、`gh issue delete`）は、
+トークン側ではこれ以上絞れない。代わりにプロファイルの `[[commands.guard]]` が、
+隔離の中で PATH から起動された `git` / `gh` のうち次の使い方を終了コード 126 で止める。
+force push（`--force` 系のフラグ、`--mirror`、`+` で始まる refspec）、git の別名
+（`-c alias.*`、`git config alias.*`。別名で force push を包む迂回を塞ぐ）、GitHub 上の
+削除と archive（`gh issue delete`、`gh repo delete` / `archive`、`gh release delete` /
+`delete-asset`、`gh api -X DELETE`）。これは事故防止の柵で境界ではなく、
+`/usr/bin/git` のような絶対パスでの起動は通る。上の段から規則を消せないので、
+このプロファイルで動くすべての起動に効く。各規則の `examples` は読み込みのたびに
+検査され、規則が例と食い違うと起動が 125 で止まる。
+
 推奨する token の権限（All repositories）: Contents / Issues / Pull requests を
 Read and write、Actions / Commit statuses を Read。Workflows と Administration は
 付けない。有効期限が切れたら同じファイルに置き直す。
