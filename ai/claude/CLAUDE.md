@@ -62,7 +62,7 @@ kotowari-review の full review で、quality のレビュー役に加えて立�
 - gpt: `ba0918-opencode-exec` で実行する。渡す値は次のとおり。
   - モデル: `openai/gpt-6-sol`
   - コマンド名: `opencode2`
-  - 前置コマンド: `kakoi` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
+  - 前置コマンド: `kakoi` `--profile` `external-review` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
   - 変更なし: 指定する
   - プロンプト: レビュー依頼をファイルに書いて渡す
   - 結果の読み方: stdout ファイルの最後のメッセージを finding の JSON として読む。stderr ファイルには opencode のログと kakoi の警告が入る
