@@ -199,8 +199,11 @@ token ファイルが無ければ警告が 1 行出るだけで、GitHub の認�
 force push（`--force` 系のフラグ、`--mirror`、`+` で始まる refspec）、git の別名
 （`-c alias.*`、`git config alias.*`。別名で force push を包む迂回を塞ぐ）、GitHub 上の
 削除と archive（`gh issue delete`、`gh repo delete` / `archive`、`gh release delete` /
-`delete-asset`、`gh api -X DELETE`）。これは事故防止の柵で境界ではなく、
-`/usr/bin/git` のような絶対パスでの起動は通る。上の段から規則を消せないので、
+`delete-asset`、`gh api -X DELETE`）、commit / push の hook の飛ばし（`--no-verify`、
+commit の `-n`、`LEFTHOOK` / `LEFTHOOK_BIN` / `LEFTHOOK_EXCLUDE` の環境変数、
+`core.hooksPath` の書き換え）。hook は secretlint と lint とテストを回すので、
+飛ばすと秘密や壊れた変更が履歴やリモートへ届く。これは事故防止の柵で境界ではなく、
+`/usr/bin/git` のような絶対パスでの起動や、`.git/hooks` のファイルを直接消す操作は通る。上の段から規則を消せないので、
 このプロファイルで動くすべての起動に効く。各規則の `examples` は読み込みのたびに
 検査され、規則が例と食い違うと起動が 125 で止まる。
 

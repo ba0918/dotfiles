@@ -252,6 +252,71 @@ examples.allow = [
     "git status",
 ]
 
+# The pre-commit and pre-push hooks run the secret scan, lint and tests; skipping them
+# lets a leaked credential or a failing change reach history or the remote. `-n` means
+# --no-verify only for commit (for push it is --dry-run), so it has a rule of its own.
+# The LEFTHOOK* variables turn lefthook off or swap its binary from the environment.
+[[commands.guard]]
+program = "git"
+reason = "commit and push hooks run the secret scan and the tests; do not skip them, fix what they report"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["commit"], ["push"], ["merge"], ["rebase"], ["am"], ["cherry-pick"], ["revert"]]
+deny-flags = ["--no-verify"]
+deny-env = ["LEFTHOOK", "LEFTHOOK_BIN", "LEFTHOOK_EXCLUDE"]
+examples.deny = [
+    "git commit --no-verify -m msg",
+    "git push --no-verify",
+    "git -C repo merge --no-verify topic",
+    "git rebase --no-verify main",
+    "LEFTHOOK=0 git commit -m msg",
+    "LEFTHOOK_BIN=/bin/true git push",
+]
+examples.allow = [
+    "git commit -m 'drop --no-verify from the docs'",
+    "git push origin topic",
+    "git log --no-verify",
+    "LEFTHOOK=0 git status",
+]
+
+[[commands.guard]]
+program = "git"
+reason = "commit hooks run the secret scan and the tests; do not skip them, fix what they report"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["commit"]]
+deny-flags = ["-n"]
+examples.deny = [
+    "git commit -n -m msg",
+    "git commit -anm msg",
+]
+examples.allow = [
+    "git commit -am msg",
+    "git push -n",
+]
+
+# Pointing core.hooksPath elsewhere skips every hook at once.
+[[commands.guard]]
+program = "git"
+reason = "changing core.hooksPath skips the commit and push hooks; do not skip them"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+# A value after the key sets it; the key alone only reads it and stays allowed.
+deny = [
+    ["config", "/(?i)core[.]hookspath/", "/.*/"],
+    ["config", ["--local", "--worktree", "--global", "--system", "--add", "--replace-all"], "/(?i)core[.]hookspath/", "/.*/"],
+    ["config", ["--unset", "--unset-all"], "/(?i)core[.]hookspath/"],
+]
+deny-option-values = { "-c" = ["/(?i)core[.]hookspath(=.*)?/"], "--config-env" = ["/(?i)core[.]hookspath=.*/"] }
+examples.deny = [
+    "git -c core.hooksPath=/dev/null commit -m msg",
+    "git --config-env=core.hooksPath=ENV push",
+    "git config core.hooksPath /tmp/empty",
+    "git config --local core.hooksPath /tmp/empty",
+    "git config --unset core.hooksPath",
+]
+examples.allow = [
+    "git config core.hooksPath",
+    "git -c core.autocrlf=false status",
+]
+
 [[commands.guard]]
 program = "gh"
 reason = "deleting or archiving on GitHub cannot be undone; ask the person to do it"
