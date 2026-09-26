@@ -244,6 +244,17 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
 `[dotfiles]` のリンクでホームから参照される。dotfiles を作業場所にした kakoi の中から
 書き換えられないよう、kakoi の default プロファイルがこの 3 つのディレクトリを読み取り専用にする。
 
+### npm に publish するとき
+
+`npm login` は使わない。`~/.npmrc` は `npm/.npmrc` へのリンクなので、login が書く
+トークンが repo の作業ツリーに残り、kakoi の中からも読める。`npm/.npmrc` は
+`//registry.npmjs.org/:_authToken=${NPM_TOKEN?}` でトークンを環境変数から参照するだけにし
+（`?` を付けると未設定のとき空になり、`${NPM_TOKEN}` という文字列を送らない）、
+トークンは npmjs.com で作った publish 用の granular access token を
+`~/.config/npm/publish-token`（`chmod 600`）に置く。publish は fish の `npm-publish` で行い、
+このファイルの中身をその 1 回の `npm publish` にだけ `NPM_TOKEN` として渡す。
+`~/.config/npm` は kakoi の default プロファイルが隠し、`NPM_TOKEN` も `*_TOKEN` として消える。
+
 この 3 層は mise が適用する側の対策で、mise 本体は対象外。mise 自身は導入時に
 [mise/install.sh](../mise/install.sh) が GPG 署名を、更新時は self-update の zipsign
 署名を検証する。ただし冷却期間は無く、リリース当日の版へ上がりうる。

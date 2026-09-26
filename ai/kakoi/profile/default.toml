@@ -130,6 +130,8 @@ hide = [
     "~/.gnupg",
     "~/.config/gh",
     "~/.config/gcloud",
+    # the npm publish token read by the npm-publish fish function
+    "~/.config/npm",
     "~/.docker",
     "~/.kube",
     # Claude Code writes a snapshot-bash-*.sh here when a session starts, and its Bash
