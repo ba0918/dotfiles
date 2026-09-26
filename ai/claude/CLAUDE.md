@@ -55,9 +55,9 @@ diff-review の提示には `kemi` skill を使う。
 安全なローカル検証は、途中で逐次承認を求めず、
 失敗が今回の変更に起因する場合は修正して再実行してよい。
 
-## kotowari-review の任意の席
+## レビューの任意の席（kotowari-review・ba0918-review）
 
-kotowari-review の full review で、quality のレビュー役に加えて立てる別モデルの席。数だけ指定されたときは上から順に使う。
+kotowari-review と ba0918-review の full review で、quality のレビュー役に加えて立てる別モデルの席。数だけ指定されたときは上から順に使う。
 
 - gpt: `ba0918-opencode-exec` で実行する。渡す値は次のとおり。
   - モデル: `openai/gpt-6-sol`
