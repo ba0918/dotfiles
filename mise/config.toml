@@ -186,7 +186,7 @@ lazygit = "latest"
 # tea: Gitea / Forgejo の CLI。配布元が gitea.com で aqua / github backend に無いため
 # go backend でビルド導入する（[tools] の go に依存）。module path は gitea.dev/tea
 # （旧 code.gitea.io/tea は go.mod の宣言と食い違い導入不能）。上げるときは gitea.com/gitea/tea の release を見る
-"go:gitea.dev/tea" = "0.15.1"
+"go:gitea.dev/tea" = "0.16.0"
 neovim = "latest"
 node = "26.8.2"
 # ollama: ローカル LLM。公式 installer（/usr/local/bin + systemd service）ではなく
