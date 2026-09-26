@@ -11,7 +11,9 @@ Catches variants the settings.json `deny` list typically misses:
 
 and decides `rm` / `rmdir` by where the deletion lands (`analyze_rm`): the
 session directory and the tmp roots are deletable, everything else is not.
-The deny list cannot express that — it matches command prefixes and is
+Literal assignments (`S=/tmp/x; rm $S/y`) and `cd` to a literal directory are
+followed where the shell certainly ran them, so a path the command itself
+fixes is judged instead of refused. The deny list cannot express that — it matches command prefixes and is
 evaluated before any hook runs — so rm is judged here and not listed there.
 
 Pure detection lives in `analyze()` / `analyze_rm()` for testability.
@@ -152,11 +154,65 @@ _DURATION_RE = re.compile(r"^\d+(?:\.\d+)?[smhd]?$")
 _RM_WORD_RE = re.compile(r"\brm(?:dir)?\b")
 
 
+_NAME_REF_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)")
+_APPEND_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\+=")
+_CD_NAMES = frozenset({"cd", "pushd", "popd"})
+# Words that start a compound command or a group. With any of them, which
+# commands run in which directory and whether an assignment ran at all depend
+# on control flow the hook does not follow, so neither is tracked.
+_STRUCTURE_WORDS = frozenset(
+    {"if", "then", "elif", "else", "fi", "for", "while", "until", "do", "done", "case", "esac", "select", "function", "{", "}", "coproc"}
+)
+# Commands that set variables in ways the hook does not read.
+_VAR_SETTERS = frozenset(
+    {"read", "declare", "typeset", "local", "readonly", "let", "printf", "mapfile", "readarray", "getopts", "source", ".", "eval"}
+)
+# A separator after which the next command runs whatever the previous one did.
+_UNCONDITIONAL = (None, ";", "\n")
+
+
 class _RmContext(NamedTuple):
     cwd: str | None
     home: str | None
     tmpdir: str | None
     roots: tuple[str, ...]
+    cdpath: bool = False
+
+
+class _State:
+    """What the command has fixed so far while walking it left to right.
+
+    `cwds` is every directory the next command may run in: a `cd` that may
+    have failed leaves the old directory possible too. None means a directory
+    change the hook cannot follow, and relative targets are refused. `known`
+    holds variables assigned a literal value where the shell certainly ran the
+    assignment; `unknown` shadows the built-in values (HOME, PWD, TMPDIR) once
+    the command may have changed them, and `all_unknown` does so for every name.
+    """
+
+    def __init__(self, cwds: frozenset[str] | None, track: bool) -> None:
+        self.cwds = cwds
+        self.pending: frozenset[str] = frozenset()
+        self.track = track
+        self.known: dict[str, str] = {}
+        self.exported: set[str] = set()
+        self.unknown: set[str] = set()
+        self.all_unknown = False
+
+    def nested(self, cwds: frozenset[str] | None) -> "_State":
+        """The state a child shell starts from: the current directory and
+        only the exported variables."""
+        child = _State(cwds, self.track)
+        child.known = {k: v for k, v in self.known.items() if k in self.exported}
+        child.exported = set(child.known)
+        child.unknown = set(self.unknown)
+        child.all_unknown = self.all_unknown
+        return child
+
+    def forget(self, name: str) -> None:
+        self.known.pop(name, None)
+        self.exported.discard(name)
+        self.unknown.add(name)
 
 
 def _deletable_roots(cwd: str | None, home: str | None, tmp_roots: tuple[str, ...]) -> tuple[str, ...]:
@@ -241,22 +297,45 @@ def _basename(tok: str) -> str:
     return tok.rsplit("/", 1)[-1] if "/" in tok else tok
 
 
-def _expand(raw: str, ctx: _RmContext) -> str | None:
-    """Expand the few variables whose value the hook knows; None if anything
+def _lookup(name: str, ctx: _RmContext, state: _State) -> str | None:
+    if state.all_unknown or name in state.unknown:
+        return None
+    if name in state.known:
+        return state.known[name]
+    if name == "HOME":
+        return ctx.home
+    if name == "TMPDIR":
+        return ctx.tmpdir
+    if name == "PWD":
+        if state.cwds is not None and len(state.cwds) == 1:
+            return next(iter(state.cwds))
+        return None
+    return None
+
+
+def _expand(raw: str, ctx: _RmContext, state: _State) -> str | None:
+    """Expand the variables whose value the hook knows; None if anything
     else would still be expanded by the shell."""
     s = raw
     if s == "~" or s.startswith("~/"):
-        if ctx.home is None:
+        home = _lookup("HOME", ctx, state)
+        if home is None:
             return None
-        s = ctx.home + s[1:]
+        s = home + s[1:]
     elif s.startswith("~"):
         return None
-    for name, value in (("HOME", ctx.home), ("PWD", ctx.cwd), ("TMPDIR", ctx.tmpdir)):
-        for form in ("${" + name + "}", "$" + name):
-            if value and s.startswith(form) and (len(s) == len(form) or s[len(form)] == "/"):
-                s = value + s[len(form):]
-                break
-    if "$" in s or "`" in s:
+    unresolved = False
+
+    def sub(m: re.Match[str]) -> str:
+        nonlocal unresolved
+        value = _lookup(m.group(1) or m.group(2), ctx, state)
+        if value is None:
+            unresolved = True
+            return m.group(0)
+        return value
+
+    s = _NAME_REF_RE.sub(sub, s)
+    if unresolved or "$" in s or "`" in s:
         return None
     return s
 
@@ -305,16 +384,7 @@ def _touches_git_metadata(path: str) -> bool:
     return not tail[-1].endswith(".lock")
 
 
-def _check_target(raw: str, ctx: _RmContext, relative_ok: bool) -> Block | None:
-    path = _expand(raw, ctx)
-    if path is None:
-        return Block("rm with unresolved expansion", raw[:120])
-    if not os.path.isabs(path):
-        if not relative_ok:
-            return Block("rm relative path after cd", raw[:120])
-        if not ctx.cwd:
-            return Block("rm outside the session directory and tmp", raw[:120])
-        path = os.path.join(ctx.cwd, path)
+def _check_path(path: str, raw: str, ctx: _RmContext) -> Block | None:
     path = os.path.normpath(path)
     base, _widened = _glob_base(path)
     real = _real_target(base, raw.endswith("/"))
@@ -328,7 +398,25 @@ def _check_target(raw: str, ctx: _RmContext, relative_ok: bool) -> Block | None:
     return None
 
 
-def _check_rm_args(args: list[str], ctx: _RmContext, relative_ok: bool) -> list[Block]:
+def _check_target(raw: str, ctx: _RmContext, state: _State) -> Block | None:
+    path = _expand(raw, ctx, state)
+    if path is None:
+        return Block("rm with unresolved expansion", raw[:120])
+    if os.path.isabs(path):
+        return _check_path(path, raw, ctx)
+    if state.cwds is None:
+        return Block("rm relative path after cd", raw[:120])
+    if not state.cwds:
+        return Block("rm outside the session directory and tmp", raw[:120])
+    # Every directory the command may be in has to allow it.
+    for cwd in sorted(state.cwds):
+        b = _check_path(os.path.join(cwd, path), raw, ctx)
+        if b:
+            return b
+    return None
+
+
+def _check_rm_args(args: list[str], ctx: _RmContext, state: _State) -> list[Block]:
     targets: list[str] = []
     options_done = False
     for a in args:
@@ -343,17 +431,22 @@ def _check_rm_args(args: list[str], ctx: _RmContext, relative_ok: bool) -> list[
         targets.append(a)
     blocks: list[Block] = []
     for t in targets:
-        b = _check_target(t, ctx, relative_ok)
+        b = _check_target(t, ctx, state)
         if b:
             blocks.append(b)
     return blocks
 
 
-def _check_subcommand(sub: list[str], ctx: _RmContext, relative_ok: bool) -> list[Block]:
+def _check_subcommand(sub: list[str], ctx: _RmContext, state: _State) -> list[Block]:
     i = 0
+    temporary: list[str] = []  # `S=x cmd`: S holds x only inside cmd
     while i < len(sub):
         tok = sub[i]
-        if _ASSIGNMENT_RE.match(tok) or tok.startswith("-") or _DURATION_RE.match(tok) or _basename(tok) in _TRANSPARENT_WRAPPERS:
+        if _ASSIGNMENT_RE.match(tok):
+            temporary.append(tok.split("=", 1)[0])
+            i += 1
+            continue
+        if tok.startswith("-") or _DURATION_RE.match(tok) or _basename(tok) in _TRANSPARENT_WRAPPERS:
             i += 1
             continue
         break
@@ -369,12 +462,17 @@ def _check_subcommand(sub: list[str], ctx: _RmContext, relative_ok: bool) -> lis
     if head in _SHELLS:
         for j, t in enumerate(rest):
             if t.startswith("-") and "c" in t and j + 1 < len(rest):
-                return _analyze_rm(rest[j + 1], ctx, relative_ok)
+                child = state.nested(state.cwds)
+                for name in temporary:
+                    child.forget(name)
+                return _analyze_rm(rest[j + 1], ctx, child)
         return []
     if head == "eval":
-        return _analyze_rm(" ".join(rest), ctx, relative_ok)
+        for name in temporary:
+            state.forget(name)
+        return _analyze_rm(" ".join(rest), ctx, state)
     if head in _RM_NAMES:
-        return _check_rm_args(rest, ctx, relative_ok)
+        return _check_rm_args(rest, ctx, state)
     if head in _RM_IS_SUBCOMMAND_OF:
         return []
     # `rm` behind a program this hook does not know: it may be a wrapper that
@@ -385,19 +483,165 @@ def _check_subcommand(sub: list[str], ctx: _RmContext, relative_ok: bool) -> lis
     return []
 
 
-def _analyze_rm(command: str, ctx: _RmContext, relative_ok: bool) -> list[Block]:
+def _walk(tokens: list[str]) -> list[tuple[list[str], str | None, str | None, bool]]:
+    """Split tokens into subcommands, each with the separator before and after
+    it and whether it opens or carries a compound command or group. Subshell
+    parentheses glued to the first or last word are stripped so that `(rm x)`
+    is read as `rm x`."""
+    out: list[tuple[list[str], str | None, str | None]] = []
+    cur: list[str] = []
+    before: str | None = None
+    for tok in tokens + [None]:  # type: ignore[list-item]
+        if tok is None or _is_separator(tok):
+            # shlex glues a newline to the separator before it (";\n", "&&\n")
+            sep = None if tok is None else (tok.replace("\n", "") or "\n")
+            if cur:
+                out.append((cur, before, sep))
+            cur = []
+            before = sep
+            continue
+        cur.append(tok)
+    structured = [_has_structure(sub) for sub, _b, _a in out]
+    for sub, _b, _a in out:
+        first = sub[0].lstrip("(")
+        if first:
+            sub[0] = first
+        else:
+            sub.pop(0)
+        if sub and "$(" not in sub[-1] and "`" not in sub[-1]:
+            last = sub[-1].rstrip(")")
+            if last:
+                sub[-1] = last
+            else:
+                sub.pop()
+    return [(sub, b, a, st) for (sub, b, a), st in zip(out, structured) if sub]
+
+
+def _has_structure(tokens: list[str]) -> bool:
+    for tok in tokens:
+        if tok in _STRUCTURE_WORDS or tok == "!" or tok.endswith("()"):
+            return True
+        if tok.startswith("(") or (tok.endswith(")") and "$(" not in tok and "`" not in tok):
+            return True
+    return False
+
+
+def _cd_target(args: list[str], ctx: _RmContext, state: _State) -> str | None:
+    rest = [a for a in args if a not in ("-L", "-P", "-e", "-@", "--")]
+    if not rest:
+        return _lookup("HOME", ctx, state)
+    if len(rest) > 1 or rest[0] == "-":
+        return None
+    target = _expand(rest[0], ctx, state)
+    if target is None:
+        return None
+    # CDPATH redirects a bare relative name somewhere the hook cannot see.
+    cdpath = ctx.cdpath or state.all_unknown or "CDPATH" in state.known or "CDPATH" in state.unknown
+    if cdpath and target not in (".", "..") and not target.startswith(("/", "./", "../")):
+        return None
+    return target
+
+
+def _apply_cd(sub: list[str], after: str | None, ctx: _RmContext, state: _State) -> None:
+    if state.cwds is None:
+        return
+    if _basename(sub[0]) != "cd":
+        state.cwds = None
+        return
+    target = _cd_target(sub[1:], ctx, state)
+    if target is None:
+        state.cwds = None
+        return
+    new = frozenset(os.path.normpath(os.path.join(c, target)) for c in state.cwds)
+    if os.path.isabs(target) and not state.cwds:
+        new = frozenset({os.path.normpath(target)})
+    if after == "&&":
+        # The rest of this && chain runs only if cd succeeded; once the chain
+        # ends, the old directory is possible again.
+        state.pending = state.pending | state.cwds
+        state.cwds = new
+    else:
+        state.cwds = new | state.cwds
+
+
+def _apply_assignments(sub: list[str], before: str | None, after: str | None, ctx: _RmContext, state: _State) -> None:
+    export = sub[0] == "export"
+    words = sub[1:] if export else sub
+    certain = state.track and before in _UNCONDITIONAL and after in _UNCONDITIONAL + ("&&", "||")
+    for w in words:
+        if not _ASSIGNMENT_RE.match(w):
+            if export and w.isidentifier():
+                state.exported.add(w)
+            continue
+        name, raw = w.split("=", 1)
+        value = _expand(raw, ctx, state) if certain else None
+        if value is None:
+            state.forget(name)
+            continue
+        state.unknown.discard(name)
+        state.known[name] = value
+        if export:
+            state.exported.add(name)
+
+
+def _is_assignment_only(sub: list[str]) -> bool:
+    words = sub[1:] if sub[0] == "export" else sub
+    return bool(words) and all(_ASSIGNMENT_RE.match(w) or (sub[0] == "export" and w.isidentifier()) for w in words)
+
+
+def _analyze_rm(command: str, ctx: _RmContext, state: _State) -> list[Block]:
     if not _RM_WORD_RE.search(command):
         return []
     try:
         tokens = _tokenize(command)
     except ValueError as e:
         return [Block("rm command could not be parsed", str(e)[:120])]
-    subs = _subcommands(tokens)
-    if any(_basename(s[0]) in ("cd", "pushd") for s in subs):
-        relative_ok = False
     blocks: list[Block] = []
-    for sub in subs:
-        blocks.extend(_check_subcommand(sub, ctx, relative_ok))
+    walked = _walk(tokens)
+    for n, (sub, before, after, structured) in enumerate(walked):
+        if structured:
+            # From the first compound command or group on, which commands run
+            # and in which directory depend on control flow the hook does not
+            # follow. What came before it ran in order and stays known.
+            state.track = False
+            rest = [t for later in walked[n:] for t in later[0]]
+            if any(_basename(t) in _CD_NAMES for t in rest):
+                state.cwds = None
+            # A loop variable or an assignment inside the structure may change
+            # any value followed so far.
+            for name in list(state.known):
+                state.forget(name)
+            for name in ("HOME", "PWD", "TMPDIR", "CDPATH"):
+                if any(t == name or t.startswith(name + "=") for t in rest):
+                    state.unknown.add(name)
+        if before not in ("&&",) and state.pending:
+            if state.cwds is not None:
+                state.cwds = state.cwds | state.pending
+            state.pending = frozenset()
+        for w in sub:
+            m = _APPEND_RE.match(w)
+            if m:
+                state.forget(m.group(1))
+        head = _basename(sub[0])
+        if head in _CD_NAMES:
+            _apply_cd(sub, after, ctx, state)
+            continue
+        if any(_basename(t) in _CD_NAMES for t in sub[1:]):
+            # `builtin cd`, `command cd`, `exec cd`: not followed
+            state.cwds = None
+        if _is_assignment_only(sub):
+            _apply_assignments(sub, before, after, ctx, state)
+            continue
+        if head == "unset":
+            for w in sub[1:]:
+                state.forget(w)
+            continue
+        blocks.extend(_check_subcommand(sub, ctx, state))
+        if head in _VAR_SETTERS and (head != "printf" or "-v" in sub):
+            state.all_unknown = True
+        if head in ("eval", "source", "."):
+            # a string or a script the hook does not read may change directory
+            state.cwds = None
     return blocks
 
 
@@ -408,11 +652,13 @@ def analyze_rm(
     home: str | None,
     tmp_roots: tuple[str, ...],
     tmpdir: str | None = None,
+    cdpath: bool = False,
 ) -> list[Block]:
     """Blocks for every `rm` / `rmdir` in `command` whose target is not
     inside `cwd` or one of `tmp_roots`. Pure function."""
-    ctx = _RmContext(cwd=cwd, home=home, tmpdir=tmpdir, roots=_deletable_roots(cwd, home, tmp_roots))
-    return _analyze_rm(command, ctx, relative_ok=True)
+    ctx = _RmContext(cwd=cwd, home=home, tmpdir=tmpdir, roots=_deletable_roots(cwd, home, tmp_roots), cdpath=cdpath)
+    state = _State(frozenset({os.path.normpath(cwd)}) if cwd else frozenset(), track=True)
+    return _analyze_rm(command, ctx, state)
 
 
 def analyze(command: str, cwd: str | None = None) -> list[Block]:
@@ -425,7 +671,16 @@ def analyze(command: str, cwd: str | None = None) -> list[Block]:
             blocks.append(Block(rule, m.group(0)[:120]))
     tmpdir = os.environ.get("TMPDIR") or None
     tmp_roots: tuple[str, ...] = ("/tmp", "/var/tmp") + ((tmpdir,) if tmpdir else ())
-    blocks.extend(analyze_rm(command, cwd=cwd, home=os.environ.get("HOME"), tmp_roots=tmp_roots, tmpdir=tmpdir))
+    blocks.extend(
+        analyze_rm(
+            command,
+            cwd=cwd,
+            home=os.environ.get("HOME"),
+            tmp_roots=tmp_roots,
+            tmpdir=tmpdir,
+            cdpath=bool(os.environ.get("CDPATH")),
+        )
+    )
     return blocks
 
 

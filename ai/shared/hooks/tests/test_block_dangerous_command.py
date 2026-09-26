@@ -233,8 +233,8 @@ HOME = "/home/u"
 TMP = ("/tmp", "/var/tmp")
 
 
-def rm_rules(command, cwd=CWD, home=HOME, tmp_roots=TMP, tmpdir=None):
-    return [b.rule for b in analyze_rm(command, cwd=cwd, home=home, tmp_roots=tmp_roots, tmpdir=tmpdir)]
+def rm_rules(command, cwd=CWD, home=HOME, tmp_roots=TMP, tmpdir=None, cdpath=False):
+    return [b.rule for b in analyze_rm(command, cwd=cwd, home=home, tmp_roots=tmp_roots, tmpdir=tmpdir, cdpath=cdpath)]
 
 
 def test_rm_under_tmp_scratchpad_is_allowed():
@@ -325,9 +325,136 @@ def test_sudo_rm_is_blocked_regardless_of_target():
     assert any("sudo" in r for r in rm_rules("doas rm -rf build"))
 
 
-def test_relative_rm_after_cd_is_blocked_absolute_is_checked():
-    assert any("cd" in r for r in rm_rules("cd /tmp && rm -rf x"))
-    assert rm_rules("cd /tmp && rm -rf /tmp/x") == []
+def test_relative_rm_after_an_untrackable_cd_is_blocked_absolute_is_checked():
+    assert any("cd" in r for r in rm_rules("cd $X && rm -rf x"))
+    assert any("cd" in r for r in rm_rules("cd - && rm -rf x"))
+    assert rm_rules("cd $X && rm -rf /tmp/x") == []
+
+
+# --- values the command itself fixes ------------------------------------------
+# Most refusals in practice were `S=/tmp/...; rm -rf $S/x` and
+# `cd /repo && rm tests/x`: the path is written in the same command. The hook
+# follows those values, but only where the shell is certain to have used them.
+
+
+def test_rm_through_a_literal_assignment_in_the_same_command_is_resolved():
+    assert rm_rules("S=/tmp/x; rm -rf $S/y") == []
+    assert rm_rules('S=/tmp/x && rm -rf "$S/y"') == []
+    assert rm_rules("S=/tmp/x\nrm -rf ${S}/y") == []
+    assert rm_rules("S=$HOME/proj/sub; rm -rf $S/x") == []
+    assert rm_rules("S=/tmp/x; R=$S/r; rm -rf $R") == []
+    assert any("outside" in r for r in rm_rules("S=/home/u/other; rm -rf $S"))
+
+
+def test_an_assignment_the_shell_may_skip_or_not_see_is_not_followed():
+    # skipped when `false` fails; set only for rm's environment, after expansion;
+    # in a background job or a pipeline, the assignment runs in a subshell
+    for cmd in (
+        "false && S=/tmp/x; rm -rf $S/y",
+        "true || S=/tmp/x; rm -rf $S/y",
+        "S=/tmp/x rm -rf $S/y",
+        "S=/tmp/x & rm -rf $S/y",
+        "S=/tmp/x | cat; rm -rf $S/y",
+        "S=$(mktemp -d); rm -rf $S",
+    ):
+        assert any("expansion" in r for r in rm_rules(cmd)), cmd
+
+
+def test_a_variable_changed_after_its_literal_assignment_is_not_followed():
+    for cmd in (
+        "S=/tmp/x; unset S; rm -rf $S/y",
+        "S=/tmp/x; read S; rm -rf $S/y",
+        "S=/tmp/x; S+=/../../home/u; rm -rf $S",
+        "S=/tmp/x; for S in /home/u; do :; done; rm -rf $S",
+        "S=/tmp/x; eval S=/home/u; rm -rf $S",
+        "S=/tmp/x; declare S=/home/u; rm -rf $S",
+        "S=/tmp/x; . ./env.sh; rm -rf $S",
+    ):
+        assert rm_rules(cmd) != [], cmd
+
+
+def test_a_nested_shell_sees_only_exported_assignments():
+    assert any("expansion" in r for r in rm_rules("S=/tmp/x; bash -c 'rm -rf $S/y'"))
+    assert rm_rules("export S=/tmp/x; bash -c 'rm -rf $S/y'") == []
+
+
+def test_rm_after_a_literal_cd_resolves_against_the_new_directory():
+    assert rm_rules("cd /tmp && rm -rf x") == []
+    assert rm_rules("cd /home/u/proj/sub && rm tests/a.rs") == []
+    assert rm_rules("cd sub && rm x") == []
+    assert rm_rules("cd /tmp && rm -rf $PWD/x") == []
+    assert any("outside" in r for r in rm_rules("cd /etc && rm passwd"))
+    assert any("outside" in r for r in rm_rules("cd && rm x"))
+
+
+def test_a_cd_that_may_have_failed_keeps_the_old_directory_possible():
+    # after `;` the next command runs whether or not cd succeeded
+    assert any("outside" in r for r in rm_rules("cd /tmp; rm -rf x", cwd="/home/u"))
+    assert rm_rules("cd /tmp && rm a", cwd="/home/u") == []
+    assert any("outside" in r for r in rm_rules("cd /tmp && rm a; rm b", cwd="/home/u"))
+    assert any("expansion" in r for r in rm_rules("cd /tmp; rm -rf $PWD/x", cwd="/home/u"))
+
+
+def test_cd_inside_a_subshell_group_or_control_structure_is_not_followed():
+    assert rm_rules("(cd /etc && rm passwd)") != []
+    assert rm_rules("(cd /tmp && true); rm -rf .ssh", cwd="/home/u") != []
+    assert rm_rules("if true; then cd /etc; fi; rm passwd") != []
+    assert rm_rules("true && { cd /etc; rm passwd; }") != []
+
+
+def test_a_directory_change_the_hook_cannot_read_stops_relative_targets():
+    for cmd in (
+        'eval "cd /etc"; rm passwd',
+        "eval cd /etc; rm passwd",
+        "builtin cd /etc; rm passwd",
+        "source ./go-somewhere.sh; rm passwd",
+        "CDPATH=/etc; cd sub && rm passwd",
+    ):
+        assert rm_rules(cmd) != [], cmd
+    assert rm_rules("cd sub && rm x", cdpath=True) != []
+
+
+def test_values_followed_before_a_structure_still_apply_to_what_ran_before_it():
+    assert rm_rules("S=/tmp/x; rm -rf $S; for f in a b; do echo $f; done") == []
+    assert rm_rules("cd /tmp && rm -rf x && (cd y && make)") == []
+    assert rm_rules("S=/tmp/x; for f in a; do :; done; rm -rf $S") != []
+    assert rm_rules("cd /tmp && (cd /etc; true) && rm passwd") != []
+    assert rm_rules("for HOME in /tmp; do :; done; rm -rf ~/.ssh") != []
+
+
+def test_a_temporary_assignment_before_a_shell_or_eval_is_not_the_followed_value():
+    for cmd in (
+        "export S=/tmp/x; S=/home/u bash -c 'rm -rf $S/y'",
+        "export S=/tmp/x; env S=/home/u bash -c 'rm -rf $S/y'",
+        "S=/tmp/x; S=/home/u eval 'rm -rf $S/y'",
+    ):
+        assert rm_rules(cmd) != [], cmd
+
+
+def test_a_structure_inside_a_nested_shell_is_still_not_followed():
+    cmd = "for f in a; do :; done; bash -c '(cd /tmp && rm -rf x) && rm -rf y'"
+    assert rm_rules(cmd, cwd="/home/u") != []
+
+
+def test_a_separator_followed_by_a_newline_is_read_as_that_separator():
+    assert rm_rules("S=/tmp/x;\nrm -rf $S/y") == []
+    assert rm_rules("cd /tmp &&\nrm -rf x") == []
+    assert rm_rules("S=/tmp/x\n\nrm -rf $S/y") == []
+
+
+def test_printf_without_v_does_not_hide_home():
+    assert rm_rules("printf 'x' > f; rm -rf ~/proj/build") == []
+    assert rm_rules("S=/tmp/x; printf -v S '%s' /home/u; rm -rf $S") != []
+
+
+def test_cdpath_still_applies_to_a_name_starting_with_a_dot():
+    assert rm_rules("cd .agents && rm x", cdpath=True) != []
+    assert rm_rules("cd ./sub && rm x", cdpath=True) == []
+
+
+def test_rm_inside_a_subshell_is_checked():
+    assert any("outside" in r for r in rm_rules("(rm -rf ~/x)"))
+    assert any("outside" in r for r in rm_rules("(true; rm -rf ~/x)"))
 
 
 def test_rm_through_a_shell_c_or_eval_is_checked_too():
