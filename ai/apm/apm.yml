@@ -24,6 +24,7 @@ dependencies:
     - ba0918/kemi/skills/kemi
     - ba0918/skills/skills/ba0918-refactor
     - ba0918/skills/skills/ba0918-rework
+    - ba0918/skills/skills/ba0918-opencode-exec
   mcp: []
 includes: auto
 scripts: {}
