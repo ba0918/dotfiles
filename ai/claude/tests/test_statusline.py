@@ -7,6 +7,8 @@ parser are the opposite - a mistake there prints a plausible line that happens
 to be untrue, which is exactly what nobody notices.
 """
 
+import os
+import subprocess
 import unicodedata
 
 import pytest
@@ -16,6 +18,7 @@ from statusline import (
     context_pct,
     display_width,
     first_that_fits,
+    git_file_counts,
     model_label,
     parse_porcelain,
     render_subagents,
@@ -170,6 +173,27 @@ def test_records_accumulate_across_kinds():
 @pytest.mark.parametrize("junk", ["", "\0", "x\0", "\0\0"])
 def test_malformed_output_yields_no_counts(junk):
     assert parse_porcelain(junk) == EMPTY
+
+
+def test_counting_files_does_not_rewrite_the_index(tmp_path):
+    def git(*args):
+        subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *args],
+            cwd=tmp_path, check=True, capture_output=True,
+        )
+
+    git("init", "-q")
+    tracked = tmp_path / "tracked.txt"
+    tracked.write_text("x")
+    git("add", "tracked.txt")
+    git("commit", "-q", "-m", "init")
+    later = tracked.stat().st_mtime + 60
+    os.utime(tracked, (later, later))
+    index = tmp_path / ".git" / "index"
+    before = index.read_bytes()
+
+    assert git_file_counts(str(tmp_path)) == counts()
+    assert index.read_bytes() == before
 
 
 # --- model_label --------------------------------------------------------------

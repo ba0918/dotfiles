@@ -416,9 +416,12 @@ def git_file_counts(root: str) -> dict | None:
     """Working-tree file counts, or None when git cannot answer."""
     if not root:
         return None
+    # Without --no-optional-locks, status takes index.lock to refresh stale
+    # stat data; the timeout kills git with SIGKILL, which leaves the lock
+    # behind and blocks every later commit in that repository.
     try:
         r = subprocess.run(
-            ["git", "-C", root, "status", "--porcelain=v1", "-z"],
+            ["git", "--no-optional-locks", "-C", root, "status", "--porcelain=v1", "-z"],
             capture_output=True, text=True, timeout=1,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
