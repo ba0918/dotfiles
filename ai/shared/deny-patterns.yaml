@@ -129,8 +129,8 @@ read_shortform:
 # scratch directory from $HOME, and deny rules are evaluated before any hook
 # can weigh in. block_dangerous_command.py judges rm by where the target lands.
 bash_destructive:
-  - "find * -delete:*"
-  - "find * -exec rm:*"
+  - "find * -delete*"
+  - "find * -exec rm*"
   - "xargs rm:*"
   - "sudo:*"
   - "git config --global *"
