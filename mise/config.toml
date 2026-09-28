@@ -245,6 +245,7 @@ gcloud = "latest"
 "github:ba0918/kakoi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kemi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kotowari" = { version = "latest", minimum_release_age = "0d" }
+"npm:wrangler" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを最新に更新する。
