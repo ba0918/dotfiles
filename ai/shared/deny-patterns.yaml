@@ -39,6 +39,7 @@ credentials:
 keys:
   - "*.pem"
   - "*.key"
+  - "*.keys"
   - "*.p12"
   - "*.pfx"
   - "*.jks"
@@ -113,6 +114,7 @@ write_deny:
   - ".env*"
   - "id_rsa*"
   - "*.key"
+  - "*.keys"
   - "*.pem"
 
 # Short-form Read denials (relative path patterns)
@@ -122,6 +124,7 @@ read_shortform:
   - "id_rsa*"
   - "id_ed25519*"
   - "*.key"
+  - "*.keys"
   - "*.pem"
 
 # Bash command denials — destructive operations.

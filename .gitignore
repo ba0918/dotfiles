@@ -19,6 +19,7 @@ auth.json
 *auth_token*
 *.pem
 *.key
+*.keys
 .env
 .env.*
 !.env.example
