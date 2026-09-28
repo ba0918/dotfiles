@@ -141,3 +141,6 @@ bash_destructive:
   - "git reset:*"
   - "brew install *"
   - "chmod 777 *"
+  # Deploys are started by hand through workflow_dispatch; an agent starting one
+  # would release without the person deciding to.
+  - "gh workflow run:*"
