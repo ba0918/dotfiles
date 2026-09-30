@@ -45,6 +45,7 @@ workflow を適用する必要はない。
 | diff review                              | ba0918-diff-review          |
 | release                                  | ba0918-release              |
 | verification / review                    | ba0918-verification         |
+| worktree                                 | ba0918-worktree             |
 
 複数に該当する場合は必要なものを組み合わせる。
 関連しない skill は予防的に読み込まない。
