@@ -189,7 +189,7 @@ lazygit = "latest"
 # （旧 code.gitea.io/tea は go.mod の宣言と食い違い導入不能）。上げるときは gitea.com/gitea/tea の release を見る
 "go:gitea.dev/tea" = "0.16.0"
 neovim = "latest"
-node = "26.8.2"
+node = "26.10.0"
 # ollama: ローカル LLM。公式 installer（/usr/local/bin + systemd service）ではなく
 # バイナリだけを mise で持つ。サーバは使うときに `ollama serve` で手動起動
 ollama = "latest"
@@ -232,7 +232,7 @@ zellij = "latest"
 # 0.9.8 に fish 4.x 退行（embedded cd.fish 未対応）があったが 0.10.0 で修正済み
 zoxide = "latest"
 lefthook = "latest"
-npm = "12.0.2"
+npm = "12.1.0"
 "npm:fkill-cli" = "latest"
 "npm:hunkdiff" = "latest"
 gcloud = "latest"
