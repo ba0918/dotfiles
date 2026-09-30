@@ -26,6 +26,8 @@ dependencies:
     - ba0918/skills/skills/ba0918-refactor
     - ba0918/skills/skills/ba0918-rework
     - ba0918/skills/skills/ba0918-opencode-exec
+    - ba0918/skills/skills/ba0918-codex-exec
+    - ba0918/skills/skills/ba0918-codex-image
   mcp: []
 includes: auto
 scripts: {}
