@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.codex/hooks/block_dangerous_command.py",
+            "command": "/usr/bin/python3 ~/.codex/hooks/block_dangerous_command.py",
             "timeout": 10
           }
         ]
@@ -29,12 +29,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.codex/hooks/detect_secret.py",
+            "command": "/usr/bin/python3 ~/.codex/hooks/detect_secret.py",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "python3 ~/.codex/hooks/detect_mojibake.py",
+            "command": "/usr/bin/python3 ~/.codex/hooks/detect_mojibake.py",
             "timeout": 10
           }
         ]

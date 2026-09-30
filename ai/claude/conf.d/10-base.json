@@ -15,10 +15,10 @@
   "showTurnDuration": true,
   "statusLine": {
     "type": "command",
-    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\""
+    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- /usr/bin/python3 \"$HOME/.claude/statusline.py\""
   },
   "subagentStatusLine": {
     "type": "command",
-    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- python3 \"$HOME/.claude/statusline.py\" --subagent"
+    "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- /usr/bin/python3 \"$HOME/.claude/statusline.py\" --subagent"
   }
 }

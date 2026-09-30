@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- /usr/bin/python3 -m claude_notify"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- /usr/bin/python3 -m claude_notify"
           }
         ]
       }
@@ -26,11 +26,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/detect_mojibake.py"
+            "command": "/usr/bin/python3 \"$HOME/.claude/hooks/detect_mojibake.py\""
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/detect_secret.py"
+            "command": "/usr/bin/python3 \"$HOME/.claude/hooks/detect_secret.py\""
           }
         ]
       },
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/block_dangerous_command.py"
+            "command": "/usr/bin/python3 \"$HOME/.claude/hooks/block_dangerous_command.py\""
           }
         ]
       },
@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- python3 -m claude_notify"
+            "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- /usr/bin/python3 -m claude_notify"
           }
         ]
       },
