@@ -51,7 +51,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$HOME/.claude/hooks/block_dangerous_command.py\""
+            "command": "command-guardian hook --agent claude",
+            "timeout": 10
           }
         ]
       },

@@ -158,6 +158,26 @@ hook スクリプトの実体は `ai/shared/hooks/` にあり、Claude Code と 
 以前は Claude 用と Codex 用に同じ検出ロジックを 2 部持っていたが、
 イベント形式の差は `hook_input.edited_files` が吸収するので統合した。
 
+### command-guardian
+
+Bash の PreToolUse hook は、削除などの破壊的な操作を対象パスで判定する
+`command-guardian hook` を Claude Code（`--agent claude`）と Codex（`--agent codex`）から呼ぶ。
+バイナリは `[tools]` の `github:ba0918/command-guardian` で導入し、hook からは
+PATH 上の mise shim で起動する。この repo が導入するものなので `run-if-present` では包まない。
+
+利用者設定の正本は `ai/command-guardian/config.toml` で、`[dotfiles]` が
+`~/.config/command-guardian/config.toml` に template で実体を書き出す。
+ホストが人の目を通さず従う設定なので、symlink にすると dotfiles を作業場所にした
+隔離の中から緩められる。直したら `mise bootstrap dotfiles apply` で配り直す。
+
+配布する設定は `unknown.verdict = "block"` にしている。分類できない対象は既定では `ask` だが、
+command-guardian の Codex モードは `ask` を何も返さず Codex の承認フローに委ねる。
+Codex は kakoi のシムから承認を外して起動するので、`ask` のままだと確認なしで通る。
+その代わり Claude Code でも分類できない対象は確認ではなく拒否になる。
+
+判定規則・設定キー・プロジェクト設定（`.command-guardian.toml`）の扱いは
+command-guardian の README を参照。
+
 ### kakoi
 
 `github:ba0918/kakoi` と `apt:bubblewrap` を mise で導入する。

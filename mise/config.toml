@@ -75,7 +75,6 @@ compile = false
 "~/.claude/agents/scout.md" = "../ai/claude/agents/scout.md"
 # hook スクリプトは ai/shared/hooks/ の単一実体を Claude / Codex 両方に配布する。
 # detect_* は hook_input を import するため、同じディレクトリに揃える必要がある
-"~/.claude/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
 "~/.claude/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
 "~/.claude/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
 "~/.claude/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
@@ -89,6 +88,10 @@ compile = false
 "~/.config/kakoi/profile/external-review.toml" = { source = "../ai/kakoi/profile/external-review.toml", mode = "template" }
 "~/.local/lib/kakoi/bin/powershell.exe" = { source = "../ai/kakoi/bin/powershell.exe", mode = "template" }
 
+# command-guardian: Claude / Codex の PreToolUse(Bash) hook が読む利用者設定。
+# ホストが人の目を通さず従う設定なので、隔離の中から緩められないよう実体配布する
+"~/.config/command-guardian/config.toml" = { source = "../ai/command-guardian/config.toml", mode = "template" }
+
 # APM: ユーザースコープの manifest。規範スキル（agentic-rules 等）を各エージェント CLI に
 # 配る宣言で、実体は bootstrap ステップの `apm update -g --yes` が ~/.claude/skills と
 # ~/.agents/skills に置く。apm.lock.yaml は生成物として ~/.apm 側に留める
@@ -97,7 +100,6 @@ compile = false
 # Codex: hooks.json はリンク差し替え防止のため実体配布。スクリプトは Claude と共有。
 # tests / pyc を配らないため個別宣言する。ro の範囲: docs/kakoi.md。
 "~/.codex/hooks.json" = { source = "../ai/codex/hooks.json", mode = "template" }
-"~/.codex/hooks/block_dangerous_command.py" = "../ai/shared/hooks/block_dangerous_command.py"
 "~/.codex/hooks/detect_mojibake.py" = "../ai/shared/hooks/detect_mojibake.py"
 "~/.codex/hooks/detect_secret.py" = "../ai/shared/hooks/detect_secret.py"
 "~/.codex/hooks/hook_input.py" = "../ai/shared/hooks/hook_input.py"
@@ -245,6 +247,7 @@ gcloud = "latest"
 "github:ba0918/kakoi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kemi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kotowari" = { version = "latest", minimum_release_age = "0d" }
+"github:ba0918/command-guardian" = { version = "latest", minimum_release_age = "0d" }
 "npm:wrangler" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:

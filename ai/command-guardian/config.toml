@@ -1,0 +1,19 @@
+# The command-guardian user configuration for this machine. This file is the
+# canonical copy and lives in the dotfiles repository: `mise bootstrap dotfiles
+# apply` writes it out to ~/.config/command-guardian/config.toml as a real file
+# (template mode, not a symbolic link). The PreToolUse hooks of Claude Code and
+# Codex run command-guardian on the host, so a link into the checkout would let
+# a jailed agent working on this repository loosen the rules for the host.
+# Edit it here and apply again.
+#
+# Keys and their defaults: the command-guardian README, "Configuration".
+
+# Report the verdict to the hook instead of only logging it.
+[mode]
+enforce = true
+
+# A target that cannot be classified is refused, not asked about. Codex runs
+# with its approvals bypassed under kakoi, and command-guardian maps `ask` to
+# no output in Codex mode, so `ask` would let the command through there.
+[unknown]
+verdict = "block"
