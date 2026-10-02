@@ -175,6 +175,12 @@ command-guardian の Codex モードは `ask` を何も返さず Codex の承認
 Codex は kakoi のシムから承認を外して起動するので、`ask` のままだと確認なしで通る。
 その代わり Claude Code でも分類できない対象は確認ではなく拒否になる。
 
+`[[commands.guard]]` には、kakoi プロファイルの git / gh の見張りと、未コミットの作業を
+消す git 操作（`reset --hard`、`clean -f`、`stash drop` / `clear`、`branch -D`）を書いている。
+kakoi で包むのは Codex だけなので、ホストで動く Claude Code にはこちらで同じ柵を置く。
+判定は、kakoi が Codex 側で止めている操作と戻せる操作を `ask`（Claude Code では確認して
+続けられる）、それ以外で失うと戻せない操作と hook の迂回を `block` にしている。
+
 判定規則・設定キー・プロジェクト設定（`.command-guardian.toml`）の扱いは
 command-guardian の README を参照。
 

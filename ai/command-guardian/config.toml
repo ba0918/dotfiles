@@ -17,3 +17,242 @@ enforce = true
 # no output in Codex mode, so `ask` would let the command through there.
 [unknown]
 verdict = "block"
+
+# Command guards. Only Codex runs inside kakoi, so the guards in the kakoi
+# profile (ai/kakoi/profile/default.toml) never see what Claude Code runs on
+# the host; the rules below carry them over and add the git operations that
+# discard uncommitted work.
+#
+# How the verdict is chosen, given that `ask` lets the command through in
+# Codex mode:
+# - `ask` where kakoi already blocks the same use for Codex, so Claude Code
+#   can still do it after a person approves (force push, GitHub deletions),
+#   and where the loss can be recovered (`git branch -D`, through the reflog).
+# - `block` where nothing else covers Codex and the loss is permanent, and
+#   where no legitimate use exists (skipping the commit and push hooks).
+#
+# `examples` is checked on every load; a rule that stops matching them is
+# disabled with a warning on standard error.
+
+# --- Carried over from the kakoi profile -----------------------------------
+
+# Global git options that take a value, declared so that
+# `git -C dir push --force` is still read from `push`.
+[[commands.guard]]
+program = "git"
+verdict = "ask"
+reason = "force pushing rewrites published history; confirm the branch and the remote"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["push"]]
+deny-flags = ["--force", "-f", "--force-with-lease", "--force-if-includes", "--mirror"]
+# A refspec starting with `+` forces that one ref.
+deny = [["push", "/.*/", "/[+].*/"]]
+examples.deny = [
+    "git push --force",
+    "git push -f origin main",
+    "git -C repo push --force-with-lease",
+    "git push --mirror origin",
+    "git push origin +main",
+]
+examples.allow = [
+    "git push",
+    "git push -u origin topic",
+    "git checkout -f main",
+    "git commit -m 'force push fix'",
+]
+
+# An alias would run a guarded command under another name.
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "git aliases can run a guarded command under another name; call the command directly"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+deny = [
+    ["config", "/(?i)alias[.].*/"],
+    ["config", ["--local", "--worktree", "--global", "--system", "--add", "--replace-all"], "/(?i)alias[.].*/"],
+]
+deny-option-values = { "-c" = ["/(?i)alias[.].*/"], "--config-env" = ["/(?i)alias[.].*/"] }
+examples.deny = [
+    "git -c alias.p=push p",
+    "git --config-env=alias.p=ENV p",
+    "git config alias.p 'push --force'",
+    "git config --local alias.p push",
+]
+examples.allow = [
+    "git -c color.ui=false log",
+    "git config user.name",
+    "git status",
+]
+
+# The pre-commit and pre-push hooks run the secret scan, lint and tests. `-n`
+# means --no-verify only for commit (for push it is --dry-run), so it has a
+# rule of its own. The LEFTHOOK* variables turn lefthook off or swap its binary.
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "commit and push hooks run the secret scan and the tests; do not skip them, fix what they report"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["commit"], ["push"], ["merge"], ["rebase"], ["am"], ["cherry-pick"], ["revert"]]
+deny-flags = ["--no-verify"]
+deny-env = ["LEFTHOOK", "LEFTHOOK_BIN", "LEFTHOOK_EXCLUDE"]
+examples.deny = [
+    "git commit --no-verify -m msg",
+    "git push --no-verify",
+    "git rebase --no-verify main",
+    "LEFTHOOK=0 git commit -m msg",
+    "LEFTHOOK_BIN=/bin/true git push",
+]
+examples.allow = [
+    "git commit -m 'drop --no-verify from the docs'",
+    "git push origin topic",
+    "git log --no-verify",
+    "LEFTHOOK=0 git status",
+]
+
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "commit hooks run the secret scan and the tests; do not skip them, fix what they report"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["commit"]]
+deny-flags = ["-n"]
+examples.deny = [
+    "git commit -n -m msg",
+    "git commit -anm msg",
+]
+examples.allow = [
+    "git commit -am msg",
+    "git push -n",
+]
+
+# Pointing core.hooksPath elsewhere skips every hook at once. A value after the
+# key sets it; the key alone only reads it and stays allowed.
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "changing core.hooksPath skips the commit and push hooks; do not skip them"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+deny = [
+    ["config", "/(?i)core[.]hookspath/", "/.*/"],
+    ["config", ["--local", "--worktree", "--global", "--system", "--add", "--replace-all"], "/(?i)core[.]hookspath/", "/.*/"],
+    ["config", ["--unset", "--unset-all"], "/(?i)core[.]hookspath/"],
+]
+deny-option-values = { "-c" = ["/(?i)core[.]hookspath(=.*)?/"], "--config-env" = ["/(?i)core[.]hookspath=.*/"] }
+examples.deny = [
+    "git -c core.hooksPath=/dev/null commit -m msg",
+    "git config core.hooksPath /tmp/empty",
+    "git config --unset core.hooksPath",
+]
+examples.allow = [
+    "git config core.hooksPath",
+    "git -c core.autocrlf=false status",
+]
+
+[[commands.guard]]
+program = "gh"
+verdict = "ask"
+reason = "deleting or archiving on GitHub cannot be undone; confirm the target"
+deny = [
+    ["issue", "delete"],
+    ["repo", ["delete", "archive"]],
+    ["release", ["delete", "delete-asset"]],
+]
+examples.deny = [
+    "gh issue delete 12 --yes",
+    "gh repo delete owner/repo --yes",
+    "gh release delete v1.0.0",
+]
+examples.allow = [
+    "gh issue close 12",
+    "gh repo view",
+    "gh release list",
+]
+
+# The REST API reaches the same deletions.
+[[commands.guard]]
+program = "gh"
+verdict = "ask"
+reason = "DELETE requests through gh api cannot be undone; confirm the target"
+options-with-value = ["-R", "--repo"]
+for = [["api"]]
+deny-option-values = { "-X" = ["/(?i)delete/"], "--method" = ["/(?i)delete/"] }
+examples.deny = [
+    "gh api -X DELETE repos/owner/repo/issues/1",
+    "gh api --method=delete repos/owner/repo",
+]
+examples.allow = [
+    "gh api repos/owner/repo",
+    "gh api -X PATCH repos/owner/repo/issues/1 -f state=closed",
+]
+
+# --- Git operations that discard uncommitted work ---------------------------
+
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "git reset --hard discards uncommitted changes for good; use git stash, or ask the person to run it"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["reset"]]
+deny-flags = ["--hard"]
+examples.deny = [
+    "git reset --hard",
+    "git reset --hard HEAD~1",
+    "git -C repo reset --hard origin/main",
+]
+examples.allow = [
+    "git reset",
+    "git reset --soft HEAD~1",
+    "git reset HEAD file.txt",
+]
+
+# A dry run (`-n`) and the interactive mode stay allowed.
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "git clean deletes untracked files for good; list them with git clean -n, or ask the person to run it"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["clean"]]
+deny-flags = ["-f", "--force"]
+examples.deny = [
+    "git clean -f",
+    "git clean -fd",
+    "git clean -fdx",
+    "git clean --force -d",
+]
+examples.allow = [
+    "git clean -n",
+    "git clean -nd",
+]
+
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "dropping a stash discards the saved changes for good; ask the person to do it"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+deny = [["stash", ["drop", "clear"]]]
+examples.deny = [
+    "git stash drop",
+    "git stash drop stash@{1}",
+    "git stash clear",
+]
+examples.allow = [
+    "git stash",
+    "git stash pop",
+    "git stash list",
+]
+
+[[commands.guard]]
+program = "git"
+verdict = "ask"
+reason = "git branch -D deletes a branch even if it is not merged; confirm the branch"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["branch"]]
+deny-flags = ["-D"]
+examples.deny = [
+    "git branch -D topic",
+    "git -C repo branch -D topic",
+]
+examples.allow = [
+    "git branch -d topic",
+    "git branch -a",
+]
