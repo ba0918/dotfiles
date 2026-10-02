@@ -43,10 +43,11 @@
 | Neovim | `nvim/.config/nvim/` | `~/.config/nvim/`（LazyVim） |
 | Claude Code | `ai/claude/` | `~/.claude/`。settings.json は `conf.d/` から合成 |
 | Codex | `ai/codex/` | `~/.codex/`。AGENTS.md と hooks.json は template |
-| OpenCode | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（v1）と `~/.config/opencode/opencode.json`（v2）（template） |
+| OpenCode V1 | `ai/opencode/opencode.json` | `~/.opencode/opencode.json`（template） |
 | AI 共通設定 | `ai/shared/` | deny の正本、共通 hook、対話契約、persona |
 | 規範スキルの配布 | `ai/apm/apm.yml` | `~/.apm/apm.yml`。APM が各ツールへ配布 |
 | 破壊的コマンドの判定 | `ai/command-guardian/config.toml` | `~/.config/command-guardian/config.toml`（template）。[詳細](dependencies.md#command-guardian) |
+| OpenCode V2のguardian連携 | `ai/opencode/opencode-v2.json` | `~/.config/opencode/opencode.json`（template）。miseの同梱プラグインを使用 |
 | 隔離起動 | `ai/kakoi/` | 起動シム、プロファイル、代替コマンド。[詳細](kakoi.md) |
 | Yazi / Glow / Herdr | `yazi/`、`glow/`、`herdr/` の `.config/` 配下 | `~/.config/` の各ツールディレクトリ |
 | パッケージ導入時の保護 | `npm/`、`pnpm/`、`bun/` | 各パッケージマネージャの設定。[方針](dependencies.md#サプライチェーン対策) |

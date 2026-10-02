@@ -139,7 +139,7 @@ ext の再ビルドが手動になるのが理由。
   `version = "latest"` / `version_list_url = "https://opencode.ai/update/api/latest/cli/npm"` /
   `version_regex = '"version":"([^"]+)"'`。
   v2 が読むグローバル config は `~/.config/opencode/`（v1 の `~/.opencode/` ではない）ため、
-  `[dotfiles]` で同じ `opencode.json` をそこにも配り、`scripts/generate-deny.sh opencode-apply`
+  `[dotfiles]` でV2専用の `ai/opencode/opencode-v2.json` を配り、`scripts/generate-deny.sh opencode-apply`
   が両方に deny を注入する。v2 はバックグラウンドのサービスが設定を保持するので、
   適用後は `opencode2 reload` で読み直させる（自動で読み直すかは未確認）。
   npm の `@opencode/cli` は `opencode2` bin を同梱するが、mise の npm backend が
@@ -183,6 +183,18 @@ kakoi で包むのは Codex だけなので、ホストで動く Claude Code に
 
 判定規則・設定キー・プロジェクト設定（`.command-guardian.toml`）の扱いは
 command-guardian の README を参照。
+
+OpenCode V2は `ai/opencode/opencode-v2.json` をtemplateで配り、Bashと同梱プラグインを登録する。
+V1には従来の `ai/opencode/opencode.json` を配り、V2専用プラグインを入れない。
+プラグインはmiseの `github-ba0918-command-guardian/latest/opencode` ディレクトリを参照する。
+`MISE_DATA_DIR` を優先し、未指定ならXDGのdataディレクトリ配下のmiseを使う。
+`mise upgrade github:ba0918/command-guardian` で本体と同梱プラグインが一緒に更新されるため、
+別途 `plugin add` やGitタグの差し替えは不要である。更新後のサーバー再起動で反映する。
+
+通常のOpenCodeバックグラウンドサービスへの接続と認証はguardian側で自動取得する。
+この機能は0.1.2には含まれず、command-guardianの次回リリースが必要である。
+明示起動したサーバーやremote接続では、guardianの導入ガイドに従って接続オプションを設定する。
+認証情報はdotfilesへ保存しない。
 
 ### kakoi
 

@@ -18,6 +18,8 @@ auto_update = true
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
 # config_root を repo ルートへ解決し、dotfiles の template から参照できる
 dotfiles_root = "{{ config_root }}"
+# mise updates this alias with the binary, so the plugin never follows a separate Git tag.
+command_guardian_plugin = '{{ get_env(name="MISE_DATA_DIR", default=xdg_data_home ~ "/mise") }}/installs/github-ba0918-command-guardian/latest/opencode'
 
 [settings.node]
 compile = false
@@ -129,10 +131,11 @@ compile = false
 # instructions が repo ルート相対パス（{{ vars.dotfiles_root }}）を指すため symlink ではなく
 # template で配布する（rendered 実ファイルになる）。MISE_GLOBAL_CONFIG_ROOT が
 # config_root を repo ルートに解決する（bootstrap.sh / fish config.fish で設定）
-# v1 は ~/.opencode/、v2（opencode2）は ~/.config/opencode/ を読むので両方に同じものを配る。
+# v1 は ~/.opencode/、v2（opencode2）は ~/.config/opencode/ を読む。
+# V2 専用の guardian plugin と Bash 設定は別テンプレートに置き、V1 には配らない。
 # deny はどちらも post-dotfiles の generate-deny.sh opencode-apply が注入する
 "~/.opencode/opencode.json" = { source = "../ai/opencode/opencode.json", mode = "template" }
-"~/.config/opencode/opencode.json" = { source = "../ai/opencode/opencode.json", mode = "template" }
+"~/.config/opencode/opencode.json" = { source = "../ai/opencode/opencode-v2.json", mode = "template" }
 
 # pnpm: グローバル設定（minimumReleaseAge によるサプライチェーン対策）
 "~/.config/pnpm/config.yaml" = "../pnpm/.config/pnpm/config.yaml"
