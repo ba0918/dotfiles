@@ -28,6 +28,7 @@ workflow を適用する必要はない。
 | implementation                           | ba0918-tdd                  |
 | code readability concern                 | ba0918-readability          |
 | information placement decision           | ba0918-placement            |
+| document creation / organization / pruning | ba0918-documents           |
 | secrets / credentials / sensitive config | ba0918-secrets              |
 | commit                                   | ba0918-commit               |
 | delegate to subagent                     | ba0918-delegation           |
@@ -38,6 +39,9 @@ workflow を適用する必要はない。
 
 複数に該当する場合は必要なものを組み合わせる。
 関連しない skill は予防的に読み込まない。
+
+文書ファイルを作るか判断するとき、配置・移動・削除を決めるとき、
+古い文書を棚卸しするときは `ba0918-documents` を読む。
 
 diff-review の提示には `kemi` skill を使う。
 
