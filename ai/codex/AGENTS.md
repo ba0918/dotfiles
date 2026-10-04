@@ -46,6 +46,7 @@ workflow を適用する必要はない。
 | diff review                              | ba0918-diff-review          |
 | release                                  | ba0918-release              |
 | CI / CD pipeline (workflow files)        | ba0918-ci                   |
+| mutation testing (run / configure / CI)  | ba0918-mutation-testing     |
 | verification / review                    | ba0918-verification         |
 | worktree                                 | ba0918-worktree             |
 
