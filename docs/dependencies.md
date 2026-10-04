@@ -123,27 +123,19 @@ ext の再ビルドが手動になるのが理由。
   設定は `ai/claude/` で管理
 - **codex** — `[tools]` の `codex`（`aqua:openai/codex`）で導入。同じく per-tool で 0d。
   設定は `ai/codex/` で管理
-- **opencode** — `[tools]` の `opencode`（`aqua:anomalyco/opencode`）で導入。同じく per-tool で 0d。
-  グローバル config は `ai/opencode/opencode.json` で template 配布。
+- **opencode** — `[tools]` の `npm:@opencode/cli`（v2）で導入。同じく per-tool で 0d。
+  v2 は GitHub Release に無く aqua から取れないため npm パッケージを使う。aqua を通らないので
+  cosign / Attestations の検証は無い。
+  パッケージの bin は postinstall がプラットフォーム別パッケージから実体を置く仕組みで、
+  mise が使う aube は既定で lifecycle script を実行しないため、`allow_builds` で
+  このパッケージだけ許可している。パッケージは `opencode` と `opencode2` の両方の bin を持つが、
+  呼び出しは `opencode` に揃える。
+  グローバル config は `ai/opencode/opencode.json` を `~/.config/opencode/` に template 配布し、
+  `scripts/generate-deny.sh opencode-apply` が deny を注入する。
+  バックグラウンドのサービスが設定を保持するので、適用後は `opencode reload` で読み直させる。
+  v1（`aqua:anomalyco/opencode`、`~/.opencode/` を読む）は 2026-10-04 に外した。
   **claude-skills** プラグインは `opencode plugin ba0918/claude-skills --force --global`
-  で導入（スキル本体は opencode のキャッシュに配置されるため repo 外）
-- **opencode v2（opencode2）** — `[tools]` の `http:opencode2` で v1 と共存させる。
-  v2 のバイナリは GitHub Release ではなく vendor CDN（`opencode.ai/files/bin/`）配布で、
-  aqua / github backend から取れないため http backend を使う。アーカイブ同梱の
-  バイナリ名が v1 と同じ `opencode` なので `rename_exe` で `opencode2` に変える。
-  aqua を通らず cosign / Attestations 検証が無く、http backend には
-  `minimum_release_age` も効かないため、版と sha256 を固定する（sha256 の出典は
-  `anomalyco/homebrew-tap` の `opencode-v2.rb`）。上げるときは両方を手で更新する。
-  latest 追従にしたい場合は、版一覧のエンドポイントが無いので v2 install script と同じ
-  update API から regex で解決する（checksum の固定は外れる）:
-  `version = "latest"` / `version_list_url = "https://opencode.ai/update/api/latest/cli/npm"` /
-  `version_regex = '"version":"([^"]+)"'`。
-  v2 が読むグローバル config は `~/.config/opencode/`（v1 の `~/.opencode/` ではない）ため、
-  `[dotfiles]` でV2専用の `ai/opencode/opencode-v2.json` を配り、`scripts/generate-deny.sh opencode-apply`
-  が両方に deny を注入する。v2 はバックグラウンドのサービスが設定を保持するので、
-  適用後は `opencode2 reload` で読み直させる（自動で読み直すかは未確認）。
-  npm の `@opencode/cli` は `opencode2` bin を同梱するが、mise の npm backend が
-  パッケージ名の初出 30 日ガード（初出 2026-09-02）で拒否するため現状は使えない
+  で導入していた（v1 時代の手順。v2 での導入方法は未確認）
 
 `ai/shared/` の共通契約（`interaction.md` / `human-readable.md`）は
 `~/.claude/rules/` にシンボリックリンクして常時適用する。Claude 専用の
@@ -184,8 +176,7 @@ kakoi で包むのは Codex だけなので、ホストで動く Claude Code に
 判定規則・設定キー・プロジェクト設定（`.command-guardian.toml`）の扱いは
 command-guardian の README を参照。
 
-OpenCode V2は `ai/opencode/opencode-v2.json` をtemplateで配り、Bashと同梱プラグインを登録する。
-V1には従来の `ai/opencode/opencode.json` を配り、V2専用プラグインを入れない。
+OpenCodeは `ai/opencode/opencode.json` をtemplateで配り、Bashと同梱プラグインを登録する。
 プラグインはmiseの `github-ba0918-command-guardian/latest/opencode` ディレクトリを参照する。
 `MISE_DATA_DIR` を優先し、未指定ならXDGのdataディレクトリ配下のmiseを使う。
 `mise upgrade github:ba0918/command-guardian` で本体と同梱プラグインが一緒に更新されるため、

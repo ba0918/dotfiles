@@ -62,8 +62,7 @@ build-settings
 
 1. `ai/shared/deny-patterns.yaml` の適切なカテゴリにパターンを追加
 2. `ai/claude/build-settings` を実行（`~/.claude/settings.json` に反映）
-3. `scripts/generate-deny.sh opencode-apply` を実行（`~/.opencode/opencode.json` と
-   `~/.config/opencode/opencode.json` に反映）
+3. `scripts/generate-deny.sh opencode-apply` を実行（`~/.config/opencode/opencode.json` に反映）
 4. `mise bootstrap` 実行時は post-dotfiles hook が自動で 2, 3 を実行
 
 ## generate-deny.sh
@@ -100,7 +99,7 @@ mawk で無言に一致しなくなる。
 |----------|------|
 | `claude` | Claude Code 形式の JSON を stdout に出力 |
 | `opencode` | OpenCode 形式の JSON を stdout に出力 |
-| `opencode-apply` | `~/.opencode/opencode.json`（v1）と `~/.config/opencode/opencode.json`（v2）の deny を in-place 更新。どちらかが無ければ何も書かずに失敗する |
+| `opencode-apply` | `~/.config/opencode/opencode.json` の deny を in-place 更新。無ければ失敗する |
 
 ### 変換ルール
 
@@ -208,8 +207,7 @@ Claude Code の settings.json は `[dotfiles]` 管轄外。runtime 追記との 
 
 ## OpenCode の deny 管理
 
-OpenCode の `opencode.json` は mise template で配布される。v1 は `~/.opencode/`、
-v2（opencode2）は `~/.config/opencode/` を読むので、同じ template を両方に配る。
+OpenCode の `opencode.json` は mise template で `~/.config/opencode/` に配布される。
 deny パターンは 2 段階で適用される:
 
 1. **template 配布** — `mise bootstrap dotfiles apply` が template をレンダリング
@@ -219,10 +217,10 @@ deny パターンは 2 段階で適用される:
 `opencode-apply` は既存の allow エントリ（`*.env.example` 等）を保持しつつ、
 deny エントリだけを正本で置換する。
 
-v2 は `~/.config/opencode/` の `opencode.json` と自前の `opencode.jsonc` を両方読んで
+opencode は `~/.config/opencode/` の `opencode.json` と自前の `opencode.jsonc` を両方読んで
 合成する。`opencode-apply` が書くのは `.json` だけで、`.jsonc` は触らない。
-v2 はバックグラウンドのサービスが設定を保持するため、apply 後は
-`opencode2 reload` で読み直させる（自動で読み直すかは未確認）。
+バックグラウンドのサービスが設定を保持するため、apply 後は
+`opencode reload` で読み直させる（自動で読み直すかは未確認）。
 
 そのため repo 内の `ai/opencode/opencode.json` は
 `permission.read` / `permission.external_directory` に **deny を一切書かない**。

@@ -67,7 +67,7 @@ kotowari-review と ba0918-review の full review で、quality のレビュー�
 
 - gpt: `ba0918-opencode-exec` で実行する。渡す値は次のとおり。
   - モデル: `openai/gpt-6-sol`
-  - コマンド名: `opencode2`
+  - コマンド名: `opencode`
   - 前置コマンド: `kakoi` `--profile` `external-review` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
   - 変更なし: 指定する
   - プロンプト: レビュー依頼をファイルに書いて渡す

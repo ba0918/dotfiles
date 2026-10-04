@@ -131,15 +131,12 @@ check_fails "missing yaml fails" \
 	env DENY_PATTERNS_FILE="${TMP}/does-not-exist.yaml" "${SCRIPT}" claude
 
 # --- 7. opencode-apply injects deny and preserves non-deny entries ----------
-# Both config locations get the same deny set: v1 reads ~/.opencode/, v2
-# (opencode2) reads ~/.config/opencode/. A target left unpatched is an agent
+# opencode reads ~/.config/opencode/. A target left unpatched is an agent
 # running with no read denials at all.
 FAKE_HOME="${TMP}/home"
-OC_V1="${FAKE_HOME}/.opencode/opencode.json"
-OC_V2="${FAKE_HOME}/.config/opencode/opencode.json"
-mkdir -p "$(dirname "${OC_V1}")" "$(dirname "${OC_V2}")"
-for target in "${OC_V1}" "${OC_V2}"; do
-	cat > "${target}" <<'JSON'
+OC_CONFIG="${FAKE_HOME}/.config/opencode/opencode.json"
+mkdir -p "$(dirname "${OC_CONFIG}")"
+cat > "${OC_CONFIG}" <<'JSON'
 {
   "permission": {
     "read": { "*": "allow", "*.env.example": "allow", "**/stale-leftover": "deny" },
@@ -148,47 +145,33 @@ for target in "${OC_V1}" "${OC_V2}"; do
   }
 }
 JSON
-done
 
 if HOME="${FAKE_HOME}" "${SCRIPT}" opencode-apply >/dev/null 2>&1; then
-	for applied in "${OC_V1}" "${OC_V2}"; do
-		label="${applied#"${FAKE_HOME}"/}"
-		check "apply keeps non-deny read entries (${label})" \
-			'[ "$(jq -r ".permission.read[\"*.env.example\"]" "${applied}")" = "allow" ]'
-		check "apply drops stale deny entries not in the yaml (${label})" \
-			'[ "$(jq -r ".permission.read | has(\"**/stale-leftover\")" "${applied}")" = "false" ]'
-		check "apply injects the generated deny set into read (${label})" \
-			'[ "$(jq -r ".permission.read[\"**/.netrc\"]" "${applied}")" = "deny" ]'
-		check "apply injects the generated deny set into external_directory (${label})" \
-			'[ "$(jq -r ".permission.external_directory[\"**/.netrc\"]" "${applied}")" = "deny" ]'
-		check "apply leaves unrelated keys untouched (${label})" \
-			'[ "$(jq -r ".permission.edit" "${applied}")" = "allow" ]'
-	done
+	check "apply keeps non-deny read entries" \
+		'[ "$(jq -r ".permission.read[\"*.env.example\"]" "${OC_CONFIG}")" = "allow" ]'
+	check "apply drops stale deny entries not in the yaml" \
+		'[ "$(jq -r ".permission.read | has(\"**/stale-leftover\")" "${OC_CONFIG}")" = "false" ]'
+	check "apply injects the generated deny set into read" \
+		'[ "$(jq -r ".permission.read[\"**/.netrc\"]" "${OC_CONFIG}")" = "deny" ]'
+	check "apply injects the generated deny set into external_directory" \
+		'[ "$(jq -r ".permission.external_directory[\"**/.netrc\"]" "${OC_CONFIG}")" = "deny" ]'
+	check "apply leaves unrelated keys untouched" \
+		'[ "$(jq -r ".permission.edit" "${OC_CONFIG}")" = "allow" ]'
 else
 	fail=$((fail + 1))
 	printf 'FAIL: opencode-apply failed\n' >&2
 fi
 
-# --- 8. opencode-apply refuses to run unless every target exists ------------
+# --- 8. opencode-apply refuses to run without its target ---------------------
 check_fails "opencode-apply fails when no opencode.json exists" \
 	env HOME="${TMP}/no-such-home" "${SCRIPT}" opencode-apply
 
-# With only one of the two targets present, apply must fail without touching
-# the one that exists: a half-applied deny set that exits 0 is the failure
-# mode AGENTS.md rule 7 forbids.
+# The v1 location is no longer read; a config left only there must not pass.
 ONLY_V1_HOME="${TMP}/only-v1"
 mkdir -p "${ONLY_V1_HOME}/.opencode"
 printf '{"permission":{"read":{"*":"allow"},"external_directory":{"*":"ask"}}}\n' > "${ONLY_V1_HOME}/.opencode/opencode.json"
-check_fails "opencode-apply fails when the v2 opencode.json is absent" \
+check_fails "opencode-apply fails when only the v1 opencode.json exists" \
 	env HOME="${ONLY_V1_HOME}" "${SCRIPT}" opencode-apply
-check "opencode-apply leaves the v1 file unpatched when the v2 one is absent" \
-	'[ "$(jq -r ".permission.read | has(\"**/.netrc\")" "${ONLY_V1_HOME}/.opencode/opencode.json")" = "false" ]'
-
-ONLY_V2_HOME="${TMP}/only-v2"
-mkdir -p "${ONLY_V2_HOME}/.config/opencode"
-printf '{"permission":{"read":{"*":"allow"},"external_directory":{"*":"ask"}}}\n' > "${ONLY_V2_HOME}/.config/opencode/opencode.json"
-check_fails "opencode-apply fails when the v1 opencode.json is absent" \
-	env HOME="${ONLY_V2_HOME}" "${SCRIPT}" opencode-apply
 
 # --- 9. the shipped opencode.json holds no literal read deny entries --------
 # deny-patterns.yaml is the single source of truth for file-read denials, and

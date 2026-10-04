@@ -1,5 +1,5 @@
 # The kakoi profile for handing work to a model from another provider (an external
-# reviewer run through `opencode2 run`). Distributed like default.toml: the canonical copy
+# reviewer run through `opencode run`). Distributed like default.toml: the canonical copy
 # is this file, and `mise bootstrap dotfiles apply` writes it out to
 # ~/.config/kakoi/profile/external-review.toml as a real file. Select it with
 # `kakoi --profile external-review`; combine it with policy/readonly-workspace.toml when

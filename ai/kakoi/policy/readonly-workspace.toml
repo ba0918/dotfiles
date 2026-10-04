@@ -2,7 +2,7 @@
 # profile, for handing a review or an investigation to another agent that must not change
 # the repository:
 #
-#   kakoi --policy-file <this file> -- opencode2 run --standalone --auto ...
+#   kakoi --policy-file <this file> -- opencode run --standalone --auto ...
 #
 # Across layers the upper layer replaces the lower one for the same path, so these `ro`
 # items replace the profile's `rw` for the workspace, the worktree and the shared .git.
@@ -11,7 +11,7 @@
 # The build output stays writable so the agent can still build and run tests. `target/`
 # covers Cargo; an item whose path does not exist is skipped.
 #
-# `opencode2 run` without `--standalone` hands the work to the background service, which
+# `opencode run` without `--standalone` hands the work to the background service, which
 # runs outside the isolation and can write the repository (measured 2026-09-23).
 
 [mounts]

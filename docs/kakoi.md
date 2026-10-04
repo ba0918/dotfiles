@@ -133,10 +133,10 @@ apply の後に実体へ置き換わったかを確かめる手順と、リン�
 
 ### 外部モデル用のプロファイル
 
-他社のモデルに opencode2 経由で作業を渡すときは、`--profile external-review`
+他社のモデルに opencode 経由で作業を渡すときは、`--profile external-review`
 （正本 `ai/kakoi/profile/external-review.toml`、配り方は default.toml と同じ）を使う。
 default.toml は claude / codex を中で動かす前提なので、`~/.claude` と `~/.codex` が
-読み書きでき、`GH_TOKEN` も入る。`opencode2 run --auto` はシェルの実行も自動で許可するため、
+読み書きでき、`GH_TOKEN` も入る。`opencode run --auto` はシェルの実行も自動で許可するため、
 その上では会話履歴や認証情報を読んでモデルの提供元へ送れてしまう。
 kakoi には下の段の項目を消す手段が無く、policy ファイルを重ねても `GH_TOKEN` や
 `rw` を取り除けないので、差分ではなく独立したプロファイルとして持つ。
@@ -153,7 +153,7 @@ default.toml との違いは、`~/.claude`・`~/.claude.json`・`~/.codex`・`~/
 作業場所を書かせないときは `ai/kakoi/policy/readonly-workspace.toml` を重ねる:
 
 ```bash
-kakoi --profile external-review --policy-file ai/kakoi/policy/readonly-workspace.toml -- opencode2 run --standalone --auto ...
+kakoi --profile external-review --policy-file ai/kakoi/policy/readonly-workspace.toml -- opencode run --standalone --auto ...
 ```
 
 残る露出: opencode は `~/.local/share/opencode/auth.json`（opencode に設定した全プロバイダの
