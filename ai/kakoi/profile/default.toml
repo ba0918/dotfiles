@@ -34,6 +34,10 @@ rw = [
     "~/.local/state/opencode",
     # claude code (same role)
     "~/.claude",
+    # pi: credentials, sessions and the model cache. It takes a lock by creating
+    # `<file>.lock` next to settings.json and auth.json, so the directory itself has to
+    # be writable, not only those files.
+    "~/.pi/agent",
 ]
 
 # Lives directly under HOME, which is never rw. Claude Code writes it in place, so the
@@ -79,6 +83,19 @@ ro = [
     "~/.claude/agents",
     "~/.claude/commands",
     "~/.claude/skills",
+    # pi loads these as code or instructions on its next start, including a start on the
+    # host outside the isolation. settings.json can declare packages and resource paths.
+    # An item whose path does not exist is skipped, so a missing one (models.json,
+    # SYSTEM.md and the like) can still be created from inside.
+    "~/.pi/agent/settings.json",
+    "~/.pi/agent/extensions",
+    "~/.pi/agent/skills",
+    "~/.pi/agent/prompts",
+    "~/.pi/agent/models.json",
+    "~/.pi/agent/mcp.json",
+    "~/.pi/agent/SYSTEM.md",
+    "~/.pi/agent/APPEND_SYSTEM.md",
+    "~/.pi/agent/AGENTS.md",
     # The shim directory the host runs `codex` from, through PATH (fish via the mise
     # config, the Claude Code Bash tool and hooks via settings.json). Unlike everything
     # above, it is not distributed: the host executes this repository's checkout itself,
