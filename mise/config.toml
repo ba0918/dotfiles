@@ -201,6 +201,8 @@ ollama = "latest"
 # aube の既定（lifecycle script を実行しない）のままだと起動できない。allow_builds で
 # このパッケージの script だけを許可する
 "npm:@opencode/cli" = { version = "latest", minimum_release_age = "0d", allow_builds = "@opencode/cli" }
+# pi: お試し導入のコーディング agent（aqua:earendil-works/pi）。aqua の検証は sha256 のみ
+pi = { version = "latest", minimum_release_age = "0d" }
 pnpm = "latest"
 ripgrep = "latest"
 rust = "latest"
