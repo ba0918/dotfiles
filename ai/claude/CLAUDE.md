@@ -15,6 +15,14 @@ Simple questions, investigation, explanations, minor fixes, and explicitly named
 
 When the user names a specific workflow or skill, follow it.
 
+## Brainstorm and shoryo
+
+brainstorm (ba0918-brainstorm / kotowari-brainstorm) uses shoryo by default. When starting one, if the `shoryo` skill and the `shoryo` command are available, read the shoryo skill and run the rounds on the shoryo screen. Do not use it when the person wants the rounds in the conversation.
+
+While shoryo is in use, the shoryo skill's instructions take precedence over the brainstorm skill for how rounds are presented and where records live (do not keep the progress file on the brainstorm skill's side or write the decision record round by round). Once the topic converges, read the records from `shoryo result` and from there write the specification and decision record as usual.
+
+When shoryo is not available, present the rounds in the conversation as before.
+
 ## Rule Routing
 
 The norms are provided as `ba0918-*` skills.
