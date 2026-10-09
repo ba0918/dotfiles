@@ -61,7 +61,7 @@ Safe local verification needs no step-by-step approval midway; when a failure co
 A seat for a different model, added alongside the quality reviewer in a full review by kotowari-review or ba0918-review. When only a count is given, use them from the top.
 
 - gpt: run it with `ba0918-opencode-exec`. Pass these values.
-  - model: `openai/gpt-6-sol`
+  - model: `openai/gpt-6.1-sol`
   - command name: `opencode`
   - prefix command: `kakoi` `--profile` `external-review` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
   - no-change: set it
