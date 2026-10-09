@@ -28,6 +28,11 @@ dependencies:
     - ba0918/skills/skills/ba0918-opencode-exec
     - ba0918/skills/skills/ba0918-codex-exec
     - ba0918/skills/skills/ba0918-codex-image
+    - nanaism/yomiyasu
+    - backnotprop/pstack/skills/unslop
+    - ba0918/skills/skills/ba0918-activity-report
+    - ba0918/skills/skills/ba0918-repo-history
+    - ba0918/shoryo/skills/shoryo
   mcp: []
 includes: auto
 scripts: {}

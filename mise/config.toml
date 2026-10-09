@@ -247,6 +247,7 @@ gcloud = "latest"
 "github:ba0918/kemi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kotowari" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/command-guardian" = { version = "latest", minimum_release_age = "0d" }
+"github:ba0918/shoryo" = { version = "latest", minimum_release_age = "0d" }
 "npm:wrangler" = "latest"
 
 # bootstrap ステップ 15（mise run bootstrap）:
