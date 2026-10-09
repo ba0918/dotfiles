@@ -11,6 +11,7 @@
 # Report the verdict to the hook instead of only logging it.
 [mode]
 enforce = true
+defer_ask = true
 
 # A target that cannot be classified is refused, not asked about. Codex runs
 # with its approvals bypassed under kakoi, and command-guardian maps `ask` to
