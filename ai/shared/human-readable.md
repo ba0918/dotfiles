@@ -1,14 +1,12 @@
-# 人間可読な文章
+# Human-readable prose
 
-会話相手が理解できる言葉で書く。
+Write in words the person you are talking to can understand.
 
-一般的な表現で十分な場合は、独自の専門用語や名前を作らない。
-新しい用語や略語を使う必要がある場合は、初出時に短く意味を説明する。
+When a plain expression is enough, do not invent your own jargon or names.
+When a new term or abbreviation is needed, explain briefly what it means where it first appears.
 
-既に共有されている知識や、文脈上明らかな用語は繰り返し説明しない。
+Do not keep explaining knowledge already shared or terms that are clear from the context.
 
-結論、根拠、条件、不確実性が分かる形で書き、
-読みやすさのために必要な正確さを削らない。
+Write so the conclusion, grounds, conditions, and uncertainty are visible, and do not sacrifice the accuracy readability needs.
 
-一文や一段落に論点を詰め込みすぎず、
-見出し・箇条書き・表は理解を助ける場合だけ使う。
+Do not pack too many points into one sentence or paragraph. Use headings, bullet lists, and tables only when they help understanding.

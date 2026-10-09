@@ -1,66 +1,63 @@
 # Model Routing
 
-モデル選択は、タスクの性質と必要な独立性に基づいて行う。
-特定モデルへの固定は、そのモデルで継続して再現できる差が確認されている場合だけ行う。
+Choose models based on the nature of the task and the independence it needs.
+Pin a specific model only when its advantage has been confirmed to reproduce consistently.
 
 ## Roles
 
 ### Main session
 
-通常の対話、実装、調査、編集、進行管理は、原則としてメインセッションで行う。
-単純な作業や共有コンテキストが重要な作業は、subagent に委譲しない。
+Ordinary dialogue, implementation, investigation, editing, and progress management happen in the main session by default.
+Do not delegate simple work, or work where shared context matters, to a subagent.
 
 ### Judge
 
-独立した判断が有益な場合だけ使う。
+Use it only when an independent judgment is useful.
 
-例:
+Examples:
 
-* 契約や仕様の解釈が複数に割れる
-* レビュー結果が衝突する
-* 不可逆または高リスクな判断がある
-* 重要な設計分岐で評価が拮抗している
+* contract or specification interpretations diverge
+* review results conflict
+* a decision is irreversible or high-risk
+* assessments are evenly split on an important design branch
 
-単純な判断や、メインセッションで十分に解決できる問題には使わない。
+Do not use it for simple judgments or problems the main session can settle well enough.
 
 ### Scout
 
-独立した read-only 調査や、メインセッションの仮説を別コンテキストで検証する必要がある場合に使う。
-単純なコード探索や検索はメインセッションで直接行う。
+Use it when you need independent read-only investigation, or to check the main session's hypothesis in a separate context.
+Do simple code exploration or searching directly in the main session.
 
 ### External reviewer / executor
 
-異なるモデルによる独立レビュー、または専用実行環境が必要な場合に使う。
-利用するモデルは、現在の性能、コスト、利用可能性を基に選ぶ。
+Use it when you need an independent review by a different model, or a dedicated execution environment.
+Choose the model to use based on current performance, cost, and availability.
 
 ## Delegation
 
-subagent は次の場合に使う。
+Use subagents when:
 
-* 独立したコンテキストが有益
-* 異なる視点による検証が必要
-* 独立した作業を並列化できる
+* a separate context is useful
+* verification from a different viewpoint is needed
+* independent work can run in parallel
 
-単純な作業、逐次処理、小規模変更、共有状態を保つ必要がある作業では、
-メインセッションで直接処理する。
+Handle simple work, sequential work, small changes, and work that must preserve shared state directly in the main session.
 
 ## Model selection
 
-モデル固有の固定は、実測で安定した差が確認されている場合に限る。
-新しいモデル世代へ移行した場合は、既存のモデル固定を前提とせず再検証する。
-モデルエイリアスではなく、再現性が必要な評価では完全なモデル ID を使用する。
+Pin a model only where a stable difference has been confirmed by measurement.
+After moving to a new model generation, do not assume the existing pins; re-verify them.
+Use full model IDs, not model aliases, for evaluations that need reproducibility.
 
 ## Handoff
 
-委譲先がユーザースコープのルール、skill、またはセッション履歴を
-自動的に共有している前提にしない。
+Do not assume the delegate automatically shares the user-scope rules, skills, or session history.
 
-委譲に必要な目的、制約、成功条件、関連する事実を明示して渡す。
-ただし、既知の共通ルール全文を無条件に展開しない。
+State the goal, constraints, success conditions, and relevant facts the delegation needs.
+Do not unconditionally expand the full text of known shared rules, either.
 
 ## Output ownership
 
-最終的な成果物とユーザーへの説明はメインセッションが統合する。
+The main session integrates the final deliverable and the explanation to the user.
 
-subagent の出力は、そのまま採用せず、
-必要に応じて事実確認・整合性確認を行ってから利用する。
+Do not adopt a subagent's output as is; check facts and consistency as needed before using it.

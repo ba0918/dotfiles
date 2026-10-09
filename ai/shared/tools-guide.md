@@ -1,15 +1,16 @@
-# 開発ツール
+# Development tools
 
-この環境では、コード作業に次の CLI を利用できる。
+This environment offers the following CLIs for code work.
 
-* `rg` — テキスト検索
-* `fdfind` — ファイル探索（Debian / Ubuntu での `fd` の実行名）
-* `jq` — JSON の検索・変形
-* `sg` (`ast-grep`) — AST 構造に基づくコード検索・書き換え
-* `tu` - htop、vim、mc、dialogベースのインストーラー、ncursesベースのUIなどの一部のプログラムは、インターフェースを描画するために実際の端末（ターミナル）を必要とします。標準入出力（stdin/stdout）をパイプするだけでは動作しません。
-tuを使用すると、仮想端末上でそれらのプログラムを実行し、画面のスクリーンショットの撮影、キー入力の送信、マウス操作を行うことができます。最初の操作を行う前に tu usage を実行して、完全なコマンドリファレンスを確認してください。
+* `rg` — text search
+* `fdfind` — file discovery (the name `fd` runs under on Debian / Ubuntu)
+* `jq` — JSON search and transformation
+* `sg` (`ast-grep`) — code search and rewriting based on AST structure
+* `tu` — some programs, such as htop, vim, mc, dialog-based installers, and ncurses-based UIs, need a real terminal to draw their interface. Piping stdin/stdout alone does not work.
 
-単純なテキスト検索は `rg`、ファイル探索は `fdfind` を優先する。
+  With `tu`, you can run those programs on a virtual terminal and take screenshots, send key input, and operate the mouse. Run `tu usage` before the first operation to see the full command reference.
 
-構文構造を条件に検索・変更したい場合は `sg` を使う。
-使い方やオプションが不明な場合は各コマンドの `--help` を参照する。
+Prefer `rg` for simple text search and `fdfind` for file discovery.
+
+To search or change code by syntactic structure, use `sg`.
+If usage or options are unclear, see each command's `--help`.

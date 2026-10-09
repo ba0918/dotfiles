@@ -2,25 +2,23 @@
 
 ## Core
 
-* 日本語で応答する。
-* ユーザーの目的と依頼範囲を優先し、不必要に作業を拡大しない。
-* 事実・推測・未確認事項を区別する。
-* プロジェクト固有の指示がある場合は、それを優先して適用する。
+* Respond in Japanese.
+* Prioritize the user's goal and requested scope; do not expand the work unnecessarily.
+* Keep facts, inferences, and unverified items apart.
+* When project-specific instructions exist, apply them with priority.
 
 ## Workflow Routing
 
-`ba0918-using-workflow` は、依頼が複数工程の開発作業であり、
-brainstorm / plan / implement / review などの進め方を選ぶ必要がある場合に読む。
+Read `ba0918-using-workflow` when the request is multi-stage development work and you need to choose how to proceed — brainstorm / plan / implement / review and the like.
 
-単純な質問、調査、説明、軽微な修正、明示された単一作業では、
-workflow を適用する必要はない。
+Simple questions, investigation, explanations, minor fixes, and explicitly named single tasks do not need the workflow.
 
-ユーザーが特定の workflow や skill を明示した場合は、それに従う。
+When the user names a specific workflow or skill, follow it.
 
 ## Rule Routing
 
-規範は `ba0918-*` skill として提供される。
-現在の作業に該当する skill のみ読む。
+The norms are provided as `ba0918-*` skills.
+Read only the skills that apply to the current work.
 
 | When                                     | Read                        |
 | ---------------------------------------- | --------------------------- |
@@ -39,37 +37,33 @@ workflow を適用する必要はない。
 | verification / review                    | ba0918-verification         |
 | worktree                                 | ba0918-worktree             |
 
-複数に該当する場合は必要なものを組み合わせる。
-関連しない skill は予防的に読み込まない。
+Combine what you need when several apply.
+Do not read unrelated skills preventively.
 
-文書ファイルを作るか判断するとき、配置・移動・削除を決めるとき、
-古い文書を棚卸しするときは `ba0918-documents` を読む。
+When deciding whether to create a document file, deciding where to place, move, or delete one, or taking inventory of old documents, read `ba0918-documents`.
 
-diff-review の提示には `kemi` skill を使う。
+Use the `kemi` skill to present diff reviews.
 
 ## Local Instructions
 
-より具体的な `AGENTS.md` やプロジェクト固有の契約が存在する場合は、
-この共通契約をそのプロジェクトへ具体化するものとして扱う。
+When a more specific `AGENTS.md` or a project-specific contract exists, treat it as a realization of this common contract for that project.
 
 ## Verification
 
-変更内容に応じた妥当な検証を行う。
+Run reasonable verification for what changed.
 
-影響範囲が限定されている場合は、その範囲に対応する検証を優先し、
-無関係な広範囲の検証を必要なく実行しない。
+When the impact is limited, prefer verification covering that range, and do not run unnecessarily broad, unrelated verification.
 
-安全なローカル検証は、途中で逐次承認を求めず、
-失敗が今回の変更に起因する場合は修正して再実行してよい。
+Safe local verification needs no step-by-step approval midway; when a failure comes from this change, fix it and run again.
 
-## レビューの任意の席（kotowari-review・ba0918-review）
+## Optional review seats (kotowari-review / ba0918-review)
 
-kotowari-review と ba0918-review の full review で、quality のレビュー役に加えて立てる別モデルの席。数だけ指定されたときは上から順に使う。
+A seat for a different model, added alongside the quality reviewer in a full review by kotowari-review or ba0918-review. When only a count is given, use them from the top.
 
-- gpt: `ba0918-opencode-exec` で実行する。渡す値は次のとおり。
-  - モデル: `openai/gpt-6-sol`
-  - コマンド名: `opencode`
-  - 前置コマンド: `kakoi` `--profile` `external-review` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
-  - 変更なし: 指定する
-  - プロンプト: レビュー依頼をファイルに書いて渡す
-  - 結果の読み方: stdout ファイルの最後のメッセージを finding の JSON として読む。stderr ファイルには opencode のログと kakoi の警告が入る
+- gpt: run it with `ba0918-opencode-exec`. Pass these values.
+  - model: `openai/gpt-6-sol`
+  - command name: `opencode`
+  - prefix command: `kakoi` `--profile` `external-review` `--policy-file` `{{ vars.dotfiles_root }}/ai/kakoi/policy/readonly-workspace.toml` `--`
+  - no-change: set it
+  - prompt: write the review request to a file and pass it
+  - reading the result: read the last message in the stdout file as the findings JSON. The stderr file holds the opencode logs and the kakoi warnings.

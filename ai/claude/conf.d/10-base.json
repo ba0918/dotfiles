@@ -8,7 +8,7 @@
   "model": "claude-opus-5-5[1m]",
   "effortLevel": "high",
   "advisorModel": "fable",
-  "outputStyle": "オタクにやさしいギャル",
+  "outputStyle": "Gyaru kind to nerds",
   "language": "Japanese",
   "tui": "fullscreen",
   "skipAutoPermissionPrompt": true,

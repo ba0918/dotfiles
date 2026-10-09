@@ -2,36 +2,34 @@
 
 ## Core
 
-* 日本語で応答する。
-* ユーザーの目的と依頼範囲を優先し、不必要に作業を拡大しない。
-* 事実・推測・未確認事項を区別する。
-* プロジェクト固有の指示がある場合は、それを優先して適用する。
+* Respond in Japanese.
+* Prioritize the user's goal and requested scope; do not expand the work unnecessarily.
+* Keep facts, inferences, and unverified items apart.
+* When project-specific instructions exist, apply them with priority.
 
 ## Workflow Routing
 
-`ba0918-using-workflow` は、依頼が複数工程の開発作業であり、
-brainstorm / plan / implement / review などの進め方を選ぶ必要がある場合に読む。
+Read `ba0918-using-workflow` when the request is multi-stage development work and you need to choose how to proceed — brainstorm / plan / implement / review and the like.
 
-単純な質問、調査、説明、軽微な修正、明示された単一作業では、
-workflow を適用する必要はない。
+Simple questions, investigation, explanations, minor fixes, and explicitly named single tasks do not need the workflow.
 
-ユーザーが特定の workflow や skill を明示した場合は、それに従う。
+When the user names a specific workflow or skill, follow it.
 
 ## Human Interaction
 
-ユーザーとの対話では、次の共有契約に従う。
+For dialogue with the user, follow these shared contracts.
 
 - `{{ vars.dotfiles_root }}/ai/shared/persona/gal.md`
-  - 表面的な人格、口調、距離感
+  - surface persona, tone, and distance
 - `{{ vars.dotfiles_root }}/ai/shared/human-readable.md`
-  - 応答の粒度、抽象度、情報密度、専門用語
+  - granularity, abstraction, information density, and technical terms of responses
 - `{{ vars.dotfiles_root }}/ai/shared/interaction.md`
-  - 質問、判断、原因分析、進捗報告、作業の進め方
+  - questions, judgments, cause analysis, progress reports, and how work proceeds
 
 ## Rule Routing
 
-規範は `ba0918-*` skill として提供される。
-現在の作業に該当する skill のみ読む。
+The norms are provided as `ba0918-*` skills.
+Read only the skills that apply to the current work.
 
 | When                                     | Read                        |
 | ---------------------------------------- | --------------------------- |
@@ -50,35 +48,31 @@ workflow を適用する必要はない。
 | verification / review                    | ba0918-verification         |
 | worktree                                 | ba0918-worktree             |
 
-複数に該当する場合は必要なものを組み合わせる。
-関連しない skill は予防的に読み込まない。
+Combine what you need when several apply.
+Do not read unrelated skills preventively.
 
-文書ファイルを作るか判断するとき、配置・移動・削除を決めるとき、
-古い文書を棚卸しするときは `ba0918-documents` を読む。
+When deciding whether to create a document file, deciding where to place, move, or delete one, or taking inventory of old documents, read `ba0918-documents`.
 
-diff-review の提示には `kemi` skill を使う。
+Use the `kemi` skill to present diff reviews.
 
 ## Tool Guide
 
-開発ツールの選択に迷った場合は
-`{{ vars.dotfiles_root }}/ai/shared/tools-guide.md` を参照する。
+When unsure which development tool to use, see
+`{{ vars.dotfiles_root }}/ai/shared/tools-guide.md`.
 
-既に適切なツールが明らかな場合は、事前に読む必要はない。
+When the right tool is already clear, you do not need to read it beforehand.
 
 ## Local Instructions
 
-より具体的な `AGENTS.md` やプロジェクト固有の契約が存在する場合は、
-この共通契約をそのプロジェクトへ具体化するものとして扱う。
+When a more specific `AGENTS.md` or a project-specific contract exists, treat it as a realization of this common contract for that project.
 
 ## Verification
 
-変更内容に応じた妥当な検証を行う。
+Run reasonable verification for what changed.
 
-影響範囲が限定されている場合は、その範囲に対応する検証を優先し、
-無関係な広範囲の検証を必要なく実行しない。
+When the impact is limited, prefer verification covering that range, and do not run unnecessarily broad, unrelated verification.
 
-安全なローカル検証は、途中で逐次承認を求めず、
-失敗が今回の変更に起因する場合は修正して再実行してよい。
+Safe local verification needs no step-by-step approval midway; when a failure comes from this change, fix it and run again.
 
 ## Subagent operation rules
 
