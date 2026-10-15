@@ -1,23 +1,3 @@
--- IME (WSL2 + Google 日本語入力): 挿入モード切替時に im-select.exe で入力切替
--- ノーマルモードで日本語入力が残る事故を防ぐ
-local function set_ime(mode)
-  if vim.fn.executable("im-select.exe") == 1 then
-    vim.fn.system({ "im-select.exe", mode })
-  end
-end
-
-vim.api.nvim_create_autocmd("InsertEnter", {
-  callback = function()
-    set_ime("1041")
-  end,
-})
-
-vim.api.nvim_create_autocmd({ "InsertLeave", "CmdlineLeave" }, {
-  callback = function()
-    set_ime("1033")
-  end,
-})
-
 -- 保存時: 末尾空白の除去（markdown の意味のある空白行は preserve）
 local save_group = vim.api.nvim_create_augroup("lazyvim_save", { clear = true })
 vim.api.nvim_create_autocmd("BufWritePre", {
