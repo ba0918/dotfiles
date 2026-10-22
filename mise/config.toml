@@ -233,7 +233,7 @@ zellij = "latest"
 # 0.9.8 に fish 4.x 退行（embedded cd.fish 未対応）があったが 0.10.0 で修正済み
 zoxide = "latest"
 lefthook = "latest"
-npm = "12.1.0"
+npm = "12.2.0"
 "npm:fkill-cli" = "latest"
 "npm:hunkdiff" = "latest"
 gcloud = "latest"
