@@ -192,7 +192,7 @@ lazygit = "latest"
 # （旧 code.gitea.io/tea は go.mod の宣言と食い違い導入不能）。上げるときは gitea.com/gitea/tea の release を見る
 "go:gitea.dev/tea" = "0.16.0"
 neovim = "latest"
-node = "26.10.0"
+node = "26.12.1"
 # ollama: ローカル LLM。公式 installer（/usr/local/bin + systemd service）ではなく
 # バイナリだけを mise で持つ。サーバは使うときに `ollama serve` で手動起動
 ollama = "latest"
