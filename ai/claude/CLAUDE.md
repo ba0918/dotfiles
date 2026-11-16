@@ -32,7 +32,7 @@ Read only the skills that apply to the current work.
 | ---------------------------------------- | --------------------------- |
 | architecture / design decision           | ba0918-design, ba0918-reuse |
 | implementation                           | ba0918-tdd                  |
-| code readability concern                 | ba0918-readability          |
+| writing prose for a person               | ba0918-readability          |
 | information placement decision           | ba0918-placement            |
 | document creation / organization / pruning | ba0918-documents           |
 | secrets / credentials / sensitive config | ba0918-secrets              |

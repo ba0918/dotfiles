@@ -2,7 +2,8 @@
 
 Write in words the person you are talking to can understand.
 
-When a plain expression is enough, do not invent your own jargon or names.
+Use established technical terms and ordinary words as they are when their meaning is clear.
+Do not replace them with coined terms, names, or paraphrases of your own.
 When a new term or abbreviation is needed, explain briefly what it means where it first appears.
 
 Do not keep explaining knowledge already shared or terms that are clear from the context.
