@@ -8,8 +8,25 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP}"' EXIT
 mkdir -p "${TMP}/repo" "${TMP}/bin" "${TMP}/home/.safe-chain/bin"
 cp "${ROOT}/bootstrap.sh" "${TMP}/repo/bootstrap.sh"
-touch "${TMP}/home/.safe-chain/bin/safe-chain"
-chmod +x "${TMP}/home/.safe-chain/bin/safe-chain"
+# The installed Safe Chain reports the version bootstrap.sh pins, so the
+# installer is not fetched unless a test replaces this stand-in.
+PINNED_SAFE_CHAIN="$(sed -n 's/^[[:space:]]*SAFE_CHAIN_VERSION="\(.*\)"$/\1/p' "${ROOT}/bootstrap.sh")"
+if [ -z "${PINNED_SAFE_CHAIN}" ]; then
+    echo 'FAIL: could not read SAFE_CHAIN_VERSION from bootstrap.sh' >&2
+    exit 1
+fi
+install_safe_chain_stub() {
+    printf '#!/bin/sh\necho "Current safe-chain version: %s"\n' "$1" \
+        > "${TMP}/home/.safe-chain/bin/safe-chain"
+    chmod +x "${TMP}/home/.safe-chain/bin/safe-chain"
+}
+install_safe_chain_stub "${PINNED_SAFE_CHAIN}"
+# No test may reach the network: a download attempt is recorded and fails.
+cat > "${TMP}/bin/curl" <<SH
+#!/usr/bin/env bash
+echo "\$*" >> "${TMP}/curl-calls"
+exit 22
+SH
 
 cat > "${TMP}/bin/mise" <<'SH'
 #!/usr/bin/env bash
@@ -60,3 +77,23 @@ echo 'PASS: successful initialization emits no warnings'
 run 1 1 dotfiles --dry-run
 test ! -s "${TMP}/err"
 echo 'PASS: dry-run does not execute optional initialization'
+
+: > "${TMP}/curl-calls"
+run 0 0
+test ! -s "${TMP}/curl-calls"
+echo 'PASS: an installed Safe Chain at the pinned version is not fetched again'
+
+install_safe_chain_stub 0.0.1
+: > "${TMP}/curl-calls"
+run 0 0
+if ! grep -q "releases/download/${PINNED_SAFE_CHAIN}/install-safe-chain.sh" "${TMP}/curl-calls"; then
+    echo 'FAIL: an installed Safe Chain older than the pin must be reinstalled from the pinned release' >&2
+    exit 1
+fi
+echo 'PASS: an installed Safe Chain of another version is reinstalled from the pinned release'
+
+install_safe_chain_stub 0.0.1
+: > "${TMP}/curl-calls"
+run 0 0 --dry-run
+test ! -s "${TMP}/curl-calls"
+echo 'PASS: dry-run does not reinstall Safe Chain'

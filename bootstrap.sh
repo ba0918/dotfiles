@@ -113,9 +113,19 @@ fi
 # 版を上げるときは SAFE_CHAIN_VERSION と SAFE_CHAIN_SHA256 を必ず同時に更新すること。
 #
 # 未導入でも失敗しても全体は止めない（開発機のブートストラップを塞がないため）。
-if [ "${DRY_RUN}" = false ] && [ ! -x "$HOME/.safe-chain/bin/safe-chain" ]; then
-	SAFE_CHAIN_VERSION="1.5.15"
-	SAFE_CHAIN_SHA256="de0565e3d6346407a604e84e639e95fea8758748063da2216bbfdca5feda5dd2"
+SAFE_CHAIN_VERSION="1.5.29"
+SAFE_CHAIN_SHA256="e9bfa05430bca0efcf26e5a0f06d09b9da8cc21de2e0ffab03f512dde649ebbe"
+
+# An install that reports another version is replaced as well: installing only
+# when the binary is absent left existing machines on the version they first
+# got, however far the pin above moved. An install whose version cannot be read
+# counts as another version, so the pin wins on doubt.
+safe_chain_at_pinned_version() {
+	[ -x "$HOME/.safe-chain/bin/safe-chain" ] || return 1
+	"$HOME/.safe-chain/bin/safe-chain" --version 2>/dev/null | grep -qF -- "version: ${SAFE_CHAIN_VERSION}"
+}
+
+if [ "${DRY_RUN}" = false ] && ! safe_chain_at_pinned_version; then
 	echo "safe-chain: installing v${SAFE_CHAIN_VERSION}"
 
 	# mktemp: a fixed /tmp path is attacker-predictable on a shared host, and the
