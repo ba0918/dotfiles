@@ -73,6 +73,8 @@ check "hardens sshd before the package can start it" '[ "$(grep -n "^plan: sshd 
 check "plans the loopback-only socket drop-in" 'grep -q "^plan: ssh.socket drop-in" <<<"${OUT}"'
 check "plans authorizing the Windows public key" 'grep -q "^plan: authorized_keys" <<<"${OUT}"'
 check "plans systemd in wsl.conf and says a WSL restart is needed" 'grep -q "^plan: wsl.conf" <<<"${OUT}" && grep -q "wsl --shutdown" <<<"${OUT}"'
+check "the planned wsl.conf switches the existing [boot] key instead of adding a second section" \
+	'[ "$(grep -c "^    \[boot\]$" <<<"${OUT}")" -eq 1 ] && grep -q "^    systemd=true$" <<<"${OUT}" && ! grep -q "systemd=false" <<<"${OUT}"'
 check "dry-run changes nothing" '[ -z "$(ls -A "${S}/sshd_config.d")" ] && [ -z "$(ls -A "${S}/ssh.socket.d")" ] && [ ! -e "${S}/home/.ssh/authorized_keys" ]'
 check "dry-run never prints the public key" '! grep -q "AAAAC3NzaC1lZDI1NTE5" <<<"${OUT}"'
 

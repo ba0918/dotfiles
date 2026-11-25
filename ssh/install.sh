@@ -108,8 +108,15 @@ pkg_installed() {
 	[ "$(dpkg-query -W -f='${Status}' "$1" 2>/dev/null)" = "install ok installed" ]
 }
 
+# The wsl.conf content with systemd enabled, from the shared helper. Comparing
+# it with the file decides whether anything has to be written: a `systemd=true`
+# outside [boot], or a second [boot] section, no longer passes for enabled.
+WSL_CONF_WANTED="$(mktemp)"
+trap 'rm -f "${WSL_CONF_WANTED}"' EXIT
+bash "${HERE}/../scripts/wsl-conf-systemd.sh" "${WSL_CONF}" > "${WSL_CONF_WANTED}"
+
 wsl_systemd_enabled() {
-	[ -f "${WSL_CONF}" ] && grep -Eq '^[[:space:]]*systemd[[:space:]]*=[[:space:]]*true' "${WSL_CONF}"
+	[ -f "${WSL_CONF}" ] && cmp -s "${WSL_CONF_WANTED}" "${WSL_CONF}"
 }
 
 # Our own drop-ins are owned by this repo, so a drifted copy is replaced
@@ -161,9 +168,10 @@ fi
 if ! wsl_systemd_enabled; then
 	plan "wsl.conf: enable systemd in ${WSL_CONF} (then run \`wsl --shutdown\` from Windows and reopen the distro)"
 	if [ "${DRY_RUN}" = true ]; then
-		printf '  would append: [boot] systemd=true\n'
+		printf '  would write %s as:\n' "${WSL_CONF}"
+		sed 's/^/    /' "${WSL_CONF_WANTED}"
 	else
-		printf '\n[boot]\nsystemd=true\n' | sudo tee -a "${WSL_CONF}" >/dev/null
+		sudo install -m 0644 "${WSL_CONF_WANTED}" "${WSL_CONF}"
 	fi
 fi
 

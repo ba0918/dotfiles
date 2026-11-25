@@ -77,6 +77,8 @@ check "plans the package install" 'grep -q "^plan: install docker-ce docker-ce-c
 check "plans daemon.json" 'grep -q "^plan: daemon.json" <<<"${OUT}"'
 check "plans the docker group" 'grep -q "^plan: group" <<<"${OUT}"'
 check "plans systemd in wsl.conf and says a WSL restart is needed" 'grep -q "^plan: wsl.conf" <<<"${OUT}" && grep -q "wsl --shutdown" <<<"${OUT}"'
+check "the planned wsl.conf switches the existing [boot] key instead of adding a second section" \
+	'[ "$(grep -c "^    \[boot\]$" <<<"${OUT}")" -eq 1 ] && grep -q "^    systemd=true$" <<<"${OUT}" && ! grep -q "systemd=false" <<<"${OUT}"'
 check "dry-run changes nothing" '[ -z "$(ls -A "${S}/sources.list.d")" ] && [ ! -e "${S}/docker/daemon.json" ]'
 
 # --- configured machine: nothing to do -----------------------------------------------
