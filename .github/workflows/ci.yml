@@ -6,7 +6,8 @@
 # caught before it sits unnoticed in a public repository.
 #
 # Actions are pinned to commit SHAs (the tag is noted alongside) so an upstream
-# tag move cannot change what runs here.
+# tag move cannot change what runs here. .github/dependabot.yml proposes the
+# updates, hash and version comment together.
 
 name: ci
 
@@ -18,12 +19,27 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch or pull request supersedes the running check.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# bash with -eo pipefail; the implicit default shell omits pipefail.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install pytest
@@ -35,8 +51,12 @@ jobs:
 
   lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install pinned ShellCheck
         run: |
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("mise/config.toml", "rb"))["tools"]["shellcheck"])')
@@ -50,10 +70,13 @@ jobs:
 
   secrets:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check out (full history)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: gitleaks (full history)
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:

@@ -1,0 +1,13 @@
+# Keeps the commit-hash pins in .github/workflows/ current.
+#
+# The cooldown holds a new release back for a week before it is proposed, the
+# same waiting period mise, npm, pnpm and bun use in this repository: a
+# compromised release is usually noticed and pulled within that window.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
