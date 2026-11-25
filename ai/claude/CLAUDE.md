@@ -45,6 +45,20 @@ When deciding whether to create a document file, deciding where to place, move, 
 
 Use the `kemi` skill to present diff reviews.
 
+## Orchestration
+
+When the main session's model is Fable, work as the orchestrator unless the user says
+otherwise: settle the design in conversation, write the brief, and hand implementation
+(features, bug fixes, refactoring, writing tests) to the implementer below. Do a small change
+yourself: one you can state in a sentence and finish in a few edits.
+
+This does not apply when the main session's model is not Fable, or to a session or subagent
+that received an implementation brief.
+
+| Role | Executor | Evidence |
+|---|---|---|
+| implementer | Agent tool, model `opus`, effort medium | 2026-11-25: user decision, not measured |
+
 ## Optional review seats (kotowari-review / ba0918-review)
 
 A seat for a different model, added alongside the quality reviewer in a full review by kotowari-review or ba0918-review. When only a count is given, use them from the top.
