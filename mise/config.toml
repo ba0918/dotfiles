@@ -21,6 +21,7 @@ self_update.auto = true
 # 更新のたびに使わない組み合わせの問い合わせが走る
 lockfile = true
 lockfile_platforms = ["linux-x64"]
+idiomatic_version_file_enable_tools = ["rust"]
 
 [vars]
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
