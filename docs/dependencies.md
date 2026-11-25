@@ -78,8 +78,6 @@
   考えられる（未検証）。今は `npx` / `uvx` で起動する MCP サーバーが無い（context7 は
   HTTP）ので影響は無く、browser-use プラグインを有効にすると `uvx` 起動なので Safe Chain
   の shim を通る
-- **opencode** — `[tools]` で導入（`aqua:anomalyco/opencode`）。
-  fish の config.fish が opencode の有無で alias / hook をロードする
 
 ## nvim
 

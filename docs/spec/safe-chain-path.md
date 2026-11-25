@@ -2,9 +2,6 @@
 
 Status: Draft
 
-置き場所: dotfiles の `docs/spec/safe-chain-path.md`。実装は `process-wrap-shim` から切った短命の
-ブランチで行い、マージ先は `process-wrap-shim`（`main` は会社 PC が使うので触らない）。
-
 ## 1. 結果
 
 Claude Code の Bash ツールとフックが起動する `npm` / `pnpm` / `bun` / `pip` などのパッケージ
