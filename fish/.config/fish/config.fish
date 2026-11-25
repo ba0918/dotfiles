@@ -1,6 +1,8 @@
 # PATH
-fish_add_path ~/.bun/bin
-fish_add_path ~/.local/bin
+# -g: ユニバーサル変数（fish_user_paths）に書かない。ユニバーサル変数はこのファイルから
+# 行を消しても残り続け、撤去済みのディレクトリが PATH の先頭側に居座る
+fish_add_path -g ~/.bun/bin
+fish_add_path -g ~/.local/bin
 
 # repo 配置を実体パスから導出（repo をどの場所に置いても self-contained）
 # config.fish は symlink 経由で読まれるため realpath で実体に解決してから 4 段上る
@@ -25,7 +27,7 @@ end
 # env._.path が hook-env のたびに shim を tool の bin より前へ置き直すので、
 # ここでの prepend は hook-env が走らない非対話シェル（--shims 側）のための保険。
 # ここだけに頼ると、hook-env が PATH を組み直した時点で mise 管理の codex 本体に負ける。
-fish_add_path --prepend --move "$dotfiles_root/ai/kakoi/shim"
+fish_add_path -g --prepend --move "$dotfiles_root/ai/kakoi/shim"
 
 # devbox global（php / xdebug / pcov のツールチェーン。nix store ベースでホストを汚さない）
 # devbox は $SHELL で出力の構文を決めるので、bash などから起動された fish
