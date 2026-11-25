@@ -1,13 +1,45 @@
-# Human-readable prose
+# 人が読む文章
 
-Write in words the person you are talking to can understand.
+人が読む文章(返答、報告、質問、文書、画面の文言)に適用する。
+subagent が呼び出し元に返す文章には適用しない。
 
-Use established technical terms and ordinary words as they are when their meaning is clear.
-Do not replace them with coined terms, names, or paraphrases of your own.
-When a new term or abbreviation is needed, explain briefly what it means where it first appears.
+## 日本語の語彙
 
-Do not keep explaining knowledge already shared or terms that are clear from the context.
+一般的な日本のエンジニアが、その場面で普通に使う語を選ぶ。
+不自然な日本語は 2 つの方向から生まれる。普通の語を簡単な語に言い換えることと、
+説明を独自の複合語に圧縮すること(例: 消費側の完全性検証、経路差)である。
+くだけた口調で変わるのは文末であり、語ではない。
 
-Write so the conclusion, grounds, conditions, and uncertainty are visible, and do not sacrifice the accuracy readability needs.
+- 普通に使われる漢語と定着したカタカナ語を、和語に言い換えない。
+  確認(×確かめ)、通知(×知らせ)、プレビュー(×見え方)。
+  画面のラベルでは、選択(×選ぶ)、選択中(×選んでいる)、全て選択(×全部選ぶ)。
+- 技術用語は、エンジニアが使う形のまま書く。日常語に訳さない。
+  sleep で待つ(×寝て待つ)、フラグ、マーカー(×印)。
+- 定着した語があるのに、動詞から名詞を作らない(×確かめ、×知らせ)。
+  切り替え、取り消し、読み込みのように定着した語は使ってよい。
+- 英語の直訳と造語を使わない。日本語の技術文書や他の製品で見かけない語は、
+  意味が推測できても使わない。
+- 作業中に付けた記号や番号(A3、iv-1、「G」)と、スキル・仕様・コードの内部の
+  呼び名は、読み手の語彙ではない。それが指す内容を書く。記号は、読み手が検索に
+  使うときだけ後ろに添える。
+- 画面の文言は、既存の画面が同じものに使っている語を先に探す。無ければ、同種の
+  製品が使っている語を選ぶ。
+- 新しい用語や略語が避けられないときは、初出で意味を書く。
 
-Do not pack too many points into one sentence or paragraph. Use headings, bullet lists, and tables only when they help understanding.
+## 報告
+
+読み手は複数のセッションを並行し、時間を空けて戻ってくる。
+
+- 冒頭に現在の状態を書く。済んだこと、まだしていないこと(コミット、マージ、
+  適用、デプロイ)、読み手の作業が残っているかどうか。冒頭だけで「終わったか」
+  「自分の作業があるか」が分かるようにする。
+- 詳細は冒頭の後ろに分ける。長さを理由に削らない。
+- 残っている作業と以前の内容は、中身を書く。「上の一覧」「前に伝えたとおり」、
+  件数、記号で済ませない。
+- 「必要なら言ってください」のような任意の申し出を書かない。依頼の範囲内で価値が
+  あれば実行する。そうでなければ、推奨を付けて判断を依頼する。
+- 結論、根拠、条件、不確かさが見えるように書く。読みやすさのために正確さを
+  犠牲にしない。
+- 読み手が既に知っていること、文脈から明らかなことを繰り返し説明しない。
+  1 つの文や段落に論点を詰め込まない。見出し、箇条書き、表は、理解の助けに
+  なるときだけ使う。
