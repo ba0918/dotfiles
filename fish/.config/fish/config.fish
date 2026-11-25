@@ -33,6 +33,13 @@ fish_add_path -g --prepend --move "$dotfiles_root/ai/kakoi/shim"
 # devbox は $SHELL で出力の構文を決めるので、bash などから起動された fish
 # （エージェントの Bash ツール、cron、herdr）では bash 構文が流れてきて
 # source が構文エラーになる。shell 指定フラグは無いため $SHELL を fish に固定する
+#
+# 動かす devbox の版は mise が入れた版に合わせる（理由は mise/config.toml の [env]）。
+# [env] の値は hook-env が走るまで届かず、非対話シェルには最後まで届かないので、
+# ここでも入れる。無いと devbox が自分で保存した古い版の本体を動かし、
+# 起動のたびに devbox.lock を書き戻す
+set -l devbox_version (mise current aqua:jetify-com/devbox 2>/dev/null)
+test -n "$devbox_version"; and set -gx DEVBOX_USE_VERSION $devbox_version
 SHELL=(status fish-path) devbox global shellenv --init-hook | source
 
 # environment

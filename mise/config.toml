@@ -8,6 +8,14 @@ _.path = [
   "~/.cargo/bin",
   "~/.safe-chain/shims",
 ]
+# devbox は自分で版を持ち替える。~/.cache/devbox/current-version に書かれた版の本体を
+# 別途ダウンロードして実行するので、指定が無いと [tools] の版も mise.lock の検証も
+# minimum_release_age も効かない（0.22.0 を入れていても 0.17.5 が動いていた）。
+# mise が入れた版を名指しすると、入れた本体がそのまま動く。
+# devbox が未導入のあいだは空になる（空は未指定と同じ扱い）。添字で直接引くと、
+# 未導入のときにテンプレートのエラーで mise env ごと落ちる。
+# fish の起動時はこの値がまだ無いので、config.fish でも同じ版を入れている。
+DEVBOX_USE_VERSION = { value = "{{ tools | get(key='aqua:jetify-com/devbox', default={}) | get(key='version', default='') }}", tools = true }
 
 [settings]
 dotfiles.default_mode = "symlink"

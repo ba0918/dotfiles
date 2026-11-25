@@ -107,7 +107,11 @@ PHP ツールチェーン（php / xdebug / pcov / composer）は mise ではな�
 devbox（nix ベース）で管理する。aqua に php 拡張の管理が無く、mise では
 ext の再ビルドが手動になるのが理由。
 
-- **devbox** — `[tools]` の `aqua:jetify-com/devbox` で導入
+- **devbox** — `[tools]` の `aqua:jetify-com/devbox` で導入。devbox は
+  `~/.cache/devbox/current-version` に書かれた版の本体を自分でダウンロードして動かすので、
+  何も指定しないと mise が入れた版は使われない。`DEVBOX_USE_VERSION` に mise の版を入れて、
+  入れた本体がそのまま動くようにしている（`mise/config.toml` の `[env]` と fish の config.fish）。
+  `devbox version update` は使わない（mise の検証と `minimum_release_age` を通らない版が入る）
 - **nix** — devbox が初回実行時に single-user モードで自動導入する（daemon 不要）。
   fish の config.fish が `devbox global shellenv --init-hook` を source して PATH を通す
 - **direnv** — `[tools]` の `direnv` で導入。プロジェクト単位の環境自動切替に使う。
