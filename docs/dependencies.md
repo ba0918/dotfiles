@@ -51,7 +51,8 @@
 `fish/.config/fish` は以下に依存する:
 
 - **fish 本体** — 4.x は repo 同梱の PPA（`apt/fish-shell-ubuntu-release-4-noble.sources`）
-  から `apt:fish` で導入
+  から `apt:fish` で導入。`apt/*.sources` と `docker/docker.sources` は `Suites: noble` と
+  ファイル名で Ubuntu 24.04 に固定している。Ubuntu を上げるときはここを先に直す
 - **シェルツール** — `bat` / `fd-find` / `eza` / `zoxide`。
   config.fish の alias / abbr / プロンプト連携に使う。`bat` と `fd-find` は
   `[bootstrap.packages]` の `apt:*` 宣言、`eza` と `zoxide` は `[tools]` で導入する

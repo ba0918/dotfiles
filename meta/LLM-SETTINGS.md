@@ -217,6 +217,12 @@ deny パターンは 2 段階で適用される:
 `opencode-apply` は既存の allow エントリ（`*.env.example` 等）を保持しつつ、
 deny エントリだけを正本で置換する。
 
+配布後のファイルに deny を書き足すので、`mise bootstrap dotfiles status` は
+`~/.config/opencode/opencode.json` を常に「differs」と表示する。差分が deny の追加だけなら
+正常で、異常ではない。deny を合成済みのファイルを先に生成してから配れば表示は消えるが、
+`deny-patterns.yaml` を直して再生成を忘れたときに「一致」と表示されるようになり、
+見落としの向きが逆になるだけなので採らない。
+
 opencode は `~/.config/opencode/` の `opencode.json` と自前の `opencode.jsonc` を両方読んで
 合成する。`opencode-apply` が書くのは `.json` だけで、`.jsonc` は触らない。
 バックグラウンドのサービスが設定を保持するため、apply 後は
