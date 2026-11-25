@@ -53,8 +53,8 @@
 - **fish 本体** — 4.x は repo 同梱の PPA（`apt/fish-shell-ubuntu-release-4-noble.sources`）
   から `apt:fish` で導入
 - **シェルツール** — `bat` / `fd-find` / `eza` / `zoxide`。
-  config.fish の alias / abbr / プロンプト連携に使う。`[bootstrap.packages]`
-  の `apt:*` 宣言
+  config.fish の alias / abbr / プロンプト連携に使う。`bat` と `fd-find` は
+  `[bootstrap.packages]` の `apt:*` 宣言、`eza` と `zoxide` は `[tools]` で導入する
 - **fzf** — fisher プラグイン `patrickf1/fzf.fish` が PATH 上の `fzf` を呼ぶ。
   apt 版は 0.44 系でプラグインが前提にする新しめのオプションに追いつかないため、
   `[bootstrap.packages]` ではなく `[tools]` の `fzf` で導入する

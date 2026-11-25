@@ -30,7 +30,6 @@ compile = false
 "apt:fish" = "latest"
 "apt:bat" = "latest"
 "apt:fd-find" = "latest"
-"apt:eza" = "latest"
 "apt:jq" = "latest"
 # kakoi の隔離に使う（mount namespace の構築）
 "apt:bubblewrap" = "latest"
@@ -171,6 +170,9 @@ deno = "latest"
 "aqua:jetify-com/devbox" = "latest"
 direnv = "latest"
 dust = "latest"
+# eza: 以前は第三者の apt リポジトリ（deb.gierens.de、平文 http）から入れていた。
+# aqua に登録があるので mise に寄せ、apt の導入元を 1 つ減らす
+eza = "latest"
 # dotenvx: .env の暗号化（aqua:dotenvx/dotenvx）。curl installer で ~/.local/bin に置いていたものを移行
 dotenvx = "latest"
 # fzf: fish の fzf.fish プラグインが PATH 上の fzf を呼ぶ。apt 版は 0.44 系で
