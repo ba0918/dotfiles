@@ -107,7 +107,7 @@ in_docker_group() {
 }
 
 wsl_systemd_enabled() {
-	[ -f "${WSL_CONF}" ] && grep -Eq '^\s*systemd\s*=\s*true' "${WSL_CONF}"
+	[ -f "${WSL_CONF}" ] && grep -Eq '^[[:space:]]*systemd[[:space:]]*=[[:space:]]*true' "${WSL_CONF}"
 }
 
 # --- 1. apt source ---------------------------------------------------------------------
