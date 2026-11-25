@@ -310,8 +310,8 @@ VPN の経路表と重ならないことを先に確認する。
 
 `ssh/install.sh` が sshd の hardening drop-in・`openssh-server`・ssh.socket の
 待受アドレス drop-in・`~/.ssh/authorized_keys`・`/etc/wsl.conf` の `systemd=true`
-を冪等に整える。Windows 側の公開鍵は `wslvar USERPROFILE`（wslu、
-`[bootstrap.packages]` 済み）で `%USERPROFILE%\.ssh\id_ed25519.pub` を探す。
+を冪等に整える。Windows 側の公開鍵は、`cmd.exe` に `%USERPROFILE%` を尋ねて
+`%USERPROFILE%\.ssh\id_ed25519.pub` を探す（追加のパッケージは要らない）。
 
 `openssh-server` を `[bootstrap.packages]` に入れないのは、apt がインストール直後に
 リスナーを起動するため、hardening が先に置かれていないと初回起動がパスワード認証

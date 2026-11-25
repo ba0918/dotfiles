@@ -37,9 +37,8 @@ compile = false
 "apt:zip" = "latest"
 "apt:unzip" = "latest"
 "apt:zstd" = "latest"
-# clipboard2path-wsl の実行時依存（Wayland クリップボード読み出しと WSL ユーティリティ）
+# clipboard2path-wsl の実行時依存（Wayland クリップボード読み出し）
 "apt:wl-clipboard" = "latest"
-"apt:wslu" = "latest"
 # ブラウザ自動化（agent-browser / Playwright の Chromium）。`playwright install-deps chromium`
 # が入れる一覧（2026-08 時点）を宣言で持つ。CJK / 絵文字フォントが無いとスクリーンショットが豆腐になる
 "apt:libnss3" = "latest"

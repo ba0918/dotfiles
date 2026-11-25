@@ -52,17 +52,36 @@ WSL_CONF="${SSH_INSTALL_WSL_CONF:-/etc/wsl.conf}"
 AUTHORIZED_KEYS="${SSH_INSTALL_AUTHORIZED_KEYS:-${HOME}/.ssh/authorized_keys}"
 DROPIN="10-dotfiles.conf"
 
-# The Windows user's key pair. wslvar (wslu) resolves %USERPROFILE%; without it
-# the key is treated as absent and step 4 is reported rather than performed.
+# %USERPROFILE% as Windows reports it, or nothing. Asked through cmd.exe, which
+# every WSL distro reaches through interop, so no extra package is needed (this
+# used to be `wslvar` from wslu, which is discontinued upstream). cmd.exe
+# complains on stderr when started from a WSL directory and ends its line with
+# CR LF. A variable that Windows does not know comes back unexpanded.
+windows_profile() {
+	local cmd answer
+	cmd="$(command -v cmd.exe 2>/dev/null || true)"
+	[ -n "${cmd}" ] || cmd=/mnt/c/Windows/System32/cmd.exe
+	[ -x "${cmd}" ] || return 0
+	answer="$("${cmd}" /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r' | head -n 1 || true)"
+	case "${answer}" in
+		''|*%*) return 0 ;;
+	esac
+	printf '%s\n' "${answer}"
+}
+
+# The Windows user's key pair. When the profile cannot be resolved the key is
+# treated as absent and step 4 is reported rather than performed.
 windows_pubkey() {
 	if [ -n "${SSH_INSTALL_WINDOWS_PUBKEY+x}" ]; then
 		printf '%s\n' "${SSH_INSTALL_WINDOWS_PUBKEY}"
 		return
 	fi
-	local profile
-	profile="$(wslvar USERPROFILE 2>/dev/null || true)"
-	if [ -n "${profile}" ]; then
-		printf '%s\n' "$(wslpath "${profile}")/.ssh/id_ed25519.pub"
+	local profile home
+	profile="$(windows_profile)"
+	[ -n "${profile}" ] || return 0
+	home="$(wslpath "${profile}" 2>/dev/null || true)"
+	if [ -n "${home}" ]; then
+		printf '%s\n' "${home}/.ssh/id_ed25519.pub"
 	fi
 }
 WINDOWS_PUBKEY="$(windows_pubkey)"

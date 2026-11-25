@@ -113,23 +113,57 @@ check "a missing Windows key does not abort the run" '[ "${RC}" -eq 0 ]'
 check "a missing Windows key is reported with the ssh-keygen command" 'grep -q "^note:.*ssh-keygen" <<<"${OUT}"'
 check "nothing is planned for authorized_keys without a key" '! grep -q "^plan: authorized_keys" <<<"${OUT}"'
 
-# --- wslu missing or silent: the Windows key is absent, not fatal ---------------------
+# --- locating the Windows key through cmd.exe ----------------------------------------
+#
+# Without SSH_INSTALL_WINDOWS_PUBKEY the script asks Windows for %USERPROFILE%
+# through cmd.exe and converts the answer with wslpath. Both are replaced by
+# stand-ins here, so no Windows process is started.
 
-S="${TMP}/nowslu"; fresh "${S}"
-mkdir -p "${S}/bin"
-printf '#!/bin/sh\nexit 0\n' > "${S}/bin/wslvar"; chmod +x "${S}/bin/wslvar"
-set +e
-OUT="$(PATH="${S}/bin:${PATH}" \
-	SSH_INSTALL_SSHD_CONF_DIR="${S}/sshd_config.d" \
-	SSH_INSTALL_SOCKET_CONF_DIR="${S}/ssh.socket.d" \
-	SSH_INSTALL_WSL_CONF="${S}/wsl.conf" \
-	SSH_INSTALL_INSTALLED_PKGS="" \
-	SSH_INSTALL_AUTHORIZED_KEYS="${S}/home/.ssh/authorized_keys" \
-	"${SCRIPT}" --dry-run 2>&1)"
-RC=$?
-set -e
-check "a wslvar that resolves nothing does not abort the run" '[ "${RC}" -eq 0 ]'
-check "a wslvar that resolves nothing is reported as a missing Windows key" 'grep -q "^note:.*ssh-keygen" <<<"${OUT}"'
+run_with_cmd() {
+	local state="$1"
+	shift
+	set +e
+	OUT="$(PATH="${state}/bin:${PATH}" \
+		SSH_INSTALL_SSHD_CONF_DIR="${state}/sshd_config.d" \
+		SSH_INSTALL_SOCKET_CONF_DIR="${state}/ssh.socket.d" \
+		SSH_INSTALL_WSL_CONF="${state}/wsl.conf" \
+		SSH_INSTALL_INSTALLED_PKGS="" \
+		SSH_INSTALL_AUTHORIZED_KEYS="${state}/home/.ssh/authorized_keys" \
+		"${SCRIPT}" "$@" 2>&1)"
+	RC=$?
+	set -e
+}
+
+# cmd.exe stand-in printing the given text; wslpath stand-in mapping the one
+# Windows path used below to the state directory.
+stub_windows() {
+	local state="$1" answer="$2"
+	mkdir -p "${state}/bin"
+	printf '#!/bin/sh\nprintf "%%s" "$CMD_ANSWER"\n' > "${state}/bin/cmd.exe"
+	printf '#!/bin/sh\n[ "$1" = "C:\\Users\\tester" ] && printf "%%s\\n" "$WIN_HOME"\n' > "${state}/bin/wslpath"
+	chmod +x "${state}/bin/cmd.exe" "${state}/bin/wslpath"
+	export CMD_ANSWER="${answer}" WIN_HOME="${state}/win"
+}
+
+S="${TMP}/cmd-found"; fresh "${S}"
+stub_windows "${S}" "$(printf 'C:\\Users\\tester\r\n')"
+run_with_cmd "${S}" --dry-run
+check "the Windows key is found from the profile cmd.exe reports" \
+	'grep -q "^plan: authorized_keys: add the Windows key from ${S}/win/.ssh/id_ed25519.pub " <<<"${OUT}"'
+
+S="${TMP}/cmd-silent"; fresh "${S}"
+stub_windows "${S}" ""
+run_with_cmd "${S}" --dry-run
+check "a cmd.exe that prints nothing does not abort the run" '[ "${RC}" -eq 0 ]'
+check "a cmd.exe that prints nothing is reported as a missing Windows key" 'grep -q "^note:.*ssh-keygen" <<<"${OUT}"'
+check "nothing is planned for authorized_keys when cmd.exe prints nothing" '! grep -q "^plan: authorized_keys" <<<"${OUT}"'
+
+S="${TMP}/cmd-unexpanded"; fresh "${S}"
+stub_windows "${S}" "$(printf '%%USERPROFILE%%\r\n')"
+run_with_cmd "${S}" --dry-run
+check "an unexpanded %USERPROFILE% is treated as a missing Windows key" \
+	'[ "${RC}" -eq 0 ] && grep -q "^note:.*ssh-keygen" <<<"${OUT}" && ! grep -q "^plan: authorized_keys" <<<"${OUT}"'
+unset CMD_ANSWER WIN_HOME
 
 # --- arguments -----------------------------------------------------------------------
 
