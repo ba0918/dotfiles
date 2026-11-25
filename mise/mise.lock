@@ -469,6 +469,12 @@ allow_builds = '["@opencode/cli"]'
 [tools."npm:@opencode/cli".provenance]
 repository = "github.com/anomalyco/opencode"
 
+[[tools."npm:cf"]]
+version = "0.15.0"
+aube = { path = ".mise/locks/npm-cf/0.15.0", digest = "sha256:05437ada1b35784ce4604332d4dea0ca6f921b6989903ade06bfc510ad3c8ce0" }
+backend = "npm:cf"
+specifiers = ["latest"]
+
 [[tools."npm:fkill-cli"]]
 version = "9.0.0"
 aube = { path = ".mise/locks/npm-fkill-cli/9.0.0", digest = "sha256:b0aba4ac121ffb4922ac087d0cef3cbc92225983444308b7ea120db81f92d2f0" }

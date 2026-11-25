@@ -265,6 +265,7 @@ gcloud = "latest"
 "github:ba0918/command-guardian" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/shoryo" = { version = "latest", minimum_release_age = "0d" }
 "npm:wrangler" = "latest"
+"npm:cf" = "latest"
 
 # bootstrap の最後に走るタスク（mise run bootstrap）:
 # - ~/.apm/apm.yml（[dotfiles] で配布済み）の宣言どおりに規範スキルを入れる。pin の無い
