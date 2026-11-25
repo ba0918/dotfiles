@@ -125,6 +125,27 @@ safe_chain_at_pinned_version() {
 	"$HOME/.safe-chain/bin/safe-chain" --version 2>/dev/null | grep -qF -- "version: ${SAFE_CHAIN_VERSION}"
 }
 
+# The installer ends with `safe-chain setup`, which appends
+#   source <home>/.safe-chain/scripts/init-fish.fish # Safe-chain Fish initialization script
+# to ~/.config/fish/config.fish. That file is a link into this repository, so
+# the line lands in the working tree: a duplicate of the guarded `source` the
+# repository already carries, with an absolute home path in it. Every line
+# carrying the installer's trailing comment is dropped again. The content is
+# written back through the link, so the link itself is never replaced by a
+# regular file.
+strip_safe_chain_fish_line() {
+	local config="$HOME/.config/fish/config.fish"
+	local marker='# Safe-chain Fish initialization script'
+	local kept
+	[ -f "${config}" ] || return 0
+	grep -qF -- "${marker}" "${config}" || return 0
+	kept="$(mktemp)"
+	# grep -v exits 1 when nothing is left to print; an empty result is valid.
+	grep -vF -- "${marker}" "${config}" > "${kept}" || true
+	cat "${kept}" > "${config}"
+	rm -f "${kept}"
+}
+
 if [ "${DRY_RUN}" = false ] && ! safe_chain_at_pinned_version; then
 	echo "safe-chain: installing v${SAFE_CHAIN_VERSION}"
 
@@ -142,6 +163,7 @@ if [ "${DRY_RUN}" = false ] && ! safe_chain_at_pinned_version; then
 		if ! env -u SAFE_CHAIN_VERSION sh "${SAFE_CHAIN_INSTALLER}"; then
 			echo "safe-chain: install failed (continuing)" >&2
 		fi
+		strip_safe_chain_fish_line
 	else
 		echo "safe-chain: installer checksum verification failed (skipping)" >&2
 	fi
