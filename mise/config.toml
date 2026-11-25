@@ -12,7 +12,8 @@ _.path = [
 [settings]
 dotfiles.default_mode = "symlink"
 minimum_release_age = "7d"
-auto_update = true
+# 旧名 auto_update は非推奨（mise の settings リファレンス）
+self_update.auto = true
 
 [vars]
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
@@ -241,7 +242,8 @@ gcloud = "latest"
 # kakoi: codex を隔離して起動する自作 CLI（docs/kakoi.md）。
 # kemi: 変更を人のレビューに出すローカルの diff ビューア（diff-review の提示手段）。
 # どれも自分がリリースするので minimum_release_age で待たない（0d）。github backend は
-# aqua registry を通らないため、上の AI CLI と違い cosign / Attestations 検証は無い
+# aqua registry を通らないので cosign 検証は無い。GitHub Artifact Attestations は
+# リリースに付いていれば検証され、無ければ asset の digest / checksum の照合だけになる
 "github:ba0918/run-if-present" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kakoi" = { version = "latest", minimum_release_age = "0d" }
 "github:ba0918/kemi" = { version = "latest", minimum_release_age = "0d" }

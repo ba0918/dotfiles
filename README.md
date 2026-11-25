@@ -33,7 +33,7 @@ keyserver を引く必要がなく、鍵が差し替われば diff に出る。�
 復号済みのスクリプトを残さずに終了する。
 
 `bootstrap.sh` は配置場所を自動解決し、必要な apt リポジトリを登録する（sudo が必要）。
-初回適用後は fish から `mise bootstrap` を使える。mise 本体は `auto_update` により
+初回適用後は fish から `mise bootstrap` を使える。mise 本体は `self_update.auto` により
 self-update で最新版へ追従する。apt で導入した環境では self-update が封じられるため、
 その場合だけ `apt upgrade` で更新する。
 clipboard2path / Devbox の補助初期化に失敗した場合は、エラーと警告を表示して続行する。

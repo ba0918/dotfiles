@@ -8,7 +8,8 @@
 
 `mise/config.toml` の `[tools]`（`github:ba0918/kakoi`）で導入する。
 自分がリリースするので `minimum_release_age` は per-tool で 0d。run-if-present と同じく
-github backend なので、aqua registry を通る AI CLI と違い cosign / Attestations 検証は無い。
+github backend なので、aqua registry を通る AI CLI と違い cosign 検証は無い。
+GitHub Artifact Attestations はリリースに付いていれば検証され、無ければ digest / checksum の照合だけになる。
 clone から `cargo install` した版が `~/.cargo/bin` に残っていると fish では先に当たる
 （fish の PATH は `~/.cargo/bin` が mise の installs ディレクトリより前。
 `ai/claude/conf.d/40-env.json` の `env.PATH` は逆で mise の shims が先）。
