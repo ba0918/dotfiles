@@ -274,6 +274,21 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
 3. **Aikido Safe Chain** — パッケージマネージャをラップし、マルウェア検知 +
    最小リリース年齢を適用。`bootstrap.sh` が sha256 検証付きで導入
 
+### ツールの版の記録（mise.lock）
+
+`[tools]` はほとんどを `latest` で宣言している。実際に入れた版は `mise/mise.lock` に
+記録する（npm のツールは依存の解決結果を `mise/.mise/locks/` にも持つ）。aqua と github の
+ツールは取得元とチェックサムも記録される。cargo と go のツールは版だけになる。
+
+- `mise up` / `mise install` が lock を書き換える。上がった版は `git diff mise/mise.lock` で
+  見える。差分はまとめてコミットしてよい
+- 新しいマシンの `mise install` は、その時点の最新ではなく lock の版を入れる。最新に
+  上げるのは `mise up`
+- lock が無いマシンでは自動では作られない。`mise lock --global` で作る
+- 記録するのは linux-x64 だけ（`lockfile_platforms`）。別の OS や CPU のマシンを足すときは
+  ここに足して `mise lock --global` をやり直す
+- やめるときは `lockfile` の 2 行と `mise/mise.lock`、`mise/.mise/` を消す
+
 2 の設定ファイル（`npm/.npmrc`、`bun/.bunfig.toml`、`pnpm/.config/pnpm/config.yaml`）は
 `[dotfiles]` のリンクでホームから参照される。dotfiles を作業場所にした kakoi の中から
 書き換えられないよう、kakoi の default プロファイルがこの 3 つのディレクトリを読み取り専用にする。

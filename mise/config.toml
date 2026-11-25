@@ -14,6 +14,13 @@ dotfiles.default_mode = "symlink"
 minimum_release_age = "7d"
 # 旧名 auto_update は非推奨（mise の settings リファレンス）
 self_update.auto = true
+# mise.lock（この config の隣）に、入れた版と取得元・チェックサムを記録する。
+# [tools] は latest のまま追従し、`mise up` が上げた版が lock の差分として残る。
+# グローバル config の lock は自動では作られない。無いときは `mise lock --global` で作る。
+# 対象はこのマシンの linux-x64 だけにする。既定の 7 プラットフォーム分を解決すると、
+# 更新のたびに使わない組み合わせの問い合わせが走る
+lockfile = true
+lockfile_platforms = ["linux-x64"]
 
 [vars]
 # MISE_GLOBAL_CONFIG_ROOT（bootstrap.sh / fish config.fish が repo ルートに設定）が
