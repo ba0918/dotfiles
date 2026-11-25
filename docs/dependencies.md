@@ -209,7 +209,6 @@ Claude Code は生成済み settings.json、Codex は起動元から継承した
 |--------|----------|------|
 | `$HOME/develop/claude-notify` | `30-hooks.json` の Notification / Stop | 別 repo。手動 clone |
 | `~/.claude/hooks/herdr-agent-state.sh`、`~/.codex/herdr-agent-state.sh` | 両者の SessionStart | herdr 管轄。dotfiles 配布外 |
-| `~/.orca/agent-hooks/claude-hook.sh` | `30-hooks.json` の Orca 行（13 イベント） | Orca（エージェント向け IDE）管轄。dotfiles 配布外 |
 
 `run-if-present` の呼び出し方:
 
@@ -218,10 +217,13 @@ run-if-present path <存在チェックするパス> -- <実行するコマン�
 run-if-present --chdir <作業ディレクトリ> path <パス> -- <コマンド>
 ```
 
-Orca は、Windows 向けの分岐を含む長いワンライナーで同じスクリプトを呼ぶ
-hook を settings.json へ書き込む。`30-hooks.json` ではそれを `run-if-present` 経由の
-短い形に置き換えている。Orca が短い形を自分の hook と認めず、長い形を再び追記して
-二重登録になった場合は、Orca が書く文字列をそのまま写す形に戻す。
+Orca（エージェント向け IDE）の hook はこの repo で管理しない。Orca は自分の hook を
+`~/.claude/settings.json` と `~/.codex/hooks.json` へ自分で書き込み、自分が書く文字列と
+完全に一致しない記述は自分のものと認めずに挿入し直す。repo 側に写しを持っても
+Orca の版が変わるたびにずれるので、書き込みは Orca に任せる。そのため
+`mise bootstrap` の直後は Orca の hook が消えており、Orca が次に書き込むまで戻らない。
+`mise bootstrap dotfiles status` が `~/.codex/hooks.json` を「差分あり」と出すのも
+Orca の追記によるもので、異常ではない。
 
 `statusLine` の `~/.claude/statusline.py` は repo 管理（`ai/claude/statusline.py` を
 `[dotfiles]` が template で実体として書き出す）だが、同じく `run-if-present` で包む。

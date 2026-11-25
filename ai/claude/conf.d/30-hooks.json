@@ -33,16 +33,6 @@
             "command": "/usr/bin/python3 \"$HOME/.claude/hooks/detect_secret.py\""
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "PreToolUse": [
@@ -52,16 +42,6 @@
           {
             "type": "command",
             "command": "command-guardian hook --agent claude",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
             "timeout": 10
           }
         ]
@@ -77,15 +57,6 @@
             "timeout": 10
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
       }
     ],
     "Stop": [
@@ -95,116 +66,6 @@
           {
             "type": "command",
             "command": "run-if-present --chdir \"$HOME/develop/claude-notify\" path \"$HOME/develop/claude-notify\" -- /usr/bin/python3 -m claude_notify"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "StopFailure": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "run-if-present path \"$HOME/.orca/agent-hooks/claude-hook.sh\" -- /bin/sh \"$HOME/.orca/agent-hooks/claude-hook.sh\"",
-            "timeout": 10
           }
         ]
       }
