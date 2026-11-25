@@ -138,14 +138,36 @@ deny = [
     ["config", ["--local", "--worktree", "--global", "--system", "--add", "--replace-all"], "/(?i)core[.]hookspath/", "/.*/"],
     ["config", ["--unset", "--unset-all"], "/(?i)core[.]hookspath/"],
 ]
-deny-option-values = { "-c" = ["/(?i)core[.]hookspath(=.*)?/"], "--config-env" = ["/(?i)core[.]hookspath=.*/"] }
 examples.deny = [
-    "git -c core.hooksPath=/dev/null commit -m msg",
     "git config core.hooksPath /tmp/empty",
     "git config --unset core.hooksPath",
 ]
 examples.allow = [
     "git config core.hooksPath",
+    "git -c core.autocrlf=false status",
+]
+
+# The same key set for one invocation with -c or --config-env. `fetch` runs
+# none of the hooks this guard protects, so it is left out: every other
+# subcommand is refused. The pattern is "any word but fetch", spelled without
+# lookahead, which the regular expressions here do not have.
+[[commands.guard]]
+program = "git"
+verdict = "block"
+reason = "changing core.hooksPath skips the commit and push hooks; do not skip them"
+options-with-value = ["-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"]
+for = [["/([^f].*|f|f[^e].*|fe|fe[^t].*|fet|fet[^c].*|fetc|fetc[^h].*|fetch.+)/"]]
+deny-option-values = { "-c" = ["/(?i)core[.]hookspath(=.*)?/"], "--config-env" = ["/(?i)core[.]hookspath=.*/"] }
+examples.deny = [
+    "git -c core.hooksPath=/dev/null commit -m msg",
+    "git -c core.hooksPath=/dev/null push origin topic:topic",
+    "git -c core.hooksPath=/dev/null merge --no-edit origin/main",
+    "git -C /tmp -c core.hooksPath=/dev/null commit -m msg",
+    "git --config-env core.hooksPath=EMPTY commit -m msg",
+    "git -c core.hooksPath=/dev/null fetch-pack origin",
+]
+examples.allow = [
+    "git -c core.hooksPath=/dev/null fetch origin main",
     "git -c core.autocrlf=false status",
 ]
 
