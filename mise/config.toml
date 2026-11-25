@@ -213,6 +213,11 @@ ollama = "latest"
 # pi: お試し導入のコーディング agent（aqua:earendil-works/pi）。aqua の検証は sha256 のみ
 pi = { version = "latest", minimum_release_age = "0d" }
 pnpm = "latest"
+# python: PATH 上の python / python3 の版。宣言が無いと mise のシムは python3 を
+# system の /usr/bin/python3 へ落とし、system に無い `python` はエラーになる。
+# 系列は固定する（新しい系列は、対応していないライブラリが出やすい）。
+# hook と statusline は /usr/bin/python3 を絶対パスで呼ぶので、ここの版に左右されない
+python = "3.14"
 ripgrep = "latest"
 rust = "latest"
 # uv: Python のパッケージ / プロジェクト管理。公式 installer で ~/.local/bin に置いていたものを移行

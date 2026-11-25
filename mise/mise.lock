@@ -519,16 +519,19 @@ url_api = "https://api.github.com/repos/earendil-works/pi/releases/assets/771562
 version = "0.36.1"
 backend = "pipx:apm-cli"
 specifiers = ["latest"]
+uv = { path = ".mise/locks/pipx-apm-cli/0.36.1", digest = "sha256:89e3102282116274ecc8402758d257bc1aeb6ab95c23f7e733d6cb4109e87770" }
 
 [[tools."pipx:pytest"]]
 version = "9.2.0"
 backend = "pipx:pytest"
 specifiers = ["latest"]
+uv = { path = ".mise/locks/pipx-pytest/9.2.0", digest = "sha256:0e43ea1ab0f5ba643f82a8c2ebc4a13f91fdb2f8904c0cf914c60c36a4cd9989" }
 
 [[tools."pipx:skills-ref"]]
 version = "0.1.1"
 backend = "pipx:skills-ref"
 specifiers = ["latest"]
+uv = { path = ".mise/locks/pipx-skills-ref/0.1.1", digest = "sha256:a975be67a649faea328a07e38a78b012548eed202d03903fdb933b1424fd347b" }
 
 [[tools.pnpm]]
 version = "12.22.0"
@@ -539,6 +542,16 @@ specifiers = ["latest"]
 checksum = "sha256:07ee196f91af1e21edb0c794401f4152932c74b0dba5d415dc4dbd5783f3c7af"
 url = "https://github.com/pnpm/pnpm/releases/download/v12.22.0/pnpm-linux-x64.tar.gz"
 url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/760376184"
+provenance = "github-attestations"
+
+[[tools.python]]
+version = "3.14.10"
+backend = "core:python"
+specifiers = ["3.14"]
+
+[tools.python."platforms.linux-x64"]
+checksum = "sha256:73ee0629c19e9f87077f318cd50d7e703137c274479ce8e8fd5723e75c86c9bc"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261124/cpython-3.14.10+20261124-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
 provenance = "github-attestations"
 
 [[tools.ripgrep]]

@@ -255,6 +255,11 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
   `github:ba0918/kemi`（自分がリリースするので `minimum_release_age` は per-tool で 0d）、
   エージェント向けの使い方は apm の `ba0918/kemi/skills/kemi` で配る。
   `ai/claude/CLAUDE.md` と `ai/codex/AGENTS.md` が、diff-review の提示手段としてこのスキルを指定する
+- **python** — `[tools]` の `python`（3.14 系）。PATH 上の `python` / `python3` の版を決める。
+  宣言が無いと mise のシムは `python3` を system の 3.12 へ落とし、system に無い `python` は
+  エラーになる。3.15 系は試したうえで見送った（pyyaml 6.0.3 など、3.15 用の配布物が無い
+  パッケージに固定している依存があり、apm の依存の解決結果を lock に記録できなかった）。
+  hook と statusline は `/usr/bin/python3` を絶対パスで呼ぶので、system の 3.12 のまま動く
 - **ripgrep** — `[tools]` の `ripgrep`。旧 apt 版から mise 管理へ移行済み
 - **ollama** — `[tools]` の `ollama`（aqua）。公式 installer は使わず
   `ollama serve` で手動起動
