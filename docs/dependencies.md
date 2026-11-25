@@ -140,10 +140,9 @@ ext の再ビルドが手動になるのが理由。
   **claude-skills** プラグインは `opencode plugin ba0918/claude-skills --force --global`
   で導入していた（v1 時代の手順。v2 での導入方法は未確認）
 
-`ai/shared/` の共通契約（`interaction.md` / `human-readable.md`）は
+`ai/shared/` の共通契約（`interaction.md` / `human-readable.md` / `tools-guide.md`）は
 `~/.claude/rules/` にシンボリックリンクして常時適用する。Claude 専用の
-`model-routing.md` と、それが参照する agent 定義（`judge.md` / `scout.md`）は
-`ai/claude/rules/` `ai/claude/agents/` から同様に symlink する。output-style の `persona/gal.md` は
+agent 定義（`judge.md` / `scout.md`）は `ai/claude/agents/` から同様に symlink する。output-style の `persona/gal.md` は
 `~/.claude/output-styles/` から symlink する。これにより `@` 参照を使わずに
 すべてのモデルで共通設定が効く
 

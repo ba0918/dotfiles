@@ -1,12 +1,5 @@
 # Agent Instructions
 
-## Core
-
-* Respond in Japanese.
-* Prioritize the user's goal and requested scope; do not expand the work unnecessarily.
-* Keep facts, inferences, and unverified items apart.
-* When project-specific instructions exist, apply them with priority.
-
 ## Workflow Routing
 
 Read `ba0918-using-workflow` when the request is multi-stage development work and you need to choose how to proceed — brainstorm / plan / implement / review and the like.
@@ -51,18 +44,6 @@ Do not read unrelated skills preventively.
 When deciding whether to create a document file, deciding where to place, move, or delete one, or taking inventory of old documents, read `ba0918-documents`.
 
 Use the `kemi` skill to present diff reviews.
-
-## Local Instructions
-
-When a more specific `AGENTS.md` or a project-specific contract exists, treat it as a realization of this common contract for that project.
-
-## Verification
-
-Run reasonable verification for what changed.
-
-When the impact is limited, prefer verification covering that range, and do not run unnecessarily broad, unrelated verification.
-
-Safe local verification needs no step-by-step approval midway; when a failure comes from this change, fix it and run again.
 
 ## Optional review seats (kotowari-review / ba0918-review)
 

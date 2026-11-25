@@ -87,7 +87,6 @@ compile = false
 "~/.claude/rules/interaction.md" = "../ai/shared/interaction.md"
 "~/.claude/rules/human-readable.md" = "../ai/shared/human-readable.md"
 "~/.claude/rules/tools-guide.md" = "../ai/shared/tools-guide.md"
-"~/.claude/rules/model-routing.md" = "../ai/claude/rules/model-routing.md"
 "~/.claude/agents/judge.md" = "../ai/claude/agents/judge.md"
 "~/.claude/agents/scout.md" = "../ai/claude/agents/scout.md"
 # hook スクリプトは ai/shared/hooks/ の単一実体を Claude / Codex 両方に配布する。

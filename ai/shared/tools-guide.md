@@ -1,16 +1,9 @@
 # Development tools
 
-This environment offers the following CLIs for code work.
+Beyond the usual CLIs, this environment has:
 
-* `rg` — text search
-* `fdfind` — file discovery (the name `fd` runs under on Debian / Ubuntu)
-* `jq` — JSON search and transformation
-* `sg` (`ast-grep`) — code search and rewriting based on AST structure
-* `tu` — some programs, such as htop, vim, mc, dialog-based installers, and ncurses-based UIs, need a real terminal to draw their interface. Piping stdin/stdout alone does not work.
-
-  With `tu`, you can run those programs on a virtual terminal and take screenshots, send key input, and operate the mouse. Run `tu usage` before the first operation to see the full command reference.
-
-Prefer `rg` for simple text search and `fdfind` for file discovery.
-
-To search or change code by syntactic structure, use `sg`.
-If usage or options are unclear, see each command's `--help`.
+* `fdfind` — `fd` under its Debian / Ubuntu name
+* `sg` (`ast-grep`) — search and rewrite code by syntactic structure
+* `tu` — runs programs that need a real terminal (vim, htop, dialog-based installers,
+  ncurses UIs) on a virtual one, with screenshots, key input, and mouse. Run `tu usage`
+  before the first use.
