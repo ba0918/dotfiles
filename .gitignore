@@ -82,6 +82,7 @@ Thumbs.db
 # ===== LLM Artifacts =====
 .agents/artifacts/
 .agents/runtime/
+.agents/HANDOFF.md
 
 # ===== secretlint for the git pre-commit hook (reproduced by `mise run bootstrap` via npm ci) =====
 git/.config/secretlint/node_modules/
