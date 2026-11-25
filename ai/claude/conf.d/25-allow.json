@@ -2,7 +2,6 @@
   "permissions": {
     "allow": [
       "Skill(codex:*)",
-      "Skill(claude-skills:*)",
       "Bash(rg *)",
       "Bash(ls *)",
       "Bash(grep *)",
