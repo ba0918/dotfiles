@@ -1,5 +1,5 @@
 # User-scope APM manifest (-> ~/.apm/apm.yml). Rule skills for every agent
-# CLI are declared here once; `apm install -g` (run by `mise run bootstrap`)
+# CLI are declared here once; scripts/apm-sync.sh (run by `mise run bootstrap`)
 # deploys them under ~/.claude/skills and ~/.agents/skills.
 # apm.lock.yaml next to this file is generated and stays local.
 name: dotfiles
@@ -13,23 +13,30 @@ targets:
   - codex
 dependencies:
   apm:
-    # Unpinned on purpose: these are the owner's own repositories, and the
-    # goal is to follow their latest state. `apm update -g` (bootstrap) moves
-    # the lock forward; a pin would freeze it at one release.
+    # The ba0918/* entries are unpinned on purpose: they are the owner's own
+    # repositories, and the goal is to follow their latest state. scripts/apm-sync.sh
+    # (bootstrap) passes them to `apm update`, which moves the lock forward.
+    #
+    # Entries from other owners are pinned to a commit. A skill is instruction
+    # text the agents follow without a person reading it first, so an upstream
+    # change must not arrive through a routine bootstrap. To move a pin, read
+    # the upstream diff between the two commits, then change the hash here.
+    # Do not run `apm update -g` without package names: it rewrites these
+    # hashes to the newest release tag it finds upstream.
     - ba0918/agentic-rules
     - ba0918/agentic-workflow
     - ba0918/agentic-meta
     - ba0918/skills/skills/ba0918-handoff
     - ba0918/skills/skills/ba0918-teacher
     - ba0918/kemi/skills/kemi
-    - typesafe-ai/skills/skills/typesafe-ai
+    - typesafe-ai/skills/skills/typesafe-ai#302eea662c54bca6730873fe245bec1d69ebc23d
     - ba0918/skills/skills/ba0918-refactor
     - ba0918/skills/skills/ba0918-rework
     - ba0918/skills/skills/ba0918-opencode-exec
     - ba0918/skills/skills/ba0918-codex-exec
     - ba0918/skills/skills/ba0918-codex-image
-    - nanaism/yomiyasu
-    - backnotprop/pstack/skills/unslop
+    - nanaism/yomiyasu#8394e099486aaa2e28cf89992e46f5ebe5ed839d # 2.5.0
+    - backnotprop/pstack/skills/unslop#f104aa8f821a3f7397318b0dc8ad2f7e4a1f8bc7
     - ba0918/skills/skills/ba0918-activity-report
     - ba0918/skills/skills/ba0918-repo-history
     - ba0918/shoryo/skills/shoryo

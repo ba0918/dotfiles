@@ -240,11 +240,15 @@ statusline のたびに「ファイルが無い」エラーが出続けるため
 
 - **apm** — `[tools]` の `pipx:apm-cli` で導入。Agent Package Manager。
   ユーザースコープの `~/.apm/apm.yml` は `ai/apm/apm.yml` から symlink 配布し、
-  `mise run bootstrap` の `apm update -g --yes` が宣言どおりに規範スキルを
-  `~/.claude/skills` と `~/.agents/skills` に最新化する。依存は自分のリポジトリ
-  （規範の `ba0918/agentic-rules`、workflow の `ba0918/agentic-workflow` 等）なので pin せず
-  main を追従する。`apm install -g` は
-  `apm.lock.yaml` の commit に留まるため、追従させたいときは update を使う。
+  `mise run bootstrap` の `scripts/apm-sync.sh` が宣言どおりに規範スキルを
+  `~/.claude/skills` と `~/.agents/skills` に入れる。自分のリポジトリ
+  （規範の `ba0918/agentic-rules`、workflow の `ba0918/agentic-workflow` 等）は pin せず
+  main を追従する。他者のリポジトリは `#<commit>` で pin し、上流の変更が bootstrap で
+  勝手に入らないようにする。スキルはエージェントが人の目を通さず従う指示文なので、
+  pin を動かすときは上流の差分を読んでから `ai/apm/apm.yml` の hash を書き換える。
+  名前を渡さない `apm update -g` は pin を上流の新しいリリースタグへ書き換えるので、
+  `apm-sync.sh` は pin の無い項目だけを `apm update` に渡し、残りを `apm install -g`
+  （`apm.lock.yaml` と pin の commit に留まる）で入れる。
   プロジェクト単位の `apm.yml` はそれぞれのリポジトリで管理する
 - **kemi** — 変更を人のレビューに出すローカルの diff ビューア。本体は `[tools]` の
   `github:ba0918/kemi`（自分がリリースするので `minimum_release_age` は per-tool で 0d）、

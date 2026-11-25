@@ -44,7 +44,7 @@ ai/claude/build-settings --status   # managed vs runtime allow の内訳を表�
 scripts/generate-deny.sh claude     # deny-patterns.yaml → Claude Code 形式で stdout
 scripts/generate-deny.sh opencode   # deny-patterns.yaml → OpenCode 形式で stdout
 scripts/generate-deny.sh opencode-apply  # ~/.config/opencode/opencode.json の deny を上書き
-apm update -g --yes                 # ~/.apm/apm.yml の規範スキルを最新に更新（bootstrap でも実行。install は lock に留まる）
+bash scripts/apm-sync.sh            # 規範スキルを同期（bootstrap でも実行）。pin の無い項目は最新へ、pin した項目は据え置き
 ```
 
 ## テスト
