@@ -227,7 +227,9 @@ pnpm = "latest"
 # hook と statusline は /usr/bin/python3 を絶対パスで呼ぶので、ここの版に左右されない
 python = "3.14"
 ripgrep = "latest"
-rust = "latest"
+# rust: rust-analyzer は Claude Code の LSP プラグイン用。rustup component add は
+# その時点の toolchain にしか入らず、latest で版が上がると消えるので宣言する
+rust = { version = "latest", components = "rust-analyzer" }
 # uv: Python のパッケージ / プロジェクト管理。公式 installer で ~/.local/bin に置いていたものを移行
 uv = "latest"
 # cargo サプライチェーン対策（crates.io 依存の脆弱性 / ライセンス検査）。cargo install 相当を
@@ -258,6 +260,10 @@ lefthook = "latest"
 npm = "12.2.0"
 "npm:fkill-cli" = "latest"
 "npm:hunkdiff" = "latest"
+# Claude Code の typescript-lsp プラグインが起動する LSP。npm -g は node の版ごとに
+# 入るため node を上げると消える。mise で管理する。tsserver はワークスペースの
+# node_modules/typescript を使う（TypeScript 7 は tsserver.js を持たないので使えない）
+"npm:typescript-language-server" = "latest"
 gcloud = "latest"
 # run-if-present: hook の repo 外依存を存在チェック付きで起動する自作 CLI。
 # kakoi: codex を隔離して起動する自作 CLI（docs/kakoi.md）。

@@ -489,6 +489,15 @@ specifiers = ["latest"]
 [tools."npm:hunkdiff".provenance]
 repository = "github.com/modem-dev/hunk"
 
+[[tools."npm:typescript-language-server"]]
+version = "6.1.0"
+aube = { path = ".mise/locks/npm-typescript-language-server/6.1.0", digest = "sha256:f86c7cfd9fe629ca833f239e754750b6d0cf1dd9524941638366bcaca28b85fe" }
+backend = "npm:typescript-language-server"
+specifiers = ["latest"]
+
+[tools."npm:typescript-language-server".provenance]
+repository = "github.com/typescript-language-server/typescript-language-server"
+
 [[tools."npm:wrangler"]]
 version = "4.166.0"
 aube = { path = ".mise/locks/npm-wrangler/4.166.0", digest = "sha256:ef2e4a69e2fde59a14c33da39b7b5175d82e8a2ac4ab3d72f7a67931fc7fda99" }
@@ -573,6 +582,9 @@ url_api = "https://api.github.com/repos/BurntSushi/ripgrep/releases/assets/47812
 version = "1.100.0"
 backend = "core:rust"
 specifiers = ["latest"]
+
+[tools.rust.options]
+components = "rust-analyzer"
 
 [[tools.shellcheck]]
 version = "0.11.0"
