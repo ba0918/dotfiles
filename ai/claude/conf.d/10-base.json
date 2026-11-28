@@ -16,5 +16,6 @@
   "statusLine": {
     "type": "command",
     "command": "run-if-present path \"$HOME/.claude/statusline.py\" -- /usr/bin/python3 \"$HOME/.claude/statusline.py\""
-  }
+  },
+  "maxProseWidth": 100
 }
