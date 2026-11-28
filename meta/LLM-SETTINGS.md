@@ -160,7 +160,8 @@ mawk で無言に一致しなくなる。
 3. $HOME / $DOTFILES_ROOT / $PATH を展開（//$HOME/ と //$DOTFILES_ROOT/ は
    //home/user/ 形に正しく変換）
 4. 既存 settings.json があれば runtime allow/ask を抽出して base に追加
-5. 通常実行時だけ conf.d/20-deny.json と ~/.claude/settings.json に書き出し
+5. 既存 settings.json にある apm の plugin 登録（`apm-` で始まる marketplace とその plugin）を引き継ぐ
+6. 通常実行時だけ conf.d/20-deny.json と ~/.claude/settings.json に書き出し
 ```
 
 ### 管理キー vs 非管理キー
@@ -169,6 +170,7 @@ mawk で無言に一致しなくなる。
 |------|------|-------------|
 | 管理キー | deny / hooks / env / model / sandbox / plugins 等 | build が上書き |
 | 非管理キー | `permissions.allow` / `permissions.ask` | 既存値を保持（runtime 追記分を引き継ぐ）|
+| apm の登録 | `extraKnownMarketplaces` / `enabledPlugins` のうち `apm-` で始まる marketplace の分 | 既存値を保持（`--clean` でも消さない。conf.d と同じキーなら conf.d が優先）|
 
 ### permissions.allow の二層構造
 

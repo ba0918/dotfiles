@@ -4,7 +4,7 @@
 #
 # Merges conf.d/*.json in numeric order, then preserves runtime-added
 # permissions.allow and permissions.ask from the existing settings.json
-# (unless --clean is passed).
+# (unless --clean is passed) and the plugin registrations apm wrote there.
 #
 # Usage:
 #   build-settings              # build with runtime allow preservation
@@ -173,7 +173,21 @@ else
   RESULT="$BASE"
 fi
 
-# Step 7: Output
+# Step 7: Carry over the plugin registrations apm writes into settings.json. apm deploys
+# its packages as native Claude plugins from a local marketplace whose name starts with
+# "apm-", and records that marketplace and its plugins here directly. They are not in
+# conf.d, so without this a rebuild would drop them until the next apm sync. Kept even
+# with --clean, which only resets the runtime permissions; conf.d wins on any shared key.
+if [ -f "$TARGET" ]; then
+  RESULT=$(echo "$RESULT" | jq --slurpfile current "$TARGET" '
+    ($current[0].extraKnownMarketplaces // {} | with_entries(select(.key | startswith("apm-")))) as $markets
+    | ($current[0].enabledPlugins // {}
+       | with_entries(select(.key | test("@apm-[^@]*$")))) as $plugins
+    | if ($markets | length) > 0 then .extraKnownMarketplaces = ($markets + (.extraKnownMarketplaces // {})) else . end
+    | if ($plugins | length) > 0 then .enabledPlugins = ($plugins + (.enabledPlugins // {})) else . end')
+fi
+
+# Step 8: Output
 if $DRY_RUN; then
   echo "$RESULT" | jq .
 else

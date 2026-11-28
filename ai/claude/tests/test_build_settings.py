@@ -73,3 +73,35 @@ def test_apply_matches_preview_and_preserves_runtime_permissions(checkout):
         text=True, capture_output=True, check=True,
     ).stdout)
     assert generated == expected
+
+
+APM_MARKETPLACE = {"source": {"source": "directory", "path": "/home/user/.agents/plugins"}}
+
+
+def write_apm_registrations(home):
+    path = home / ".claude/settings.json"
+    settings = json.loads(path.read_text())
+    settings["enabledPlugins"] = {
+        "ba0918-rules@apm-u-0123abcd": True,
+        "stale-plugin@claude-plugins-official": True,
+    }
+    settings["extraKnownMarketplaces"] = {
+        "apm-u-0123abcd": APM_MARKETPLACE,
+        "stale-marketplace": APM_MARKETPLACE,
+    }
+    path.write_text(json.dumps(settings))
+
+
+@pytest.mark.parametrize("flag", [None, "--clean"])
+def test_apm_plugin_registrations_survive_a_rebuild(checkout, flag):
+    repo, home = checkout
+    write_apm_registrations(home)
+    managed = json.loads(run_build(checkout, "--clean", "--dry-run").stdout)
+    run_build(checkout, *([flag] if flag else []))
+    applied = json.loads((home / ".claude/settings.json").read_text())
+    assert applied["enabledPlugins"]["ba0918-rules@apm-u-0123abcd"] is True
+    assert applied["extraKnownMarketplaces"]["apm-u-0123abcd"] == APM_MARKETPLACE
+    assert "stale-plugin@claude-plugins-official" not in applied["enabledPlugins"]
+    assert "stale-marketplace" not in applied["extraKnownMarketplaces"]
+    for key, value in managed["enabledPlugins"].items():
+        assert applied["enabledPlugins"][key] == value
