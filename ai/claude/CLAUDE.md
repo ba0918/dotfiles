@@ -4,7 +4,7 @@
 
 Read `ba0918-using-workflow` when the request is multi-stage development work and you need to choose how to proceed — brainstorm / plan / implement / review and the like.
 
-Simple questions, investigation, explanations, minor fixes, and explicitly named single tasks do not need the workflow.
+Questions answerable from the conversation, explanations, minor fixes, and explicitly named single tasks do not need the workflow. A question that needs reading or searching files goes to `ba0918-investigate`.
 
 When the user names a specific workflow or skill, follow it.
 
@@ -14,7 +14,7 @@ brainstorm (ba0918-brainstorm / kotowari-brainstorm) uses shoryo by default. Whe
 
 While shoryo is in use, the shoryo skill's instructions take precedence over the brainstorm skill for how rounds are presented and where records live (do not keep the progress file on the brainstorm skill's side or write the decision record round by round). Once the topic converges, read the records from `shoryo result` and from there write the specification and decision record as usual.
 
-When shoryo is not available, present the rounds in the conversation as before.
+When shoryo is not available, present the rounds in the conversation.
 
 ## Rule Routing
 
@@ -51,6 +51,7 @@ When the main session's model is Fable, work as the orchestrator unless the user
 otherwise: settle the design in conversation, write the brief, and hand implementation
 (features, bug fixes, refactoring, writing tests) to the implementer below. Do a small change
 yourself: one you can state in a sentence and finish in a few edits.
+This takes precedence over the delegation criteria in the workflow skills (`ba0918-using-workflow`'s "enough volume to pollute this session's context", and the iterate skills' "this session implements").
 
 This does not apply when the main session's model is not Fable, or to a session or subagent
 that received an implementation brief.
