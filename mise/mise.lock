@@ -36,24 +36,24 @@ url = "https://github.com/ast-grep/ast-grep/releases/download/0.51.3/app-x86_64-
 url_api = "https://api.github.com/repos/ast-grep/ast-grep/releases/assets/753396224"
 
 [[tools.atuin]]
-version = "18.25.0"
+version = "18.25.1"
 backend = "aqua:atuinsh/atuin"
 specifiers = ["latest"]
 
 [tools.atuin."platforms.linux-x64"]
-checksum = "sha256:1ee01017e27d5968b6b3e9c35f0e190fcec918591ec808f3f090ee7d97fc87a7"
-url = "https://github.com/atuinsh/atuin/releases/download/v18.25.0/atuin-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/atuinsh/atuin/releases/assets/770087356"
+checksum = "sha256:bd586c8c5ba631c3e545b1665fdd0bfc1d8aa4954e6b6a488dc712c8d8a89f10"
+url = "https://github.com/atuinsh/atuin/releases/download/v18.25.1/atuin-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/atuinsh/atuin/releases/assets/773455537"
 provenance = "github-attestations"
 
 [[tools.aws-cli]]
-version = "2.41.2"
+version = "2.42.1"
 backend = "aqua:aws/aws-cli"
 specifiers = ["latest"]
 
 [tools.aws-cli."platforms.linux-x64"]
-checksum = "blake3:e10a797fa37da6fd3bb58d141271e16e97b6bdc0690fc5dbb9fab94e95bad451"
-url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.41.2.zip"
+checksum = "blake3:6f8b61c3fbdbad0f16f065c72b244b6376ef4e939197f0130bbfb9bf3a372e47"
+url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.42.1.zip"
 
 [[tools.bottom]]
 version = "0.15.0"
@@ -490,8 +490,8 @@ specifiers = ["latest"]
 repository = "github.com/modem-dev/hunk"
 
 [[tools."npm:wrangler"]]
-version = "4.165.0"
-aube = { path = ".mise/locks/npm-wrangler/4.165.0", digest = "sha256:a042de7dbb6f11b898fe9b20c4f994e379d9c463faac02af99eb7100931d0930" }
+version = "4.166.0"
+aube = { path = ".mise/locks/npm-wrangler/4.166.0", digest = "sha256:ef2e4a69e2fde59a14c33da39b7b5175d82e8a2ac4ab3d72f7a67931fc7fda99" }
 backend = "npm:wrangler"
 specifiers = ["latest"]
 
@@ -510,20 +510,20 @@ url = "https://github.com/ollama/ollama/releases/download/v0.40.17/ollama-linux-
 url_api = "https://api.github.com/repos/ollama/ollama/releases/assets/774304976"
 
 [[tools.pi]]
-version = "1.6.1"
+version = "1.7.0"
 backend = "aqua:earendil-works/pi"
 specifiers = ["latest"]
 
 [tools.pi."platforms.linux-x64"]
-checksum = "sha256:3c7f00715eb512e165c0da8cad314d73c83b54d5bf7748be4adc618fc8357b68"
-url = "https://github.com/earendil-works/pi/releases/download/v1.6.1/pi-linux-x64.tar.gz"
-url_api = "https://api.github.com/repos/earendil-works/pi/releases/assets/791633919"
+checksum = "sha256:42f7ed67e83f727fe51dd2746d50dc45c7d1784159a9518296a282402ac68f4a"
+url = "https://github.com/earendil-works/pi/releases/download/v1.7.0/pi-linux-x64.tar.gz"
+url_api = "https://api.github.com/repos/earendil-works/pi/releases/assets/801243839"
 
 [[tools."pipx:apm-cli"]]
-version = "0.36.1"
+version = "0.37.0"
 backend = "pipx:apm-cli"
 specifiers = ["latest"]
-uv = { path = ".mise/locks/pipx-apm-cli/0.36.1", digest = "sha256:89e3102282116274ecc8402758d257bc1aeb6ab95c23f7e733d6cb4109e87770" }
+uv = { path = ".mise/locks/pipx-apm-cli/0.37.0", digest = "sha256:bc3ae2971812efb5a5270f124c36ee6117891272365e49e4c1907bf136f10363" }
 
 [[tools."pipx:pytest"]]
 version = "9.2.0"
